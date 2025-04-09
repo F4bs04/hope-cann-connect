@@ -27,6 +27,19 @@ const Header = () => {
     };
   }, []);
 
+  // Function to scroll to the scheduling section on the homepage
+  const scrollToScheduling = (e) => {
+    e.preventDefault();
+    if (location.pathname === '/') {
+      const schedulingSection = document.querySelector('.HomeScheduling');
+      if (schedulingSection) {
+        schedulingSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      window.location.href = '/#scheduling';
+    }
+  };
+
   return (
     <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-4'}`}>
       <div className="hopecann-container flex justify-between items-center">
@@ -79,7 +92,8 @@ const Header = () => {
           </div>
           
           <Link 
-            to="/agendar" 
+            to="/"
+            onClick={scrollToScheduling}
             className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm"
           >
             Agendar Consulta
@@ -137,9 +151,12 @@ const Header = () => {
             </div>
             
             <Link 
-              to="/agendar" 
-              className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center" 
-              onClick={() => setIsMenuOpen(false)}
+              to="/"
+              onClick={(e) => {
+                setIsMenuOpen(false);
+                scrollToScheduling(e);
+              }}
+              className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center"
             >
               Agendar Consulta
             </Link>
