@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <img src="/lovable-uploads/906d320d-17b6-4919-8bd3-30ecf3d226e7.png" alt="Clínica HopeCann Logo" className="h-12" />
+              <img alt="Clínica HopeCann Logo" className="h-12" src="/lovable-uploads/e9833c00-8361-43f0-a28f-f3b2b794df50.png" />
             </div>
             <p className="text-white/90 mb-4">
               Tratamento canábico<br />
