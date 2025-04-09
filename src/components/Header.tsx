@@ -1,17 +1,36 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, PhoneCall } from 'lucide-react';
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const location = useLocation();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
-    <header className="bg-hopecann-teal text-white py-4">
+    <header className={`sticky top-0 z-50 transition-all duration-300 ${
+      isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-4'
+    }`}>
       <div className="hopecann-container flex justify-between items-center">
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
@@ -25,21 +44,33 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <Link to="/" className="font-medium hover:text-white/80 transition">
+          <NavLink to="/" isActive={location.pathname === '/'} isScrolled={isScrolled}>
             Início
-          </Link>
-          <Link to="/tratamentos" className="font-medium hover:text-white/80 transition">
+          </NavLink>
+          <NavLink to="/tratamentos" isActive={location.pathname === '/tratamentos'} isScrolled={isScrolled}>
             Tratamentos
-          </Link>
-          <Link to="/medicos" className="font-medium hover:text-white/80 transition">
+          </NavLink>
+          <NavLink to="/medicos" isActive={location.pathname === '/medicos'} isScrolled={isScrolled}>
             Médicos
-          </Link>
-          <Link to="/contato" className="font-medium hover:text-white/80 transition">
+          </NavLink>
+          <NavLink to="/contato" isActive={location.pathname === '/contato'} isScrolled={isScrolled}>
             Contato
-          </Link>
+          </NavLink>
+          
+          <div className="hidden lg:flex items-center gap-2 pl-4 border-l border-gray-200">
+            <PhoneCall className="h-4 w-4 text-hopecann-teal" />
+            <span className={`font-medium ${isScrolled ? 'text-gray-700' : 'text-white'}`}>
+              (11) 99999-9999
+            </span>
+          </div>
+          
           <Link 
             to="/agendar" 
-            className="bg-hopecann-green hover:bg-hopecann-green/90 text-white font-medium py-2 px-6 rounded-full transition-all"
+            className={`${
+              isScrolled 
+                ? 'bg-hopecann-teal hover:bg-hopecann-teal/90 text-white' 
+                : 'bg-white hover:bg-white/90 text-hopecann-teal'
+            } font-medium py-2.5 px-6 rounded-full transition-all shadow-sm`}
           >
             Agendar Consulta
           </Link>
@@ -47,7 +78,7 @@ const Header = () => {
 
         {/* Mobile Menu Button */}
         <button 
-          className="md:hidden text-white"
+          className={`md:hidden ${isScrolled ? 'text-gray-700' : 'text-white'}`}
           onClick={toggleMenu}
           aria-label="Toggle menu"
         >
@@ -57,39 +88,47 @@ const Header = () => {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden bg-hopecann-teal border-t border-white/10 py-4">
-          <div className="hopecann-container flex flex-col space-y-4">
-            <Link 
+        <div className="md:hidden bg-white shadow-lg py-6 absolute top-full left-0 right-0 animate-fade-in">
+          <div className="hopecann-container flex flex-col space-y-6">
+            <MobileNavLink 
               to="/" 
-              className="font-medium hover:text-white/80 transition"
+              isActive={location.pathname === '/'} 
               onClick={() => setIsMenuOpen(false)}
             >
               Início
-            </Link>
-            <Link 
+            </MobileNavLink>
+            <MobileNavLink 
               to="/tratamentos" 
-              className="font-medium hover:text-white/80 transition"
+              isActive={location.pathname === '/tratamentos'} 
               onClick={() => setIsMenuOpen(false)}
             >
               Tratamentos
-            </Link>
-            <Link 
+            </MobileNavLink>
+            <MobileNavLink 
               to="/medicos" 
-              className="font-medium hover:text-white/80 transition"
+              isActive={location.pathname === '/medicos'} 
               onClick={() => setIsMenuOpen(false)}
             >
               Médicos
-            </Link>
-            <Link 
+            </MobileNavLink>
+            <MobileNavLink 
               to="/contato" 
-              className="font-medium hover:text-white/80 transition"
+              isActive={location.pathname === '/contato'} 
               onClick={() => setIsMenuOpen(false)}
             >
               Contato
-            </Link>
+            </MobileNavLink>
+            
+            <div className="pt-4 border-t border-gray-100 flex items-center gap-2">
+              <PhoneCall className="h-4 w-4 text-hopecann-teal" />
+              <span className="font-medium text-gray-700">
+                (11) 99999-9999
+              </span>
+            </div>
+            
             <Link 
               to="/agendar" 
-              className="bg-hopecann-green hover:bg-hopecann-green/90 text-white font-medium py-2 px-6 rounded-full transition-all w-full text-center"
+              className="bg-hopecann-teal hover:bg-hopecann-teal/90 text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center"
               onClick={() => setIsMenuOpen(false)}
             >
               Agendar Consulta
@@ -100,5 +139,30 @@ const Header = () => {
     </header>
   );
 };
+
+const NavLink = ({ to, children, isActive, isScrolled }) => (
+  <Link 
+    to={to} 
+    className={`font-medium transition-colors ${
+      isActive 
+        ? 'text-hopecann-teal' 
+        : isScrolled ? 'text-gray-700 hover:text-hopecann-teal' : 'text-white hover:text-white/80'
+    }`}
+  >
+    {children}
+  </Link>
+);
+
+const MobileNavLink = ({ to, children, isActive, onClick }) => (
+  <Link 
+    to={to} 
+    className={`font-medium transition-colors ${
+      isActive ? 'text-hopecann-teal' : 'text-gray-700 hover:text-hopecann-teal'
+    }`}
+    onClick={onClick}
+  >
+    {children}
+  </Link>
+);
 
 export default Header;

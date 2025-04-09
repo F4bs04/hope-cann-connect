@@ -53,11 +53,11 @@
   }
   
   .hopecann-btn-primary {
-    @apply bg-hopecann-teal hover:bg-hopecann-teal/90 text-white font-medium py-2 px-6 rounded-full transition-colors;
+    @apply bg-hopecann-teal hover:bg-hopecann-teal/90 text-white font-medium py-2.5 px-6 rounded-full transition-colors;
   }
   
   .hopecann-btn-secondary {
-    @apply bg-white hover:bg-gray-50 text-hopecann-teal border border-hopecann-teal font-medium py-2 px-6 rounded-full transition-colors;
+    @apply bg-white hover:bg-gray-50 text-hopecann-teal border border-hopecann-teal font-medium py-2.5 px-6 rounded-full transition-colors;
   }
   
   .hopecann-section {
@@ -73,6 +73,71 @@
   }
   
   .hopecann-card {
-    @apply bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-6 h-full;
+    @apply bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 h-full border border-gray-100;
   }
+
+  .hopecann-decoration {
+    @apply absolute -z-10 text-hopecann-teal/10 opacity-50;
+  }
+
+  .hopecann-gradient-bg {
+    @apply bg-gradient-to-r from-hopecann-teal to-hopecann-teal/90;
+  }
+  
+  .hopecann-stat-card {
+    @apply bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col;
+  }
+  
+  .hopecann-stat-value {
+    @apply text-3xl font-bold text-hopecann-teal;
+  }
+  
+  .hopecann-stat-label {
+    @apply text-sm text-gray-500 mt-1;
+  }
+  
+  .btn-hover-scale {
+    @apply transform transition-transform duration-200 hover:scale-105;
+  }
+
+  .hopecann-testimonial-card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6 relative;
+  }
+
+  .hopecann-testimonial-card::before {
+    content: "";
+    @apply absolute top-0 left-0 w-full h-1 bg-hopecann-teal rounded-t-xl;
+  }
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
 }

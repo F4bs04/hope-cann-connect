@@ -9,6 +9,7 @@ import CtaSection from '../components/CtaSection';
 import BenefitsSection from '../components/BenefitsSection';
 import TestimonialSection from '../components/TestimonialSection';
 import ProcessSteps from '../components/ProcessSteps';
+import WhyChooseUs from '../components/WhyChooseUs';
 
 const Index = () => {
   return (
@@ -16,6 +17,7 @@ const Index = () => {
       <Header />
       <main className="flex-grow">
         <HeroSection />
+        <WhyChooseUs />
         <BenefitsSection />
         <ConditionsSection />
         <ProcessSteps />
