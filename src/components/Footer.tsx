@@ -1,20 +1,13 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, Instagram, Facebook, Linkedin } from 'lucide-react';
-
 const Footer = () => {
-  return (
-    <footer className="bg-hopecann-green text-white pt-12 pb-6">
+  return <footer className="bg-hopecann-green text-white pt-12 pb-6 bg-teal-500">
       <div className="hopecann-container">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <img 
-                src="/lovable-uploads/906d320d-17b6-4919-8bd3-30ecf3d226e7.png" 
-                alt="Clínica HopeCann Logo" 
-                className="h-12"
-              />
+              <img src="/lovable-uploads/906d320d-17b6-4919-8bd3-30ecf3d226e7.png" alt="Clínica HopeCann Logo" className="h-12" />
             </div>
             <p className="text-white/90 mb-4">
               Tratamento canábico<br />
@@ -80,8 +73,6 @@ const Footer = () => {
           <p>© 2025 HopeCann. Todos os direitos reservados.</p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
