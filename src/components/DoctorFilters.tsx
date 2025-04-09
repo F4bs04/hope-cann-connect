@@ -14,7 +14,7 @@ const availabilityOptions = [
 
 // Brazilian states
 const brazilianStates = [
-  { value: '', label: 'Todos os estados' },
+  { value: 'all', label: 'Todos os estados' },
   { value: 'AC', label: 'Acre' },
   { value: 'AL', label: 'Alagoas' },
   { value: 'AP', label: 'Amapá' },
@@ -49,8 +49,8 @@ const DoctorFilters = ({
   onFilterChange 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const [selectedState, setSelectedState] = useState('');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('all');
+  const [selectedState, setSelectedState] = useState('all');
   const [selectedAvailability, setSelectedAvailability] = useState('any');
   
   useEffect(() => {
@@ -58,8 +58,8 @@ const DoctorFilters = ({
     const timeoutId = setTimeout(() => {
       onFilterChange({
         searchTerm,
-        specialty: selectedSpecialty,
-        state: selectedState,
+        specialty: selectedSpecialty === 'all' ? '' : selectedSpecialty,
+        state: selectedState === 'all' ? '' : selectedState,
         availability: selectedAvailability
       });
     }, 300);
@@ -100,7 +100,7 @@ const DoctorFilters = ({
               <SelectValue placeholder="Todas especialidades" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas especialidades</SelectItem>
+              <SelectItem value="all">Todas especialidades</SelectItem>
               {specialties.map((specialty) => (
                 <SelectItem key={specialty} value={specialty}>
                   {specialty}
