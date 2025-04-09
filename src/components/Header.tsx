@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, PhoneCall } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -84,13 +84,6 @@ const Header = () => {
             Contato
           </NavLink>
           
-          <div className="hidden lg:flex items-center gap-2 pl-4 border-l border-gray-200">
-            <PhoneCall className="h-4 w-4 text-hopecann-teal" />
-            <span className={`font-medium ${isScrolled ? 'text-gray-700' : 'text-white'}`}>
-              (11) 99999-9999
-            </span>
-          </div>
-          
           <Link 
             to="/"
             onClick={scrollToScheduling}
@@ -142,13 +135,6 @@ const Header = () => {
             >
               Contato
             </MobileNavLink>
-            
-            <div className="pt-4 border-t border-gray-100 flex items-center gap-2">
-              <PhoneCall className="h-4 w-4 text-hopecann-teal" />
-              <span className="font-medium text-gray-700">
-                (11) 99999-9999
-              </span>
-            </div>
             
             <Link 
               to="/"

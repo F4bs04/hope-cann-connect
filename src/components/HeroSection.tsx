@@ -8,7 +8,7 @@ const HeroSection = () => {
     <section className="relative py-20 md:py-28 overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img 
-          src="/lovable-uploads/31b21e55-c292-47fb-888b-f884e7027019.png" 
+          src="/lovable-uploads/a5f96bd2-0443-4cbb-81e8-170c5b8eb2b1.png" 
           alt="Médicos especialistas" 
           className="w-full h-full object-cover"
         />

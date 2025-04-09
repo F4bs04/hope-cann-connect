@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 const doctorsData = [
   {
@@ -19,32 +21,34 @@ const doctorsData = [
     name: 'Dr. Carlos Mendes',
     specialty: 'Neurologista',
     bio: 'Especialista em epilepsia e doenças neurodegenerativas.',
-    image: '/lovable-uploads/31b21e55-c292-47fb-888b-f884e7027019.png'
+    image: '/lovable-uploads/4c61ba35-b917-48df-a2d5-424e22a77db2.png'
   }
 ];
 
 const DoctorCard = ({ name, specialty, bio, image }) => {
   return (
-    <div className="hopecann-card p-0 overflow-hidden">
-      <div className="h-48 overflow-hidden">
+    <Card className="overflow-hidden h-full flex flex-col">
+      <div className="h-52 relative">
         <img 
           src={image} 
           alt={name} 
           className="w-full h-full object-cover"
         />
       </div>
-      <div className="p-6">
+      <CardContent className="flex-grow pt-6">
         <h3 className="text-xl font-semibold mb-1">{name}</h3>
         <p className="text-hopecann-teal mb-3">{specialty}</p>
         <p className="text-gray-600 mb-4">{bio}</p>
+      </CardContent>
+      <CardFooter className="pt-0">
         <Link 
           to="/agendar" 
           className="block w-full py-2 px-4 bg-hopecann-teal hover:bg-hopecann-teal/90 text-white text-center rounded-md transition-colors"
         >
           Agendar Consulta
         </Link>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 };
 
