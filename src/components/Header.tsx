@@ -1,13 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, PhoneCall } from 'lucide-react';
+
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -16,11 +20,13 @@ const Header = () => {
         setIsScrolled(false);
       }
     };
+
     window.addEventListener('scroll', handleScroll);
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
   return <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-4'}`}>
       <div className="hopecann-container flex justify-between items-center">
         <div className="flex items-center">
@@ -51,7 +57,7 @@ const Header = () => {
             </span>
           </div>
           
-          <Link to="/agendar" className={`${isScrolled ? 'bg-hopecann-teal hover:bg-hopecann-teal/90 text-white' : 'bg-white hover:bg-white/90 text-hopecann-teal'} font-medium py-2.5 px-6 rounded-full transition-all shadow-sm`}>
+          <Link to="/agendar" className={`${isScrolled ? 'bg-hopecann-green hover:bg-hopecann-teal text-white' : 'bg-hopecann-green hover:bg-hopecann-teal text-white'} font-medium py-2.5 px-6 rounded-full transition-all shadow-sm`}>
             Agendar Consulta
           </Link>
         </nav>
@@ -85,27 +91,30 @@ const Header = () => {
               </span>
             </div>
             
-            <Link to="/agendar" className="bg-hopecann-teal hover:bg-hopecann-teal/90 text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center" onClick={() => setIsMenuOpen(false)}>
+            <Link to="/agendar" className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center" onClick={() => setIsMenuOpen(false)}>
               Agendar Consulta
             </Link>
           </div>
         </div>}
     </header>;
 };
+
 const NavLink = ({
   to,
   children,
   isActive,
   isScrolled
-}) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : isScrolled ? 'text-gray-700 hover:text-hopecann-teal' : 'text-white hover:text-white/80'}`}>
+}) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : isScrolled ? 'text-hopecann-green hover:text-hopecann-teal' : 'text-white hover:text-white/80'}`}>
     {children}
   </Link>;
+
 const MobileNavLink = ({
   to,
   children,
   isActive,
   onClick
-}) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : 'text-gray-700 hover:text-hopecann-teal'}`} onClick={onClick}>
+}) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : 'text-hopecann-green hover:text-hopecann-teal'}`} onClick={onClick}>
     {children}
   </Link>;
+
 export default Header;
