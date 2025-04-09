@@ -1,17 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, PhoneCall } from 'lucide-react';
-
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
-
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
-
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -20,18 +16,16 @@ const Header = () => {
         setIsScrolled(false);
       }
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
-
   return <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-4'}`}>
       <div className="hopecann-container flex justify-between items-center">
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
-            <img alt="Clínica HopeCann Logo" className="h-10" src="/lovable-uploads/4c61ba35-b917-48df-a2d5-424e22a77db2.png" />
+            <img alt="Clínica HopeCann Logo" className="h-10" src="/lovable-uploads/9826141f-2e80-41ba-8792-01e2ed93ac69.png" />
           </Link>
         </div>
 
@@ -98,7 +92,6 @@ const Header = () => {
         </div>}
     </header>;
 };
-
 const NavLink = ({
   to,
   children,
@@ -107,7 +100,6 @@ const NavLink = ({
 }) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : isScrolled ? 'text-hopecann-green hover:text-hopecann-teal' : 'text-white hover:text-white/80'}`}>
     {children}
   </Link>;
-
 const MobileNavLink = ({
   to,
   children,
@@ -116,5 +108,4 @@ const MobileNavLink = ({
 }) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : 'text-hopecann-green hover:text-hopecann-teal'}`} onClick={onClick}>
     {children}
   </Link>;
-
 export default Header;
