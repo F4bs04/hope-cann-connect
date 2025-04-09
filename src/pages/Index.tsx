@@ -11,6 +11,7 @@ import TestimonialSection from '../components/TestimonialSection';
 import ProcessSteps from '../components/ProcessSteps';
 import WhyChooseUs from '../components/WhyChooseUs';
 import HomeScheduling from '../components/HomeScheduling';
+import FAQSection from '../components/FAQSection';
 
 const Index = () => {
   return (
@@ -25,6 +26,7 @@ const Index = () => {
         <ProcessSteps />
         <DoctorsSection />
         <TestimonialSection />
+        <FAQSection />
         <CtaSection />
       </main>
       <Footer />
