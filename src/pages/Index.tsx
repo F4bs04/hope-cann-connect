@@ -12,6 +12,7 @@ import ProcessSteps from '../components/ProcessSteps';
 import WhyChooseUs from '../components/WhyChooseUs';
 import HomeScheduling from '../components/HomeScheduling';
 import FAQSection from '../components/FAQSection';
+import DoctorCTA from '../components/DoctorCTA';
 
 const Index = () => {
   return (
@@ -25,6 +26,7 @@ const Index = () => {
         <ConditionsSection />
         <ProcessSteps />
         <DoctorsSection />
+        <DoctorCTA />
         <TestimonialSection />
         <FAQSection />
         <CtaSection />

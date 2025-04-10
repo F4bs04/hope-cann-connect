@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogIn } from 'lucide-react';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -85,11 +85,11 @@ const Header = () => {
           </NavLink>
           
           <Link 
-            to="/"
-            onClick={scrollToScheduling}
-            className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm"
+            to="/login"
+            className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm flex items-center gap-2"
           >
-            Agendar Consulta
+            <LogIn size={18} />
+            Login
           </Link>
         </nav>
 
@@ -137,14 +137,12 @@ const Header = () => {
             </MobileNavLink>
             
             <Link 
-              to="/"
-              onClick={(e) => {
-                setIsMenuOpen(false);
-                scrollToScheduling(e);
-              }}
-              className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center"
+              to="/login"
+              onClick={() => setIsMenuOpen(false)}
+              className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center flex items-center justify-center gap-2"
             >
-              Agendar Consulta
+              <LogIn size={18} />
+              Login
             </Link>
           </div>
         </div>

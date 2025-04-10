@@ -15,7 +15,7 @@ const doctorsData = [
     name: 'Dra. Ana Santos',
     specialty: 'Psiquiatra',
     bio: 'Especializada em tratamentos para ansiedade e depressão.',
-    image: '/lovable-uploads/be79c24c-8c7d-4991-a114-10af50832262.png'
+    image: '/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png'
   },
   {
     name: 'Dr. Carlos Mendes',
@@ -28,11 +28,14 @@ const doctorsData = [
 const DoctorCard = ({ name, specialty, bio, image }) => {
   return (
     <Card className="overflow-hidden h-full flex flex-col">
-      <div className="h-52 relative">
+      <div className="h-52 relative overflow-hidden">
         <img 
           src={image} 
           alt={name} 
           className="w-full h-full object-cover"
+          onError={(e) => {
+            e.currentTarget.src = '/placeholder.svg';
+          }}
         />
       </div>
       <CardContent className="flex-grow pt-6">
@@ -42,10 +45,10 @@ const DoctorCard = ({ name, specialty, bio, image }) => {
       </CardContent>
       <CardFooter className="pt-0">
         <Link 
-          to="/agendar" 
+          to={`/medico/${name.replace(/Dr\.|Dra\.\s+/g, '').trim()}`}
           className="block w-full py-2 px-4 bg-hopecann-teal hover:bg-hopecann-teal/90 text-white text-center rounded-md transition-colors"
         >
-          Agendar Consulta
+          Ver Perfil
         </Link>
       </CardFooter>
     </Card>
@@ -68,6 +71,15 @@ const DoctorsSection = () => {
               image={doctor.image}
             />
           ))}
+        </div>
+        
+        <div className="mt-12 text-center">
+          <Link
+            to="/medicos"
+            className="inline-flex items-center justify-center rounded-full bg-white border border-hopecann-teal text-hopecann-teal px-6 py-3 hover:bg-hopecann-teal/5 transition-colors"
+          >
+            Ver todos os médicos
+          </Link>
         </div>
       </div>
     </section>
