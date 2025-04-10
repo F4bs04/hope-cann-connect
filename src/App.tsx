@@ -15,31 +15,36 @@ import AreaMedico from "./pages/AreaMedico";
 import PerfilMedico from "./pages/PerfilMedico";
 import CadastroMedico from "./pages/CadastroMedico";
 import NotFound from "./pages/NotFound";
+import React from "react";
 
+// Create the query client
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/tratamentos" element={<Tratamentos />} />
-          <Route path="/medicos" element={<Medicos />} />
-          <Route path="/medico/:id" element={<PerfilMedico />} />
-          <Route path="/contato" element={<Contato />} />
-          <Route path="/agendar" element={<Agendar />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/area-paciente" element={<AreaPaciente />} />
-          <Route path="/area-medico" element={<AreaMedico />} />
-          <Route path="/cadastro-medico" element={<CadastroMedico />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+// Define App as a function component
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/tratamentos" element={<Tratamentos />} />
+            <Route path="/medicos" element={<Medicos />} />
+            <Route path="/medico/:id" element={<PerfilMedico />} />
+            <Route path="/contato" element={<Contato />} />
+            <Route path="/agendar" element={<Agendar />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/area-paciente" element={<AreaPaciente />} />
+            <Route path="/area-medico" element={<AreaMedico />} />
+            <Route path="/cadastro-medico" element={<CadastroMedico />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
