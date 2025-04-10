@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Award, Clock, Heart } from 'lucide-react';
@@ -7,7 +8,7 @@ const HeroSection = () => {
     <section className="relative py-20 md:py-28 overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img 
-          src="/lovable-uploads/3ad8bd40-7607-47d2-a32d-7c5a0e8286fb.png" 
+          src="/lovable-uploads/1c16dd34-4732-46fc-aa92-a9994398ea88.png" 
           alt="Médico especialista" 
           className="w-full h-full object-cover"
         />
