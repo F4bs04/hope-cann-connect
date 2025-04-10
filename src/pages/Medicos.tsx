@@ -19,7 +19,7 @@ const doctorsData = [
     id: 1,
     name: "Dr. Ricardo Silva",
     specialty: "Neurologista",
-    photo: "/lovable-uploads/12b5d4e6-afb3-43a3-9045-b53345c241b6.png",
+    photo: "/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png",
     bio: "Especialista em tratamentos canábicos para distúrbios neurológicos, com mais de 15 anos de experiência clínica. Formado pela USP com residência em Neurologia pela UNIFESP.",
     credentials: [
       "Membro da Sociedade Brasileira de Neurologia",
@@ -34,7 +34,7 @@ const doctorsData = [
     id: 2,
     name: "Dra. Ana Santos",
     specialty: "Psiquiatra",
-    photo: "/lovable-uploads/5601622e-b421-4257-8c29-4be5a45ae10f.png",
+    photo: "/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png",
     bio: "Especializada em tratamentos para ansiedade e depressão com abordagem integrativa. Formada pela UFRJ com residência em Psiquiatria pelo Instituto de Psiquiatria da USP.",
     credentials: [
       "Membro da Associação Brasileira de Psiquiatria",
@@ -49,7 +49,7 @@ const doctorsData = [
     id: 3,
     name: "Dr. Carlos Mendes",
     specialty: "Neurologista",
-    photo: "/lovable-uploads/31b21e55-c292-47fb-888b-f884e7027019.png",
+    photo: "/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png",
     bio: "Especialista em epilepsia e doenças neurodegenerativas, com foco em tratamentos inovadores. Formado pela UNICAMP com doutorado em Neurologia Clínica.",
     credentials: [
       "Membro da Academia Brasileira de Neurologia",
@@ -64,7 +64,7 @@ const doctorsData = [
     id: 4,
     name: "Dra. Mariana Costa",
     specialty: "Clínica Geral",
-    photo: "/lovable-uploads/906d320d-17b6-4919-8bd3-30ecf3d226e7.png",
+    photo: "/lovable-uploads/4357c3c3-e33d-4756-b440-f505e4170615.png",
     bio: "Médica com foco em medicina integrativa e tratamentos personalizados para dor crônica. Formada pela UFMG com especialização em Cannabis Medicinal.",
     credentials: [
       "Certificação Internacional em Endocanabinologia",
@@ -79,7 +79,7 @@ const doctorsData = [
     id: 5,
     name: "Dr. Paulo Oliveira",
     specialty: "Reumatologista",
-    photo: "/lovable-uploads/4c61ba35-b917-48df-a2d5-424e22a77db2.png",
+    photo: "/lovable-uploads/38500e89-61f6-4f91-902b-2b4d1b1bb1ba.png",
     bio: "Especialista em tratamentos para doenças autoimunes e dor crônica. Formado pela UFBA com especialização em Cannabis Medicinal pela Universidade de Tel Aviv.",
     credentials: [
       "Membro da Sociedade Brasileira de Reumatologia",
@@ -94,7 +94,7 @@ const doctorsData = [
     id: 6,
     name: "Dra. Laura Pereira",
     specialty: "Neurologista Pediátrica",
-    photo: "/lovable-uploads/34122bd7-3398-483c-91bf-6d0c1a1ca29c.png",
+    photo: "/lovable-uploads/f4b2ad1d-2040-443d-ac50-47f18a3457af.png",
     bio: "Especialista em epilepsia infantil e distúrbios neurológicos em crianças. Formada pela USP com especialização em Cannabis Medicinal Pediátrica.",
     credentials: [
       "Membro da Sociedade Brasileira de Neurologia Pediátrica",

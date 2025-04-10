@@ -9,28 +9,28 @@ const doctorsData = [
     name: 'Dr. Ricardo Silva',
     specialty: 'Neurologista',
     bio: 'Especialista em tratamentos canábicos para distúrbios neurológicos.',
-    image: '/lovable-uploads/12b5d4e6-afb3-43a3-9045-b53345c241b6.png'
+    image: '/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png'
   },
   {
     id: 2,
     name: 'Dra. Ana Santos',
     specialty: 'Psiquiatra',
     bio: 'Especializada em tratamentos para ansiedade e depressão.',
-    image: '/lovable-uploads/5601622e-b421-4257-8c29-4be5a45ae10f.png'
+    image: '/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png'
   },
   {
     id: 3,
     name: 'Dr. Carlos Mendes',
     specialty: 'Neurologista',
     bio: 'Especialista em epilepsia e doenças neurodegenerativas.',
-    image: '/lovable-uploads/31b21e55-c292-47fb-888b-f884e7027019.png'
+    image: '/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png'
   },
   {
     id: 4,
     name: 'Dra. Mariana Costa',
     specialty: 'Clínica Geral',
     bio: 'Especialista em medicina integrativa e tratamentos canábicos.',
-    image: '/lovable-uploads/d3a5df3f-5f78-424b-81a9-e93f20c67ecb.png'
+    image: '/lovable-uploads/4357c3c3-e33d-4756-b440-f505e4170615.png'
   }
 ];
 
