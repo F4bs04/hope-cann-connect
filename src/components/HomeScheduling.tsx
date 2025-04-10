@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, ChevronLeft, ChevronRight, Clock, User, Mail, Phone, FileText, CalendarCheck, CheckCircle, Search } from 'lucide-react';
@@ -17,7 +17,6 @@ const timeSlots = [
   "13:00", "14:00", "15:00", "16:00", "17:00"
 ];
 
-// Gera dias disponíveis a partir de amanhã (excluindo finais de semana)
 const generateAvailableDays = () => {
   const days = [];
   const today = new Date();
@@ -26,7 +25,6 @@ const generateAvailableDays = () => {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
     
-    // Excluir finais de semana (0 = domingo, 6 = sábado)
     if (date.getDay() !== 0 && date.getDay() !== 6) {
       days.push(date);
     }
@@ -55,6 +53,7 @@ const HomeScheduling = () => {
     previous_treatments: ""
   });
   
+  const navigate = useNavigate();
   const availableDays = generateAvailableDays();
   
   const handleFormChange = (e) => {
@@ -72,9 +71,7 @@ const HomeScheduling = () => {
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Aqui você implementaria a lógica de envio dos dados
-    // Por enquanto, vamos apenas avançar para o passo de confirmação
-    setStep(5);
+    navigate('/login');
   };
   
   return (
@@ -85,13 +82,10 @@ const HomeScheduling = () => {
           Preencha os dados abaixo para agendar sua consulta com um de nossos especialistas
         </p>
         
-        {/* Progress Steps */}
         <div className="mb-12">
           <div className="flex justify-between items-center w-full max-w-3xl mx-auto relative">
-            {/* Connecting Line */}
             <div className="absolute top-1/2 w-full h-0.5 bg-gray-200 -z-10"></div>
             
-            {/* Steps */}
             {[1, 2, 3, 4, 5].map((stepNumber) => (
               <div key={stepNumber} className="flex flex-col items-center">
                 <div 

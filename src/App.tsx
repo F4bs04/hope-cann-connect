@@ -9,6 +9,8 @@ import Tratamentos from "./pages/Tratamentos";
 import Medicos from "./pages/Medicos";
 import Contato from "./pages/Contato";
 import Agendar from "./pages/Agendar";
+import Login from "./pages/Login";
+import AreaPaciente from "./pages/AreaPaciente";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,8 @@ const App = () => (
           <Route path="/medicos" element={<Medicos />} />
           <Route path="/contato" element={<Contato />} />
           <Route path="/agendar" element={<Agendar />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/area-paciente" element={<AreaPaciente />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
