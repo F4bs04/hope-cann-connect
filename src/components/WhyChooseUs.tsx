@@ -74,7 +74,7 @@ const WhyChooseUs = () => {
                 <AlarmClock className="h-6 w-6 text-hopecann-teal" />
               </div>
               <div className="hopecann-stat-value">1500+</div>
-              <div className="hopecann-stat-label">Consultas realizadas</div>
+              <div className="hopecann-stat-label">Atendimento humanizado</div>
             </div>
             
             <div className="hopecann-stat-card">
@@ -82,7 +82,7 @@ const WhyChooseUs = () => {
                 <FileText className="h-6 w-6 text-hopecann-teal" />
               </div>
               <div className="hopecann-stat-value">10+</div>
-              <div className="hopecann-stat-label">Condições tratadas</div>
+              <div className="hopecann-stat-label">Médicos especializados</div>
             </div>
             
             <div className="hopecann-stat-card">
@@ -90,7 +90,7 @@ const WhyChooseUs = () => {
                 <Leaf className="h-6 w-6 text-hopecann-teal" />
               </div>
               <div className="hopecann-stat-value">5+</div>
-              <div className="hopecann-stat-label">Anos de experiência</div>
+              <div className="hopecann-stat-label">Plataforma acessível</div>
             </div>
           </div>
         </div>
