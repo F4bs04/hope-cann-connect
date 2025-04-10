@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Award, Check, FileText, HeartPulse, AlarmClock, Leaf } from 'lucide-react';
+import { Award, Check, FileText, HeartPulse, AlarmClock, Leaf, Stethoscope, Smartphone } from 'lucide-react';
 
 const WhyChooseUs = () => {
   return (
@@ -79,7 +79,7 @@ const WhyChooseUs = () => {
             
             <div className="hopecann-stat-card">
               <div className="bg-hopecann-teal/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
-                <FileText className="h-6 w-6 text-hopecann-teal" />
+                <Stethoscope className="h-6 w-6 text-hopecann-teal" />
               </div>
               <div className="hopecann-stat-value">10+</div>
               <div className="hopecann-stat-label">Médicos especializados</div>
@@ -87,7 +87,7 @@ const WhyChooseUs = () => {
             
             <div className="hopecann-stat-card">
               <div className="bg-hopecann-teal/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
-                <Leaf className="h-6 w-6 text-hopecann-teal" />
+                <Smartphone className="h-6 w-6 text-hopecann-teal" />
               </div>
               <div className="hopecann-stat-value">5+</div>
               <div className="hopecann-stat-label">Plataforma acessível</div>

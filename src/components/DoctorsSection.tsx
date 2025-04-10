@@ -15,7 +15,7 @@ const doctorsData = [
     name: 'Dra. Ana Santos',
     specialty: 'Psiquiatra',
     bio: 'Especializada em tratamentos para ansiedade e depressão.',
-    image: '/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png'
+    image: '/lovable-uploads/a9289338-2503-4d70-8771-263ebb613e72.png'
   },
   {
     name: 'Dr. Carlos Mendes',
