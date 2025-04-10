@@ -172,12 +172,13 @@ const AreaMedico = () => {
     for (let i = 0; i < 7; i++) {
       const day = addDays(selectedWeekStart, i);
       const dayName = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
-      days.push({ day, slots: horariosConfig[dayName] });
+      const slots = horariosConfig[dayName] || []; // Add fallback empty array
+      days.push({ day, slots });
     }
     
     return days.map((dayInfo, dayIndex) => (
       <div key={dayIndex} className="border-t">
-        {dayInfo.slots.map((time, timeIndex) => (
+        {Array.isArray(dayInfo.slots) && dayInfo.slots.map((time, timeIndex) => (
           <div 
             key={`${dayIndex}-${timeIndex}`} 
             className="p-2 border-b text-center cursor-pointer hover:bg-gray-50"
@@ -189,7 +190,7 @@ const AreaMedico = () => {
             {time}
           </div>
         ))}
-        {dayInfo.slots.length === 0 && (
+        {(!Array.isArray(dayInfo.slots) || dayInfo.slots.length === 0) && (
           <div className="p-2 border-b text-center text-gray-400">
             Indisponível
           </div>
@@ -254,7 +255,7 @@ const AreaMedico = () => {
               <TabsTrigger value="mensagens" className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" /> 
                 Mensagens
-                {mensagens.filter(m => !m.lida).length > 0 && (
+                {mensagens && mensagens.filter(m => !m.lida).length > 0 && (
                   <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {mensagens.filter(m => !m.lida).length}
                   </span>
@@ -307,7 +308,7 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {consultas.filter(c => c.status === 'agendada').map((consulta) => (
+                      {consultas && consultas.filter(c => c.status === 'agendada').map((consulta) => (
                         <TableRow key={consulta.id}>
                           <TableCell className="font-medium">{consulta.paciente}</TableCell>
                           <TableCell>{consulta.data}</TableCell>
@@ -323,7 +324,8 @@ const AreaMedico = () => {
                                 variant="outline" 
                                 size="sm"
                                 onClick={() => {
-                                  setSelectedPaciente(pacientesMock.find(p => p.nome === consulta.paciente) || null);
+                                  const paciente = pacientesMock.find(p => p.nome === consulta.paciente);
+                                  setSelectedPaciente(paciente || null);
                                   setProntuarioDialogOpen(true);
                                 }}
                               >
@@ -350,7 +352,7 @@ const AreaMedico = () => {
                           </TableCell>
                         </TableRow>
                       ))}
-                      {consultas.filter(c => c.status === 'agendada').length === 0 && (
+                      {(!consultas || consultas.filter(c => c.status === 'agendada').length === 0) && (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-6 text-gray-500">
                             Não há consultas agendadas para os próximos dias
@@ -382,7 +384,7 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pacientesMock.map((paciente) => (
+                      {pacientesMock && pacientesMock.map((paciente) => (
                         <TableRow key={paciente.id}>
                           <TableCell className="font-medium">{paciente.nome}</TableCell>
                           <TableCell>{paciente.idade} anos</TableCell>
@@ -439,7 +441,7 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {consultas.filter(c => c.status === 'realizada').map((consulta) => (
+                      {consultas && consultas.filter(c => c.status === 'realizada').map((consulta) => (
                         <TableRow key={consulta.id}>
                           <TableCell className="font-medium">{consulta.paciente}</TableCell>
                           <TableCell>{consulta.data}</TableCell>
@@ -454,7 +456,8 @@ const AreaMedico = () => {
                               variant="outline" 
                               size="sm"
                               onClick={() => {
-                                setSelectedPaciente(pacientesMock.find(p => p.nome === consulta.paciente) || null);
+                                const paciente = pacientesMock.find(p => p.nome === consulta.paciente);
+                                setSelectedPaciente(paciente || null);
                                 setProntuarioDialogOpen(true);
                               }}
                             >
@@ -463,6 +466,13 @@ const AreaMedico = () => {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {(!consultas || consultas.filter(c => c.status === 'realizada').length === 0) && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                            Não há consultas realizadas no histórico
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
@@ -488,7 +498,7 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {receitasMock.map((receita) => (
+                      {receitasMock && receitasMock.map((receita) => (
                         <TableRow key={receita.id}>
                           <TableCell className="font-medium">{receita.paciente}</TableCell>
                           <TableCell>{receita.medicamento}</TableCell>
@@ -503,7 +513,8 @@ const AreaMedico = () => {
                                 variant="outline" 
                                 size="sm"
                                 onClick={() => {
-                                  setSelectedPaciente(pacientesMock.find(p => p.nome === receita.paciente) || null);
+                                  const paciente = pacientesMock.find(p => p.nome === receita.paciente);
+                                  setSelectedPaciente(paciente || null);
                                   setReceitaDialogOpen(true);
                                 }}
                               >
@@ -513,6 +524,13 @@ const AreaMedico = () => {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {(!receitasMock || receitasMock.length === 0) && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                            Nenhuma receita emitida ainda
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
@@ -538,7 +556,7 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {mensagens.map((msg) => (
+                      {mensagens && mensagens.map((msg) => (
                         <TableRow key={msg.id} className={!msg.lida ? "bg-blue-50" : ""}>
                           <TableCell className="font-medium">{msg.paciente}</TableCell>
                           <TableCell className="max-w-[300px] truncate">{msg.mensagem}</TableCell>
@@ -568,6 +586,13 @@ const AreaMedico = () => {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {(!mensagens || mensagens.length === 0) && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                            Nenhuma mensagem recebida
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
