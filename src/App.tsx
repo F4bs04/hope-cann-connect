@@ -11,7 +11,9 @@ import Contato from "./pages/Contato";
 import Agendar from "./pages/Agendar";
 import Login from "./pages/Login";
 import AreaPaciente from "./pages/AreaPaciente";
+import AreaMedico from "./pages/AreaMedico";
 import PerfilMedico from "./pages/PerfilMedico";
+import CadastroMedico from "./pages/CadastroMedico";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
           <Route path="/agendar" element={<Agendar />} />
           <Route path="/login" element={<Login />} />
           <Route path="/area-paciente" element={<AreaPaciente />} />
+          <Route path="/area-medico" element={<AreaMedico />} />
+          <Route path="/cadastro-medico" element={<CadastroMedico />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
