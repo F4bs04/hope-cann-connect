@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 const doctorsData = [
   {
-    name: 'Dr. Romulo Fernandes',
+    name: 'Dr. Samuel Rodrigo',
     specialty: 'Neurologista',
     bio: 'Especialista em tratamentos canábicos para distúrbios neurológicos.',
     image: '/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png'
