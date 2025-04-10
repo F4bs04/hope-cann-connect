@@ -52,8 +52,8 @@ const ProcessSteps = () => {
                     </div>
                   </div>
                   
-                  {/* Step number */}
-                  <div className="bg-hopecann-green/10 text-hopecann-green text-xs font-medium px-3 py-1 rounded-full mb-3 inline-block">
+                  {/* Step number - UPDATED FROM OPACITY TO SOLID */}
+                  <div className="bg-hopecann-green text-white text-xs font-medium px-3 py-1 rounded-full mb-3 inline-block">
                     Etapa {index + 1}
                   </div>
                   
