@@ -178,19 +178,20 @@ const AreaMedico = () => {
     
     return days.map((dayInfo, dayIndex) => (
       <div key={dayIndex} className="border-t">
-        {Array.isArray(dayInfo.slots) && dayInfo.slots.map((time, timeIndex) => (
-          <div 
-            key={`${dayIndex}-${timeIndex}`} 
-            className="p-2 border-b text-center cursor-pointer hover:bg-gray-50"
-            onClick={() => {
-              setSelectedDay(dayInfo.day);
-              setHorarioDialogOpen(true);
-            }}
-          >
-            {time}
-          </div>
-        ))}
-        {(!Array.isArray(dayInfo.slots) || dayInfo.slots.length === 0) && (
+        {Array.isArray(dayInfo.slots) && dayInfo.slots.length > 0 ? (
+          dayInfo.slots.map((time, timeIndex) => (
+            <div 
+              key={`${dayIndex}-${timeIndex}`} 
+              className="p-2 border-b text-center cursor-pointer hover:bg-gray-50"
+              onClick={() => {
+                setSelectedDay(dayInfo.day);
+                setHorarioDialogOpen(true);
+              }}
+            >
+              {time}
+            </div>
+          ))
+        ) : (
           <div className="p-2 border-b text-center text-gray-400">
             Indisponível
           </div>
@@ -308,51 +309,52 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {consultas && consultas.filter(c => c.status === 'agendada').map((consulta) => (
-                        <TableRow key={consulta.id}>
-                          <TableCell className="font-medium">{consulta.paciente}</TableCell>
-                          <TableCell>{consulta.data}</TableCell>
-                          <TableCell>{consulta.horario}</TableCell>
-                          <TableCell>
-                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                              Agendada
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  const paciente = pacientesMock.find(p => p.nome === consulta.paciente);
-                                  setSelectedPaciente(paciente || null);
-                                  setProntuarioDialogOpen(true);
-                                }}
-                              >
-                                <FileText className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setConsultaDialogOpen(true);
-                                }}
-                              >
-                                <Edit className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="text-red-500 hover:text-red-700"
-                                onClick={() => handleCancelarConsulta(consulta.id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {(!consultas || consultas.filter(c => c.status === 'agendada').length === 0) && (
+                      {consultas && consultas.length > 0 ? (
+                        consultas.filter(c => c.status === 'agendada').map((consulta) => (
+                          <TableRow key={consulta.id}>
+                            <TableCell className="font-medium">{consulta.paciente}</TableCell>
+                            <TableCell>{consulta.data}</TableCell>
+                            <TableCell>{consulta.horario}</TableCell>
+                            <TableCell>
+                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                                Agendada
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    const paciente = pacientesMock.find(p => p.nome === consulta.paciente);
+                                    setSelectedPaciente(paciente || null);
+                                    setProntuarioDialogOpen(true);
+                                  }}
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setConsultaDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={() => handleCancelarConsulta(consulta.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-6 text-gray-500">
                             Não há consultas agendadas para os próximos dias
@@ -384,38 +386,46 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pacientesMock && pacientesMock.map((paciente) => (
-                        <TableRow key={paciente.id}>
-                          <TableCell className="font-medium">{paciente.nome}</TableCell>
-                          <TableCell>{paciente.idade} anos</TableCell>
-                          <TableCell>{paciente.condicao}</TableCell>
-                          <TableCell>{paciente.ultimaConsulta}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedPaciente(paciente);
-                                  setProntuarioDialogOpen(true);
-                                }}
-                              >
-                                Prontuário
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedPaciente(paciente);
-                                  setReceitaDialogOpen(true);
-                                }}
-                              >
-                                Receita
-                              </Button>
-                            </div>
+                      {pacientesMock && pacientesMock.length > 0 ? (
+                        pacientesMock.map((paciente) => (
+                          <TableRow key={paciente.id}>
+                            <TableCell className="font-medium">{paciente.nome}</TableCell>
+                            <TableCell>{paciente.idade} anos</TableCell>
+                            <TableCell>{paciente.condicao}</TableCell>
+                            <TableCell>{paciente.ultimaConsulta}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedPaciente(paciente);
+                                    setProntuarioDialogOpen(true);
+                                  }}
+                                >
+                                  Prontuário
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedPaciente(paciente);
+                                    setReceitaDialogOpen(true);
+                                  }}
+                                >
+                                  Receita
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                            Nenhum paciente cadastrado
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
@@ -441,32 +451,33 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {consultas && consultas.filter(c => c.status === 'realizada').map((consulta) => (
-                        <TableRow key={consulta.id}>
-                          <TableCell className="font-medium">{consulta.paciente}</TableCell>
-                          <TableCell>{consulta.data}</TableCell>
-                          <TableCell>{consulta.horario}</TableCell>
-                          <TableCell>
-                            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                              Realizada
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                const paciente = pacientesMock.find(p => p.nome === consulta.paciente);
-                                setSelectedPaciente(paciente || null);
-                                setProntuarioDialogOpen(true);
-                              }}
-                            >
-                              Ver detalhes
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {(!consultas || consultas.filter(c => c.status === 'realizada').length === 0) && (
+                      {consultas && consultas.length > 0 ? (
+                        consultas.filter(c => c.status === 'realizada').map((consulta) => (
+                          <TableRow key={consulta.id}>
+                            <TableCell className="font-medium">{consulta.paciente}</TableCell>
+                            <TableCell>{consulta.data}</TableCell>
+                            <TableCell>{consulta.horario}</TableCell>
+                            <TableCell>
+                              <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                                Realizada
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  const paciente = pacientesMock.find(p => p.nome === consulta.paciente);
+                                  setSelectedPaciente(paciente || null);
+                                  setProntuarioDialogOpen(true);
+                                }}
+                              >
+                                Ver detalhes
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-6 text-gray-500">
                             Não há consultas realizadas no histórico
@@ -498,33 +509,34 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {receitasMock && receitasMock.map((receita) => (
-                        <TableRow key={receita.id}>
-                          <TableCell className="font-medium">{receita.paciente}</TableCell>
-                          <TableCell>{receita.medicamento}</TableCell>
-                          <TableCell>{receita.posologia}</TableCell>
-                          <TableCell>{receita.data}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="sm">
-                                Imprimir
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  const paciente = pacientesMock.find(p => p.nome === receita.paciente);
-                                  setSelectedPaciente(paciente || null);
-                                  setReceitaDialogOpen(true);
-                                }}
-                              >
-                                Renovar
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {(!receitasMock || receitasMock.length === 0) && (
+                      {receitasMock && receitasMock.length > 0 ? (
+                        receitasMock.map((receita) => (
+                          <TableRow key={receita.id}>
+                            <TableCell className="font-medium">{receita.paciente}</TableCell>
+                            <TableCell>{receita.medicamento}</TableCell>
+                            <TableCell>{receita.posologia}</TableCell>
+                            <TableCell>{receita.data}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button variant="outline" size="sm">
+                                  Imprimir
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    const paciente = pacientesMock.find(p => p.nome === receita.paciente);
+                                    setSelectedPaciente(paciente || null);
+                                    setReceitaDialogOpen(true);
+                                  }}
+                                >
+                                  Renovar
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-6 text-gray-500">
                             Nenhuma receita emitida ainda
@@ -556,37 +568,38 @@ const AreaMedico = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {mensagens && mensagens.map((msg) => (
-                        <TableRow key={msg.id} className={!msg.lida ? "bg-blue-50" : ""}>
-                          <TableCell className="font-medium">{msg.paciente}</TableCell>
-                          <TableCell className="max-w-[300px] truncate">{msg.mensagem}</TableCell>
-                          <TableCell>{msg.data}</TableCell>
-                          <TableCell>
-                            {msg.lida ? (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                                Respondida
-                              </span>
-                            ) : (
-                              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                                Nova
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                setSelectedMensagem(msg);
-                                setMensagemDialogOpen(true);
-                              }}
-                            >
-                              Responder
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {(!mensagens || mensagens.length === 0) && (
+                      {mensagens && mensagens.length > 0 ? (
+                        mensagens.map((msg) => (
+                          <TableRow key={msg.id} className={!msg.lida ? "bg-blue-50" : ""}>
+                            <TableCell className="font-medium">{msg.paciente}</TableCell>
+                            <TableCell className="max-w-[300px] truncate">{msg.mensagem}</TableCell>
+                            <TableCell>{msg.data}</TableCell>
+                            <TableCell>
+                              {msg.lida ? (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                                  Respondida
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                                  Nova
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedMensagem(msg);
+                                  setMensagemDialogOpen(true);
+                                }}
+                              >
+                                Responder
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-6 text-gray-500">
                             Nenhuma mensagem recebida
@@ -977,3 +990,4 @@ const AreaMedico = () => {
 };
 
 export default AreaMedico;
+
