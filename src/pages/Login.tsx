@@ -16,6 +16,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [captchaValue, setCaptchaValue] = useState('');
   const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [userCaptchaInput, setUserCaptchaInput] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,7 +42,7 @@ const Login = () => {
     setError('');
 
     // Validar CAPTCHA
-    if (captchaAnswer !== captchaValue.split('=')[1].trim()) {
+    if (userCaptchaInput !== captchaAnswer) {
       setError('CAPTCHA incorreto');
       setIsLoading(false);
       generateCaptcha();
@@ -146,8 +147,8 @@ const Login = () => {
                 id="captcha"
                 type="text"
                 placeholder="Digite a resposta"
-                value={captchaValue.split('=')[1].trim()}
-                onChange={(e) => setCaptchaValue(e.target.value)}
+                value={userCaptchaInput}
+                onChange={(e) => setUserCaptchaInput(e.target.value)}
                 required
               />
               <button
