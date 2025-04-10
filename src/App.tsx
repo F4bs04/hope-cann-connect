@@ -11,6 +11,7 @@ import Contato from "./pages/Contato";
 import Agendar from "./pages/Agendar";
 import Login from "./pages/Login";
 import AreaPaciente from "./pages/AreaPaciente";
+import PerfilMedico from "./pages/PerfilMedico";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/tratamentos" element={<Tratamentos />} />
           <Route path="/medicos" element={<Medicos />} />
+          <Route path="/medico/:id" element={<PerfilMedico />} />
           <Route path="/contato" element={<Contato />} />
           <Route path="/agendar" element={<Agendar />} />
           <Route path="/login" element={<Login />} />
