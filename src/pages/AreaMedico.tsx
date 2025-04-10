@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, Clock, Users, FileText, History, Calendar, ChevronLeft, ChevronRight, Edit, Trash2, X, Check, Plus, MessageSquare, Eye } from 'lucide-react';
@@ -76,6 +75,7 @@ const AreaMedico = () => {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const [selectedViewDay, setSelectedViewDay] = useState<Date>(new Date());
+  const [quickSetMode, setQuickSetMode] = useState<'morning' | 'afternoon' | 'all' | 'custom'>('custom');
   const [horariosConfig, setHorariosConfig] = useState({
     segunda: [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde],
     terca: [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde],
@@ -102,6 +102,79 @@ const AreaMedico = () => {
 
   const prevDay = () => {
     setSelectedViewDay(addDays(selectedViewDay, -1));
+  };
+
+  // Quick set availability for specific periods
+  const handleQuickSetAvailability = (day: Date, mode: 'morning' | 'afternoon' | 'all' | 'none') => {
+    const diaSemana = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
+    let newSlots: string[] = [];
+    
+    if (mode === 'morning') {
+      newSlots = [...horariosDisponiveis.manha];
+    } else if (mode === 'afternoon') {
+      newSlots = [...horariosDisponiveis.tarde];
+    } else if (mode === 'all') {
+      newSlots = [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde];
+    }
+    
+    setHorariosConfig({
+      ...horariosConfig,
+      [diaSemana]: newSlots
+    });
+    
+    toast({
+      title: mode === 'none' ? "Dia indisponibilizado" : "Horários atualizados",
+      description: `${format(day, 'EEEE', { locale: ptBR })}: ${
+        mode === 'morning' ? 'Manhã disponível' : 
+        mode === 'afternoon' ? 'Tarde disponível' : 
+        mode === 'all' ? 'Dia todo disponível' : 
+        'Indisponível'
+      }`,
+    });
+  };
+
+  // Apply a schedule pattern to multiple days
+  const applyPatternToWeek = (pattern: 'workdays' | 'weekend' | 'all' | 'none', timePattern: 'morning' | 'afternoon' | 'all' | 'none') => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(selectedWeekStart, i));
+    }
+    
+    const newConfig = { ...horariosConfig };
+    
+    days.forEach(day => {
+      const dayName = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
+      const dayNumber = day.getDay(); // 0 is Sunday, 6 is Saturday
+      const isWeekend = dayNumber === 0 || dayNumber === 6;
+      const isWorkday = !isWeekend;
+      
+      if (
+        (pattern === 'workdays' && isWorkday) ||
+        (pattern === 'weekend' && isWeekend) ||
+        pattern === 'all'
+      ) {
+        if (timePattern === 'morning') {
+          newConfig[dayName] = [...horariosDisponiveis.manha];
+        } else if (timePattern === 'afternoon') {
+          newConfig[dayName] = [...horariosDisponiveis.tarde];
+        } else if (timePattern === 'all') {
+          newConfig[dayName] = [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde];
+        } else {
+          newConfig[dayName] = [];
+        }
+      }
+    });
+    
+    setHorariosConfig(newConfig);
+    
+    toast({
+      title: "Horários em massa atualizados",
+      description: `Padrão aplicado com sucesso aos ${
+        pattern === 'workdays' ? 'dias úteis' : 
+        pattern === 'weekend' ? 'finais de semana' : 
+        'dias da semana'
+      }`,
+    });
   };
 
   // Função para formatar o nome do dia da semana
@@ -192,7 +265,7 @@ const AreaMedico = () => {
     });
   };
 
-  // Renderizar os dias da semana
+  // Renderizar os dias da semana com melhor usabilidade
   const renderDaysOfWeek = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -200,30 +273,97 @@ const AreaMedico = () => {
       days.push(day);
     }
     
-    return days.map((day, index) => (
-      <div 
-        key={index} 
-        className="text-center p-2 cursor-pointer hover:bg-gray-50 rounded-md"
-        onClick={() => {
-          setSelectedViewDay(day);
-          setViewMode('day');
-        }}
-      >
-        <div className="font-medium mb-1">
-          {format(day, 'EEEE', { locale: ptBR })}
+    return days.map((day, index) => {
+      const diaSemana = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
+      const timeSlotsCount = horariosConfig[diaSemana]?.length || 0;
+      const hasMorningSlots = horariosConfig[diaSemana]?.some(slot => horariosDisponiveis.manha.includes(slot)) || false;
+      const hasAfternoonSlots = horariosConfig[diaSemana]?.some(slot => horariosDisponiveis.tarde.includes(slot)) || false;
+      
+      return (
+        <div 
+          key={index} 
+          className="border rounded-md overflow-hidden bg-white"
+        >
+          <div 
+            className="text-center p-2 cursor-pointer hover:bg-gray-50 border-b"
+            onClick={() => {
+              setSelectedViewDay(day);
+              setViewMode('day');
+            }}
+          >
+            <div className="font-medium">
+              {format(day, 'EEEE', { locale: ptBR })}
+            </div>
+            <div className="text-sm">
+              {format(day, 'dd/MM')}
+            </div>
+          </div>
+          
+          <div className="p-2 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-500">Disponibilidade:</span>
+              <Switch 
+                checked={timeSlotsCount > 0}
+                onCheckedChange={(checked) => handleToggleDayAvailability(day, checked)}
+                size="sm"
+              />
+            </div>
+            
+            {timeSlotsCount > 0 ? (
+              <div className="space-y-2">
+                <div className="flex gap-1">
+                  <Button 
+                    variant={hasMorningSlots && !hasAfternoonSlots ? "default" : "outline"} 
+                    size="sm" 
+                    className="flex-1 h-7 text-xs"
+                    onClick={() => handleQuickSetAvailability(day, 'morning')}
+                  >
+                    Manhã
+                  </Button>
+                  <Button 
+                    variant={!hasMorningSlots && hasAfternoonSlots ? "default" : "outline"} 
+                    size="sm" 
+                    className="flex-1 h-7 text-xs"
+                    onClick={() => handleQuickSetAvailability(day, 'afternoon')}
+                  >
+                    Tarde
+                  </Button>
+                  <Button 
+                    variant={hasMorningSlots && hasAfternoonSlots ? "default" : "outline"} 
+                    size="sm" 
+                    className="flex-1 h-7 text-xs"
+                    onClick={() => handleQuickSetAvailability(day, 'all')}
+                  >
+                    Todos
+                  </Button>
+                </div>
+                
+                <div className="text-xs text-center text-gray-500">
+                  {timeSlotsCount} horários • <button 
+                    className="text-blue-500 hover:underline" 
+                    onClick={() => {
+                      setSelectedDay(day);
+                      setHorarioDialogOpen(true);
+                    }}
+                  >
+                    Detalhes
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full h-7 text-xs"
+                onClick={() => handleQuickSetAvailability(day, 'all')}
+              >
+                Disponibilizar
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="text-sm">
-          {format(day, 'dd/MM')}
-        </div>
-        <div className="mt-1 text-xs text-gray-500">
-          {(() => {
-            const diaSemana = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
-            const count = horariosConfig[diaSemana]?.length || 0;
-            return count > 0 ? `${count} horários` : 'Indisponível';
-          })()}
-        </div>
-      </div>
-    ));
+      );
+    });
   };
 
   // Renderizar o seletor de dia para a visualização diária
@@ -409,6 +549,229 @@ const AreaMedico = () => {
     );
   };
 
+  // Add bulk actions to schedule management
+  const renderBulkActions = () => {
+    return (
+      <div className="mb-6 p-4 border rounded-md bg-gray-50">
+        <h3 className="text-sm font-medium mb-3">Configuração rápida</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <h4 className="text-xs font-medium mb-2">Aplicar a:</h4>
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8 text-xs"
+                onClick={() => applyPatternToWeek('workdays', quickSetMode as any)}
+              >
+                Dias úteis
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8 text-xs"
+                onClick={() => applyPatternToWeek('weekend', quickSetMode as any)}
+              >
+                Fim de semana
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8 text-xs"
+                onClick={() => applyPatternToWeek('all', quickSetMode as any)}
+              >
+                Semana toda
+              </Button>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="text-xs font-medium mb-2">Definir como:</h4>
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                size="sm" 
+                variant={quickSetMode === 'morning' ? "default" : "outline"} 
+                className="h-8 text-xs"
+                onClick={() => setQuickSetMode('morning')}
+              >
+                Manhãs
+              </Button>
+              <Button 
+                size="sm" 
+                variant={quickSetMode === 'afternoon' ? "default" : "outline"} 
+                className="h-8 text-xs"
+                onClick={() => setQuickSetMode('afternoon')}
+              >
+                Tardes
+              </Button>
+              <Button 
+                size="sm" 
+                variant={quickSetMode === 'all' ? "default" : "outline"} 
+                className="h-8 text-xs"
+                onClick={() => setQuickSetMode('all')}
+              >
+                Dia todo
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8 text-xs"
+                onClick={() => applyPatternToWeek('all', 'none')}
+              >
+                Limpar todos
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Improved dialog for time slot management
+  const renderHorarioDialog = () => {
+    if (!selectedDay) return null;
+    
+    const dayName = formatWeekday(selectedDay).toLowerCase() as keyof typeof horariosConfig;
+    const selectedDaySlots = horariosConfig[dayName] || [];
+    
+    return (
+      <Dialog open={horarioDialogOpen} onOpenChange={setHorarioDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gerenciar Horários</DialogTitle>
+            <DialogDescription>
+              {`${format(selectedDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Disponibilidade</span>
+              <Switch 
+                checked={selectedDaySlots.length > 0}
+                onCheckedChange={(checked) => handleToggleDayAvailability(selectedDay, checked)}
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant={selectedDaySlots.every(slot => horariosDisponiveis.manha.includes(slot)) && 
+                  selectedDaySlots.length === horariosDisponiveis.manha.length && 
+                  !selectedDaySlots.some(slot => horariosDisponiveis.tarde.includes(slot)) 
+                  ? "default" : "outline"} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => handleQuickSetAvailability(selectedDay, 'morning')}
+              >
+                Somente manhã
+              </Button>
+              <Button 
+                variant={selectedDaySlots.every(slot => horariosDisponiveis.tarde.includes(slot)) && 
+                  selectedDaySlots.length === horariosDisponiveis.tarde.length && 
+                  !selectedDaySlots.some(slot => horariosDisponiveis.manha.includes(slot)) 
+                  ? "default" : "outline"} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => handleQuickSetAvailability(selectedDay, 'afternoon')}
+              >
+                Somente tarde
+              </Button>
+              <Button 
+                variant={selectedDaySlots.length === horariosDisponiveis.manha.length + horariosDisponiveis.tarde.length ? "default" : "outline"} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => handleQuickSetAvailability(selectedDay, 'all')}
+              >
+                Dia todo
+              </Button>
+            </div>
+            
+            {selectedDaySlots.length > 0 && (
+              <>
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-medium mb-3">Manhã</h3>
+                  <div className="grid grid-cols-4 gap-2">
+                    {horariosDisponiveis.manha.map((hora) => {
+                      const isSelected = selectedDaySlots.includes(hora);
+                      return (
+                        <Button 
+                          key={hora} 
+                          variant={isSelected ? "default" : "outline"} 
+                          className="text-sm"
+                          onClick={() => {
+                            const newSlots = isSelected 
+                              ? selectedDaySlots.filter(h => h !== hora) 
+                              : [...selectedDaySlots, hora].sort();
+                            
+                            setHorariosConfig({
+                              ...horariosConfig,
+                              [dayName]: newSlots
+                            });
+                          }}
+                        >
+                          {hora}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Tarde</h3>
+                  <div className="grid grid-cols-4 gap-2">
+                    {horariosDisponiveis.tarde.map((hora) => {
+                      const isSelected = selectedDaySlots.includes(hora);
+                      return (
+                        <Button 
+                          key={hora} 
+                          variant={isSelected ? "default" : "outline"} 
+                          className="text-sm"
+                          onClick={() => {
+                            const newSlots = isSelected 
+                              ? selectedDaySlots.filter(h => h !== hora) 
+                              : [...selectedDaySlots, hora].sort();
+                            
+                            setHorariosConfig({
+                              ...horariosConfig,
+                              [dayName]: newSlots
+                            });
+                          }}
+                        >
+                          {hora}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setHorarioDialogOpen(false)}
+            >
+              Fechar
+            </Button>
+            <Button 
+              className="bg-hopecann-green hover:bg-hopecann-green/90" 
+              onClick={() => {
+                toast({
+                  title: "Horários salvos",
+                  description: `Configuração salva para ${format(selectedDay, 'EEEE', { locale: ptBR })}`,
+                });
+                setHorarioDialogOpen(false);
+              }}
+            >
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   // Gerar nova receita
   const handleGerarReceita = () => {
     toast({
@@ -462,7 +825,7 @@ const AreaMedico = () => {
               </TabsTrigger>
             </TabsList>
           
-            {/* Agenda e horários */}
+            {/* Agenda e horários com usabilidade melhorada */}
             <TabsContent value="agenda" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -494,13 +857,13 @@ const AreaMedico = () => {
                     </ToggleGroup>
                   </div>
                   
+                  {/* Ações em massa para configuração rápida */}
+                  {viewMode === 'week' && renderBulkActions()}
+                  
                   {/* Grade de horários - Visualização semanal ou diária */}
-                  <div className="border rounded-md bg-white">
+                  <div className="bg-white">
                     {viewMode === 'week' ? (
-                      <>
-                        <div className="grid grid-cols-7">{renderDaysOfWeek()}</div>
-                        <div className="grid grid-cols-7">{renderTimeSlots()}</div>
-                      </>
+                      <div className="grid grid-cols-7 gap-3">{renderDaysOfWeek()}</div>
                     ) : (
                       <>
                         {renderDaySelector()}
@@ -835,78 +1198,8 @@ const AreaMedico = () => {
       </main>
       <Footer />
       
-      {/* Diálogo de Configuração de Horário */}
-      <Dialog open={horarioDialogOpen} onOpenChange={setHorarioDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Configurar Horários</DialogTitle>
-            <DialogDescription>
-              {selectedDay && `Selecione os horários disponíveis para ${format(selectedDay, 'EEEE', { locale: ptBR })}`}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Período da manhã</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {horariosDisponiveis.manha.map((hora) => {
-                  const dayName = selectedDay ? formatWeekday(selectedDay).toLowerCase() as keyof typeof horariosConfig : 'segunda';
-                  const isSelected = selectedSlot?.time === hora;
-                  const isAlreadySelected = selectedDay ? horariosConfig[dayName]?.includes(hora) : false;
-                  
-                  return (
-                    <Button 
-                      key={hora} 
-                      variant={isSelected ? "default" : isAlreadySelected ? "secondary" : "outline"} 
-                      className={`text-sm ${isSelected ? 'bg-hopecann-teal' : ''} ${isAlreadySelected ? 'bg-gray-100' : ''}`}
-                      onClick={() => setSelectedSlot({ day: selectedDay!, time: hora })}
-                      disabled={isAlreadySelected}
-                    >
-                      {hora} {isAlreadySelected && <Check className="h-3 w-3 ml-1" />}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Período da tarde</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {horariosDisponiveis.tarde.map((hora) => {
-                  const dayName = selectedDay ? formatWeekday(selectedDay).toLowerCase() as keyof typeof horariosConfig : 'segunda';
-                  const isSelected = selectedSlot?.time === hora;
-                  const isAlreadySelected = selectedDay ? horariosConfig[dayName]?.includes(hora) : false;
-                  
-                  return (
-                    <Button 
-                      key={hora} 
-                      variant={isSelected ? "default" : isAlreadySelected ? "secondary" : "outline"} 
-                      className={`text-sm ${isSelected ? 'bg-hopecann-teal' : ''} ${isAlreadySelected ? 'bg-gray-100' : ''}`}
-                      onClick={() => setSelectedSlot({ day: selectedDay!, time: hora })}
-                      disabled={isAlreadySelected}
-                    >
-                      {hora} {isAlreadySelected && <Check className="h-3 w-3 ml-1" />}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setHorarioDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              className="bg-hopecann-green hover:bg-hopecann-green/90" 
-              onClick={handleAdicionarHorario}
-              disabled={!selectedSlot}
-            >
-              Adicionar Horário
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Diálogo de Configuração de Horário melhorado */}
+      {renderHorarioDialog()}
       
       {/* Diálogo de Edição de Consulta */}
       <Dialog open={consultaDialogOpen} onOpenChange={setConsultaDialogOpen}>
