@@ -753,4 +753,463 @@ const AreaMedico = () => {
             <CardContent>
               <div className="space-y-2">
                 {consultas.filter(c => c.status === 'agendada').slice(0, 3).map(consulta => (
-                  <div key={consulta.id} className="flex justify
+                  <div key={consulta.id} className="flex justify-between items-center p-2 text-sm border-b">
+                    <div>
+                      <p className="font-medium">{consulta.paciente}</p>
+                      <p className="text-xs text-gray-500">{format(parseISO(consulta.data), 'dd/MM/yyyy')} - {consulta.horario}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => handleCancelarConsulta(consulta.id)}>
+                      <X className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button variant="link" className="w-full mt-2" onClick={() => navigate('/agenda')}>
+                Ver todas as consultas
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-hopecann-green" />
+                Mensagens recentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {mensagens.filter(m => !m.lida).slice(0, 3).map(mensagem => (
+                  <div key={mensagem.id} className="flex justify-between items-center p-2 text-sm border-b">
+                    <div>
+                      <p className="font-medium">{mensagem.paciente}</p>
+                      <p className="text-xs text-gray-500 truncate max-w-[200px]">{mensagem.mensagem}</p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setSelectedMensagem(mensagem);
+                        setMensagemDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4 text-blue-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button variant="link" className="w-full mt-2" onClick={() => navigate('/mensagens')}>
+                Ver todas as mensagens
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-hopecann-blue" />
+                Receitas recentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {receitasMock.slice(0, 3).map(receita => (
+                  <div key={receita.id} className="flex justify-between items-center p-2 text-sm border-b">
+                    <div>
+                      <p className="font-medium">{receita.paciente}</p>
+                      <p className="text-xs text-gray-500">{receita.medicamento}</p>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="h-4 w-4 text-gray-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button variant="link" className="w-full mt-2" onClick={() => navigate('/receitas')}>
+                Ver todas as receitas
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div>
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Gerenciar disponibilidade
+          </h2>
+          
+          <Tabs defaultValue="week" value={viewMode} onValueChange={(value) => setViewMode(value as 'week' | 'day' | 'calendar')}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="week">Semana</TabsTrigger>
+              <TabsTrigger value="day">Dia</TabsTrigger>
+              <TabsTrigger value="calendar">Calendário</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="week">
+              <div className="space-y-4">
+                {renderBulkActions()}
+                
+                <div className="flex justify-between items-center mb-4">
+                  <Button variant="outline" size="sm" onClick={prevWeek}>
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Semana anterior
+                  </Button>
+                  <span className="text-sm font-medium">
+                    {format(selectedWeekStart, "dd/MM")} - {format(addDays(selectedWeekStart, 6), "dd/MM/yyyy")}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={nextWeek}>
+                    Próxima semana
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                  {renderDaysOfWeek()}
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="day">
+              <div>
+                {renderDaySelector()}
+                {renderDayTimeSlots()}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="calendar">
+              {renderCalendarView()}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Área do Médico</h1>
+          <p className="text-gray-600">
+            Gerencie seus pacientes, consultas e disponibilidade
+          </p>
+        </div>
+        
+        <Tabs defaultValue="agenda">
+          <TabsList className="mb-6">
+            <TabsTrigger value="agenda">Agenda</TabsTrigger>
+            <TabsTrigger value="pacientes">Pacientes</TabsTrigger>
+            <TabsTrigger value="receitas">Receitas</TabsTrigger>
+            <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="agenda">
+            {renderAgendaView()}
+          </TabsContent>
+          
+          <TabsContent value="pacientes">
+            <div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Idade</TableHead>
+                    <TableHead>Condição</TableHead>
+                    <TableHead>Última Consulta</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pacientesMock.map(paciente => (
+                    <TableRow key={paciente.id}>
+                      <TableCell className="font-medium">{paciente.nome}</TableCell>
+                      <TableCell>{paciente.idade} anos</TableCell>
+                      <TableCell>{paciente.condicao}</TableCell>
+                      <TableCell>{format(parseISO(paciente.ultimaConsulta), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedPaciente(paciente);
+                              setProntuarioDialogOpen(true);
+                            }}
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Prontuário
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedPaciente(paciente);
+                              setReceitaDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Receita
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="receitas">
+            <div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Paciente</TableHead>
+                    <TableHead>Medicamento</TableHead>
+                    <TableHead>Posologia</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {receitasMock.map(receita => (
+                    <TableRow key={receita.id}>
+                      <TableCell className="font-medium">{receita.paciente}</TableCell>
+                      <TableCell>{receita.medicamento}</TableCell>
+                      <TableCell>{receita.posologia}</TableCell>
+                      <TableCell>{format(parseISO(receita.data), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="mensagens">
+            <div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Paciente</TableHead>
+                    <TableHead>Mensagem</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mensagens.map(mensagem => (
+                    <TableRow key={mensagem.id}>
+                      <TableCell className="font-medium">{mensagem.paciente}</TableCell>
+                      <TableCell className="truncate max-w-[300px]">{mensagem.mensagem}</TableCell>
+                      <TableCell>{format(parseISO(mensagem.data), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs ${mensagem.lida ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                          {mensagem.lida ? 'Respondida' : 'Não lida'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedMensagem(mensagem);
+                            setMensagemDialogOpen(true);
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-1" />
+                          Responder
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
+      
+      <Dialog open={horarioDialogOpen} onOpenChange={setHorarioDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Configurar Horários</DialogTitle>
+            <DialogDescription>
+              {selectedDay && (
+                <span>Horários para {format(selectedDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-sm font-medium mb-2">Horários da manhã</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {horariosDisponiveis.manha.map(hora => {
+                  const isSelected = selectedDay && 
+                    horariosConfig[formatWeekday(selectedDay).toLowerCase() as keyof typeof horariosConfig]?.includes(hora);
+                  
+                  return (
+                    <Button 
+                      key={hora} 
+                      variant={isSelected ? 'default' : 'outline'}
+                      size="sm"
+                      className={isSelected ? 'bg-green-600' : ''}
+                      onClick={() => {
+                        if (selectedDay) {
+                          if (isSelected) {
+                            handleRemoverHorario(selectedDay, hora);
+                          } else {
+                            setSelectedSlot({ day: selectedDay, time: hora });
+                            handleAdicionarHorario();
+                          }
+                        }
+                      }}
+                    >
+                      {hora}
+                      {isSelected && <Check className="ml-1 h-4 w-4" />}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium mb-2">Horários da tarde</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {horariosDisponiveis.tarde.map(hora => {
+                  const isSelected = selectedDay && 
+                    horariosConfig[formatWeekday(selectedDay).toLowerCase() as keyof typeof horariosConfig]?.includes(hora);
+                  
+                  return (
+                    <Button 
+                      key={hora} 
+                      variant={isSelected ? 'default' : 'outline'}
+                      size="sm"
+                      className={isSelected ? 'bg-green-600' : ''}
+                      onClick={() => {
+                        if (selectedDay) {
+                          if (isSelected) {
+                            handleRemoverHorario(selectedDay, hora);
+                          } else {
+                            setSelectedSlot({ day: selectedDay, time: hora });
+                            handleAdicionarHorario();
+                          }
+                        }
+                      }}
+                    >
+                      {hora}
+                      {isSelected && <Check className="ml-1 h-4 w-4" />}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHorarioDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={mensagemDialogOpen} onOpenChange={setMensagemDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Responder mensagem</DialogTitle>
+            {selectedMensagem && (
+              <DialogDescription>
+                De: {selectedMensagem.paciente} - {format(parseISO(selectedMensagem.data), 'dd/MM/yyyy')}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedMensagem && (
+              <div className="bg-gray-50 p-3 rounded-md">
+                <p className="text-sm">{selectedMensagem.mensagem}</p>
+              </div>
+            )}
+            <div>
+              <label htmlFor="resposta" className="text-sm font-medium">
+                Sua resposta
+              </label>
+              <Textarea 
+                id="resposta" 
+                placeholder="Digite sua resposta aqui..." 
+                className="mt-1" 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMensagemDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleResponderMensagem}>Enviar resposta</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={receitaDialogOpen} onOpenChange={setReceitaDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Receita</DialogTitle>
+            {selectedPaciente && (
+              <DialogDescription>
+                Paciente: {selectedPaciente.nome}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="medicamento" className="text-sm font-medium">
+                Medicamento
+              </label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o medicamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cbd-5">Óleo CBD 5%</SelectItem>
+                  <SelectItem value="cbd-3">Óleo CBD 3%</SelectItem>
+                  <SelectItem value="cbd-thc-20-1">Óleo CBD:THC 20:1</SelectItem>
+                  <SelectItem value="cbd-thc-10-1">Óleo CBD:THC 10:1</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label htmlFor="posologia" className="text-sm font-medium">
+                Posologia
+              </label>
+              <Textarea 
+                id="posologia" 
+                placeholder="Ex: 10 gotas, 2x ao dia" 
+                className="mt-1" 
+              />
+            </div>
+            <div>
+              <label htmlFor="observacoes" className="text-sm font-medium">
+                Observações
+              </label>
+              <Textarea 
+                id="observacoes" 
+                placeholder="Observações adicionais" 
+                className="mt-1" 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReceitaDialogOpen(false)}>Cancelar</Button>
+            <Button>Emitir receita</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default AreaMedico;
