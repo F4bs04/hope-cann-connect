@@ -19,7 +19,6 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-// Mock data
 const pacientesMock = [
   { id: 1, nome: 'João Silva', idade: 42, condicao: 'Dor crônica', ultimaConsulta: '2025-03-15' },
   { id: 2, nome: 'Maria Oliveira', idade: 35, condicao: 'Ansiedade', ultimaConsulta: '2025-03-28' },
@@ -53,7 +52,6 @@ const horariosDisponiveis = {
   tarde: ['13:00', '14:00', '15:00', '16:00', '17:00']
 };
 
-// Tipos
 type Paciente = typeof pacientesMock[0];
 type Consulta = typeof consultasMock[0];
 type Receita = typeof receitasMock[0];
@@ -89,7 +87,6 @@ const AreaMedico = () => {
     domingo: []
   });
 
-  // Navegar entre semanas
   const nextWeek = () => {
     setSelectedWeekStart(addWeeks(selectedWeekStart, 1));
   };
@@ -98,7 +95,6 @@ const AreaMedico = () => {
     setSelectedWeekStart(subWeeks(selectedWeekStart, 1));
   };
 
-  // Navegar entre dias (para visualização diária)
   const nextDay = () => {
     setSelectedViewDay(addDays(selectedViewDay, 1));
   };
@@ -107,7 +103,6 @@ const AreaMedico = () => {
     setSelectedViewDay(addDays(selectedViewDay, -1));
   };
 
-  // Quick set availability for specific periods
   const handleQuickSetAvailability = (day: Date, mode: 'morning' | 'afternoon' | 'all' | 'none') => {
     const diaSemana = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
     let newSlots: string[] = [];
@@ -136,7 +131,6 @@ const AreaMedico = () => {
     });
   };
 
-  // Apply a schedule pattern to multiple days
   const applyPatternToWeek = (pattern: 'workdays' | 'weekend' | 'all' | 'none', timePattern: 'morning' | 'afternoon' | 'all' | 'none') => {
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -180,12 +174,10 @@ const AreaMedico = () => {
     });
   };
 
-  // Função para formatar o nome do dia da semana
   const formatWeekday = (date: Date): string => {
     return format(date, 'EEEE', { locale: ptBR });
   };
 
-  // Responder mensagem
   const handleResponderMensagem = () => {
     if (selectedMensagem) {
       const updatedMensagens = mensagens.map(msg => 
@@ -201,7 +193,6 @@ const AreaMedico = () => {
     }
   };
 
-  // Cancelar consulta
   const handleCancelarConsulta = (consultaId: number) => {
     const updatedConsultas = consultas.filter(c => c.id !== consultaId);
     setConsultas(updatedConsultas);
@@ -212,12 +203,10 @@ const AreaMedico = () => {
     });
   };
 
-  // Adicionar horário disponível
   const handleAdicionarHorario = () => {
     if (selectedSlot) {
       const diaSemana = formatWeekday(selectedSlot.day).toLowerCase() as keyof typeof horariosConfig;
       
-      // Verificar se o horário já está na lista
       if (!horariosConfig[diaSemana].includes(selectedSlot.time)) {
         setHorariosConfig({
           ...horariosConfig,
@@ -235,7 +224,6 @@ const AreaMedico = () => {
     }
   };
 
-  // Remover horário
   const handleRemoverHorario = (day: Date, time: string) => {
     const diaSemana = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
     const updatedHorarios = horariosConfig[diaSemana].filter(t => t !== time);
@@ -251,7 +239,6 @@ const AreaMedico = () => {
     });
   };
 
-  // Update handleToggleDayAvailability to be more intuitive
   const handleToggleDayAvailability = (day: Date, isAvailable: boolean) => {
     const diaSemana = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
     
@@ -268,14 +255,12 @@ const AreaMedico = () => {
     });
   };
 
-  // Enhanced calendar view for selecting availability
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
       setSelectedViewDay(date);
       setViewMode('day');
       
-      // Show toast when date is selected
       toast({
         title: "Data selecionada",
         description: `${format(date, 'EEEE, dd/MM', { locale: ptBR })}`,
@@ -283,7 +268,6 @@ const AreaMedico = () => {
     }
   };
 
-  // Improved rendering of days of week with better usability
   const renderDaysOfWeek = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -384,13 +368,11 @@ const AreaMedico = () => {
     });
   };
 
-  // Function to get available slots for a specific day
   const getAvailableSlotsForDay = (date: Date) => {
     const diaSemana = formatWeekday(date).toLowerCase() as keyof typeof horariosConfig;
     return horariosConfig[diaSemana] || [];
   };
 
-  // Enhanced calendar view
   const renderCalendarView = () => {
     return (
       <div className="bg-white rounded-md p-4">
@@ -468,7 +450,6 @@ const AreaMedico = () => {
     );
   };
 
-  // Improved day selector with better visual feedback
   const renderDaySelector = () => {
     return (
       <div className="flex items-center justify-between mb-4">
@@ -503,7 +484,6 @@ const AreaMedico = () => {
     );
   };
 
-  // Renderizar os horários disponíveis para visualização semanal
   const renderTimeSlots = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -567,7 +547,6 @@ const AreaMedico = () => {
     ));
   };
 
-  // Improved time slots rendering for daily view
   const renderDayTimeSlots = () => {
     const dayName = formatWeekday(selectedViewDay).toLowerCase() as keyof typeof horariosConfig;
     const availableSlots = horariosConfig[dayName] || [];
@@ -683,7 +662,6 @@ const AreaMedico = () => {
     );
   };
 
-  // Add bulk actions to schedule management
   const renderBulkActions = () => {
     return (
       <div className="mb-6 p-4 border rounded-md bg-gray-50">
@@ -756,3 +734,754 @@ const AreaMedico = () => {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAgendaView = () => {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-hopecann-teal" />
+                Próximas consultas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {consultas.filter(c => c.status === 'agendada').slice(0, 3).map(consulta => (
+                  <div key={consulta.id} className="flex justify-between items-center p-2 border rounded-md">
+                    <div>
+                      <div className="font-medium">{consulta.paciente}</div>
+                      <div className="text-sm text-gray-500">{format(parseISO(consulta.data), 'dd/MM')} - {consulta.horario}</div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setConsultaDialogOpen(true)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-hopecann-green" />
+                Mensagens recentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {mensagens.slice(0, 3).map(mensagem => (
+                  <div 
+                    key={mensagem.id} 
+                    className="flex justify-between items-center p-2 border rounded-md"
+                    onClick={() => {
+                      setSelectedMensagem(mensagem);
+                      setMensagemDialogOpen(true);
+                    }}
+                  >
+                    <div>
+                      <div className="font-medium flex items-center">
+                        {mensagem.paciente}
+                        {!mensagem.lida && <span className="ml-2 h-2 w-2 rounded-full bg-hopecann-teal"></span>}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate" style={{ maxWidth: "200px" }}>
+                        {mensagem.mensagem}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400">{format(parseISO(mensagem.data), 'dd/MM')}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-hopecann-blue" />
+                Pacientes recentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {pacientesMock.slice(0, 3).map(paciente => (
+                  <div 
+                    key={paciente.id} 
+                    className="flex justify-between items-center p-2 border rounded-md"
+                    onClick={() => {
+                      setSelectedPaciente(paciente);
+                      setProntuarioDialogOpen(true);
+                    }}
+                  >
+                    <div>
+                      <div className="font-medium">{paciente.nome}</div>
+                      <div className="text-sm text-gray-500">{paciente.condicao}</div>
+                    </div>
+                    <div className="text-xs text-gray-400">{format(parseISO(paciente.ultimaConsulta), 'dd/MM')}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      
+      <main className="flex-1 py-8 px-4 md:px-8 max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8 text-hopecann-teal">Área do Médico</h1>
+        
+        <Tabs defaultValue="agenda" className="w-full">
+          <TabsList className="w-full md:w-auto justify-start mb-6 overflow-x-auto">
+            <TabsTrigger value="agenda" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Agenda</span>
+            </TabsTrigger>
+            <TabsTrigger value="pacientes" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>Pacientes</span>
+            </TabsTrigger>
+            <TabsTrigger value="receitas" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span>Receitas</span>
+            </TabsTrigger>
+            <TabsTrigger value="horarios" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>Horários</span>
+            </TabsTrigger>
+            <TabsTrigger value="mensagens" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              <span>Mensagens</span>
+              {mensagens.filter(m => !m.lida).length > 0 && (
+                <span className="bg-hopecann-teal text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {mensagens.filter(m => !m.lida).length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="agenda" className="space-y-6">
+            {renderAgendaView()}
+          </TabsContent>
+          
+          <TabsContent value="pacientes">
+            <Card>
+              <CardHeader>
+                <CardTitle>Meus Pacientes</CardTitle>
+                <CardDescription>
+                  Gerenciamento de pacientes e prontuários
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Idade</TableHead>
+                        <TableHead>Condição</TableHead>
+                        <TableHead>Última Consulta</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pacientesMock.map((paciente) => (
+                        <TableRow key={paciente.id}>
+                          <TableCell className="font-medium">{paciente.nome}</TableCell>
+                          <TableCell>{paciente.idade} anos</TableCell>
+                          <TableCell>{paciente.condicao}</TableCell>
+                          <TableCell>{format(parseISO(paciente.ultimaConsulta), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedPaciente(paciente);
+                                  setProntuarioDialogOpen(true);
+                                }}
+                              >
+                                <FileText className="h-4 w-4" />
+                                <span className="sr-only">Ver prontuário</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedPaciente(paciente);
+                                  setReceitaDialogOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Nova receita</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="receitas">
+            <Card>
+              <CardHeader>
+                <CardTitle>Receitas Emitidas</CardTitle>
+                <CardDescription>
+                  Histórico de receitas e prescrições
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Paciente</TableHead>
+                        <TableHead>Medicamento</TableHead>
+                        <TableHead>Posologia</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {receitasMock.map((receita) => (
+                        <TableRow key={receita.id}>
+                          <TableCell className="font-medium">{receita.paciente}</TableCell>
+                          <TableCell>{receita.medicamento}</TableCell>
+                          <TableCell>{receita.posologia}</TableCell>
+                          <TableCell>{format(parseISO(receita.data), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">Ver receita</span>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="horarios">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gerenciar Disponibilidade</CardTitle>
+                <CardDescription>
+                  Configure seus horários disponíveis para consultas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {viewMode === 'calendar' && renderCalendarView()}
+                
+                {viewMode === 'week' && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <Button variant="outline" size="sm" onClick={prevWeek}>
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Semana anterior
+                      </Button>
+                      <div className="font-medium">
+                        {format(selectedWeekStart, "dd 'de' MMMM", { locale: ptBR })} - 
+                        {format(addDays(selectedWeekStart, 6), "dd 'de' MMMM", { locale: ptBR })}
+                      </div>
+                      <Button variant="outline" size="sm" onClick={nextWeek}>
+                        Próxima semana
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+
+                    {renderBulkActions()}
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+                      {renderDaysOfWeek()}
+                    </div>
+                    
+                    <div className="flex justify-center mt-6">
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2"
+                        onClick={() => setViewMode('calendar')}
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                        Visão de calendário
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {viewMode === 'day' && (
+                  <div>
+                    {renderDaySelector()}
+                    {renderDayTimeSlots()}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="mensagens">
+            <Card>
+              <CardHeader>
+                <CardTitle>Mensagens dos Pacientes</CardTitle>
+                <CardDescription>
+                  Responda às dúvidas e solicitações de seus pacientes
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Paciente</TableHead>
+                        <TableHead>Mensagem</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mensagens.map((mensagem) => (
+                        <TableRow key={mensagem.id}>
+                          <TableCell className="font-medium">{mensagem.paciente}</TableCell>
+                          <TableCell className="max-w-xs truncate">{mensagem.mensagem}</TableCell>
+                          <TableCell>{format(parseISO(mensagem.data), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>
+                            {mensagem.lida ? (
+                              <span className="text-green-600 text-xs">Respondida</span>
+                            ) : (
+                              <span className="text-amber-600 text-xs">Não lida</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedMensagem(mensagem);
+                                setMensagemDialogOpen(true);
+                              }}
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                              <span className="sr-only">Responder</span>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+        
+        <Dialog open={horarioDialogOpen} onOpenChange={setHorarioDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Gerenciar Horários</DialogTitle>
+              <DialogDescription>
+                {selectedDay && `Configure horários para ${format(selectedDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}`}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Período da manhã</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {horariosDisponiveis.manha.map((hora) => {
+                      const isSelected = selectedDay && getAvailableSlotsForDay(selectedDay).includes(hora);
+                      return (
+                        <Button 
+                          key={hora}
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            if (selectedDay) {
+                              if (isSelected) {
+                                handleRemoverHorario(selectedDay, hora);
+                              } else {
+                                setSelectedSlot({ day: selectedDay, time: hora });
+                                handleAdicionarHorario();
+                              }
+                            }
+                          }}
+                        >
+                          {hora}
+                          {isSelected && <Check className="ml-2 h-4 w-4" />}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Período da tarde</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {horariosDisponiveis.tarde.map((hora) => {
+                      const isSelected = selectedDay && getAvailableSlotsForDay(selectedDay).includes(hora);
+                      return (
+                        <Button 
+                          key={hora}
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            if (selectedDay) {
+                              if (isSelected) {
+                                handleRemoverHorario(selectedDay, hora);
+                              } else {
+                                setSelectedSlot({ day: selectedDay, time: hora });
+                                handleAdicionarHorario();
+                              }
+                            }
+                          }}
+                        >
+                          {hora}
+                          {isSelected && <Check className="ml-2 h-4 w-4" />}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (selectedDay) {
+                      handleQuickSetAvailability(selectedDay, 'none');
+                    }
+                  }}
+                >
+                  Limpar todos
+                </Button>
+                <div className="space-x-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedDay) {
+                        handleQuickSetAvailability(selectedDay, 'morning');
+                      }
+                    }}
+                  >
+                    Só manhã
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedDay) {
+                        handleQuickSetAvailability(selectedDay, 'afternoon');
+                      }
+                    }}
+                  >
+                    Só tarde
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedDay) {
+                        handleQuickSetAvailability(selectedDay, 'all');
+                      }
+                    }}
+                  >
+                    Dia todo
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setHorarioDialogOpen(false)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={prontuarioDialogOpen} onOpenChange={setProntuarioDialogOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Prontuário do Paciente</DialogTitle>
+              <DialogDescription>
+                {selectedPaciente?.nome}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Dados Pessoais</h3>
+                  <div className="p-4 border rounded-md space-y-2">
+                    <div className="grid grid-cols-2">
+                      <span className="text-sm text-gray-500">Nome:</span>
+                      <span className="text-sm">{selectedPaciente?.nome}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-sm text-gray-500">Idade:</span>
+                      <span className="text-sm">{selectedPaciente?.idade} anos</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-sm text-gray-500">Condição:</span>
+                      <span className="text-sm">{selectedPaciente?.condicao}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-sm text-gray-500">Última consulta:</span>
+                      <span className="text-sm">{selectedPaciente?.ultimaConsulta ? format(parseISO(selectedPaciente.ultimaConsulta), 'dd/MM/yyyy') : 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Histórico</h3>
+                  <div className="p-4 border rounded-md h-40 overflow-y-auto">
+                    <div className="space-y-3">
+                      <div className="border-b pb-2">
+                        <div className="text-xs text-gray-500">02/04/2025</div>
+                        <div className="text-sm">Consulta de acompanhamento. Paciente relata melhora da dor.</div>
+                      </div>
+                      <div className="border-b pb-2">
+                        <div className="text-xs text-gray-500">15/03/2025</div>
+                        <div className="text-sm">Início do tratamento com óleo CBD 5%.</div>
+                      </div>
+                      <div className="border-b pb-2">
+                        <div className="text-xs text-gray-500">28/02/2025</div>
+                        <div className="text-sm">Primeira consulta. Diagnóstico inicial.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium mb-2">Evolução</h3>
+                <Textarea 
+                  placeholder="Adicione notas sobre a evolução do paciente..." 
+                  className="min-h-32" 
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Receitas</h3>
+                  <div className="p-2 border rounded-md h-40 overflow-y-auto">
+                    {receitasMock.filter(r => r.paciente === selectedPaciente?.nome).length > 0 ? (
+                      <div className="space-y-2">
+                        {receitasMock.filter(r => r.paciente === selectedPaciente?.nome).map((receita, idx) => (
+                          <div key={idx} className="p-2 border rounded-md text-sm">
+                            <div className="font-medium">{receita.medicamento}</div>
+                            <div className="text-xs text-gray-500">{receita.posologia}</div>
+                            <div className="text-xs text-gray-400 mt-1">{format(parseISO(receita.data), 'dd/MM/yyyy')}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-sm text-gray-500">
+                        Nenhuma receita encontrada
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Consultas</h3>
+                  <div className="p-2 border rounded-md h-40 overflow-y-auto">
+                    {consultasMock.filter(c => c.paciente === selectedPaciente?.nome).length > 0 ? (
+                      <div className="space-y-2">
+                        {consultasMock.filter(c => c.paciente === selectedPaciente?.nome).map((consulta, idx) => (
+                          <div key={idx} className="p-2 border rounded-md text-sm">
+                            <div className="flex justify-between">
+                              <div className="font-medium">{format(parseISO(consulta.data), 'dd/MM/yyyy')}</div>
+                              <div className="text-xs bg-gray-100 rounded-full px-2 py-0.5">
+                                {consulta.status === 'agendada' ? 'Agendada' : 'Realizada'}
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-500">{consulta.horario}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-sm text-gray-500">
+                        Nenhuma consulta encontrada
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setSelectedPaciente(selectedPaciente);
+                  setReceitaDialogOpen(true);
+                  setProntuarioDialogOpen(false);
+                }}
+              >
+                Nova receita
+              </Button>
+              <Button onClick={() => setProntuarioDialogOpen(false)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={receitaDialogOpen} onOpenChange={setReceitaDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Nova Receita</DialogTitle>
+              <DialogDescription>
+                {selectedPaciente?.nome}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium" htmlFor="medicamento">
+                  Medicamento
+                </label>
+                <Select>
+                  <SelectTrigger id="medicamento">
+                    <SelectValue placeholder="Selecione o medicamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cbd3">Óleo CBD 3%</SelectItem>
+                    <SelectItem value="cbd5">Óleo CBD 5%</SelectItem>
+                    <SelectItem value="cbd10">Óleo CBD 10%</SelectItem>
+                    <SelectItem value="cbdthc20_1">Óleo CBD:THC 20:1</SelectItem>
+                    <SelectItem value="cbdthc10_1">Óleo CBD:THC 10:1</SelectItem>
+                    <SelectItem value="cbdthc5_1">Óleo CBD:THC 5:1</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium" htmlFor="posologia">
+                  Posologia
+                </label>
+                <Input id="posologia" placeholder="Ex: 10 gotas, 2x ao dia" />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium" htmlFor="observacoes">
+                  Observações
+                </label>
+                <Textarea id="observacoes" placeholder="Observações adicionais..." />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReceitaDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => {
+                setReceitaDialogOpen(false);
+                toast({
+                  title: "Receita emitida",
+                  description: `Receita emitida para ${selectedPaciente?.nome}`,
+                });
+              }}>
+                Emitir Receita
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={consultaDialogOpen} onOpenChange={setConsultaDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Detalhes da Consulta</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Paciente</label>
+                  <div className="p-2 border rounded-md mt-1">
+                    João Silva
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Data e Hora</label>
+                  <div className="p-2 border rounded-md mt-1">
+                    15/04/2025 - 09:00
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Condição</label>
+                <div className="p-2 border rounded-md mt-1">
+                  Dor crônica
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Observações</label>
+                <Textarea placeholder="Adicione observações sobre esta consulta..." />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => handleCancelarConsulta(1)}
+                className="text-red-500 hover:text-red-600"
+              >
+                Cancelar Consulta
+              </Button>
+              <Button onClick={() => setConsultaDialogOpen(false)}>
+                Confirmar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={mensagemDialogOpen} onOpenChange={setMensagemDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Mensagem do Paciente</DialogTitle>
+              <DialogDescription>
+                {selectedMensagem?.paciente}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 border rounded-md bg-gray-50">
+                <div className="text-sm">{selectedMensagem?.mensagem}</div>
+                <div className="text-xs text-gray-500 mt-2">
+                  {selectedMensagem?.data && format(parseISO(selectedMensagem.data), 'dd/MM/yyyy HH:mm')}
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Resposta</label>
+                <Textarea 
+                  placeholder="Escreva sua resposta para o paciente..." 
+                  className="min-h-24 mt-1" 
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setMensagemDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleResponderMensagem}>
+                Enviar Resposta
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </main>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default AreaMedico;
