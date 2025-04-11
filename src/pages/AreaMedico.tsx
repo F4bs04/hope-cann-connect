@@ -52,6 +52,8 @@ const horariosDisponiveis = {
   tarde: ['13:00', '14:00', '15:00', '16:00', '17:00']
 };
 
+const todosHorariosDisponiveis = [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde];
+
 type Paciente = typeof pacientesMock[0];
 type Consulta = typeof consultasMock[0];
 type Receita = typeof receitasMock[0];
@@ -75,16 +77,16 @@ const AreaMedico = () => {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'day' | 'calendar'>('week');
   const [selectedViewDay, setSelectedViewDay] = useState<Date>(new Date());
-  const [quickSetMode, setQuickSetMode] = useState<'morning' | 'afternoon' | 'all' | 'custom'>('custom');
+  const [quickSetMode, setQuickSetMode] = useState<'morning' | 'afternoon' | 'all' | 'custom'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [horariosConfig, setHorariosConfig] = useState({
-    segunda: [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde],
-    terca: [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde],
-    quarta: [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde],
-    quinta: [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde],
-    sexta: [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde],
-    sabado: [...horariosDisponiveis.manha],
-    domingo: []
+    segunda: todosHorariosDisponiveis,
+    terca: todosHorariosDisponiveis,
+    quarta: todosHorariosDisponiveis,
+    quinta: todosHorariosDisponiveis,
+    sexta: todosHorariosDisponiveis,
+    sabado: todosHorariosDisponiveis,
+    domingo: todosHorariosDisponiveis
   });
 
   const nextWeek = () => {
@@ -155,7 +157,7 @@ const AreaMedico = () => {
         } else if (timePattern === 'afternoon') {
           newConfig[dayName] = [...horariosDisponiveis.tarde];
         } else if (timePattern === 'all') {
-          newConfig[dayName] = [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde];
+          newConfig[dayName] = todosHorariosDisponiveis;
         } else {
           newConfig[dayName] = [];
         }
@@ -245,7 +247,7 @@ const AreaMedico = () => {
     setHorariosConfig({
       ...horariosConfig,
       [diaSemana]: isAvailable 
-        ? [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde]
+        ? todosHorariosDisponiveis
         : []
     });
     
@@ -884,6 +886,14 @@ const AreaMedico = () => {
       </div>
     );
   };
+
+  useEffect(() => {
+    applyPatternToWeek('all', 'all');
+    toast({
+      title: "Todos os horários disponibilizados",
+      description: "Todos os dias da semana estão com horários completos disponíveis para consultas.",
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
