@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, Clock, Users, FileText, History, Calendar, ChevronLeft, ChevronRight, Edit, Trash2, X, Check, Plus, MessageSquare, Eye } from 'lucide-react';
-import { format, addDays, startOfWeek, addWeeks, subWeeks, isSameDay, parseISO } from 'date-fns';
+import { format, addDays, startOfWeek, addWeeks, subWeeks, isSameDay, parseISO, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // Mock data
 const pacientesMock = [
@@ -73,9 +75,10 @@ const AreaMedico = () => {
   const [mensagens, setMensagens] = useState<Mensagem[]>(mensagensMock);
   const [consultas, setConsultas] = useState<Consulta[]>(consultasMock);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+  const [viewMode, setViewMode] = useState<'week' | 'day' | 'calendar'>('week');
   const [selectedViewDay, setSelectedViewDay] = useState<Date>(new Date());
   const [quickSetMode, setQuickSetMode] = useState<'morning' | 'afternoon' | 'all' | 'custom'>('custom');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [horariosConfig, setHorariosConfig] = useState({
     segunda: [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde],
     terca: [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde],
@@ -248,7 +251,7 @@ const AreaMedico = () => {
     });
   };
 
-  // Adicionar/remover todos os horários para um dia
+  // Update handleToggleDayAvailability to be more intuitive
   const handleToggleDayAvailability = (day: Date, isAvailable: boolean) => {
     const diaSemana = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
     
@@ -261,11 +264,26 @@ const AreaMedico = () => {
     
     toast({
       title: isAvailable ? "Dia disponibilizado" : "Dia indisponibilizado",
-      description: `${format(day, 'EEEE', { locale: ptBR })} ${isAvailable ? 'disponível' : 'indisponível'} para consultas`,
+      description: `${format(day, 'EEEE, dd/MM', { locale: ptBR })} ${isAvailable ? 'disponível' : 'indisponível'} para consultas`,
     });
   };
 
-  // Renderizar os dias da semana com melhor usabilidade
+  // Enhanced calendar view for selecting availability
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setSelectedViewDay(date);
+      setViewMode('day');
+      
+      // Show toast when date is selected
+      toast({
+        title: "Data selecionada",
+        description: `${format(date, 'EEEE, dd/MM', { locale: ptBR })}`,
+      });
+    }
+  };
+
+  // Improved rendering of days of week with better usability
   const renderDaysOfWeek = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -366,7 +384,91 @@ const AreaMedico = () => {
     });
   };
 
-  // Renderizar o seletor de dia para a visualização diária
+  // Function to get available slots for a specific day
+  const getAvailableSlotsForDay = (date: Date) => {
+    const diaSemana = formatWeekday(date).toLowerCase() as keyof typeof horariosConfig;
+    return horariosConfig[diaSemana] || [];
+  };
+
+  // Enhanced calendar view
+  const renderCalendarView = () => {
+    return (
+      <div className="bg-white rounded-md p-4">
+        <div className="mb-6">
+          <h3 className="text-lg font-medium mb-2">Selecione uma data</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Clique em uma data para configurar sua disponibilidade
+          </p>
+          
+          <div className="border rounded-lg p-4 bg-gray-50">
+            <CalendarComponent
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDateSelect}
+              className="mx-auto"
+              classNames={{
+                day_today: "bg-hopecann-teal/20 text-hopecann-teal font-medium",
+                day_selected: "bg-hopecann-teal text-white hover:bg-hopecann-teal hover:text-white",
+                day: "hover:bg-hopecann-teal/10 focus:bg-hopecann-teal/10 rounded-md"
+              }}
+              components={{
+                DayContent: (props) => {
+                  const date = props.date;
+                  const dayName = formatWeekday(date).toLowerCase() as keyof typeof horariosConfig;
+                  const hasSlots = horariosConfig[dayName]?.length > 0;
+                  
+                  return (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <div>{props.date.getDate()}</div>
+                      {hasSlots && (
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-hopecann-green rounded-full" />
+                      )}
+                    </div>
+                  );
+                }
+              }}
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Disponibilidade rápida</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <Button 
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => applyPatternToWeek('workdays', 'all')}
+            >
+              <Check className="h-4 w-4" /> Todos dias úteis
+            </Button>
+            <Button 
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => applyPatternToWeek('weekend', 'morning')}
+            >
+              <Check className="h-4 w-4" /> Finais de semana (manhãs)
+            </Button>
+            <Button 
+              variant="outline"
+              className="flex items-center gap-2 text-red-500 border-red-200 hover:bg-red-50"
+              onClick={() => applyPatternToWeek('all', 'none')}
+            >
+              <X className="h-4 w-4" /> Limpar tudo
+            </Button>
+            <Button 
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => setViewMode('week')}
+            >
+              <Calendar className="h-4 w-4" /> Ver semana
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Improved day selector with better visual feedback
   const renderDaySelector = () => {
     return (
       <div className="flex items-center justify-between mb-4">
@@ -375,9 +477,23 @@ const AreaMedico = () => {
           Dia anterior
         </Button>
         
-        <div className="font-medium">
-          {format(selectedViewDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="font-medium">
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              {format(selectedViewDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+              {isToday(selectedViewDay) && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Hoje</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="center">
+            <CalendarComponent
+              mode="single"
+              selected={selectedViewDay}
+              onSelect={(date) => date && setSelectedViewDay(date)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
         
         <Button variant="outline" size="sm" onClick={nextDay}>
           Próximo dia
@@ -451,27 +567,32 @@ const AreaMedico = () => {
     ));
   };
 
-  // Renderizar os horários para visualização diária
+  // Improved time slots rendering for daily view
   const renderDayTimeSlots = () => {
     const dayName = formatWeekday(selectedViewDay).toLowerCase() as keyof typeof horariosConfig;
-    const allTimeSlots = [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde];
     const availableSlots = horariosConfig[dayName] || [];
     
     return (
       <div className="mt-4">
-        <div className="mb-4 flex justify-between items-center">
+        <div className="mb-6 flex justify-between items-center">
           <div className="font-medium">
-            Disponibilidade para {format(selectedViewDay, "EEEE", { locale: ptBR })}
+            Disponibilidade para {format(selectedViewDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
           </div>
-          <Switch 
-            checked={availableSlots.length > 0}
-            onCheckedChange={(checked) => handleToggleDayAvailability(selectedViewDay, checked)}
-          />
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">{availableSlots.length > 0 ? `${availableSlots.length} horários disponíveis` : 'Indisponível'}</span>
+            <Switch 
+              checked={availableSlots.length > 0}
+              onCheckedChange={(checked) => handleToggleDayAvailability(selectedViewDay, checked)}
+            />
+          </div>
         </div>
         
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium mb-2">Período da manhã</h3>
+        <div className="space-y-6">
+          <div className="bg-white p-4 rounded-lg border">
+            <h3 className="text-sm font-medium mb-4 flex items-center">
+              <Clock className="h-4 w-4 mr-2 text-hopecann-teal" />
+              Período da manhã
+            </h3>
             <div className="grid grid-cols-4 gap-2">
               {horariosDisponiveis.manha.map((hora) => {
                 const isAvailable = availableSlots.includes(hora);
@@ -479,7 +600,7 @@ const AreaMedico = () => {
                   <Button 
                     key={hora} 
                     variant={isAvailable ? "default" : "outline"} 
-                    className={`text-sm ${isAvailable ? 'bg-hopecann-teal text-white' : 'text-gray-700'}`}
+                    className={`text-sm ${isAvailable ? 'bg-hopecann-teal text-white hover:bg-hopecann-teal/90' : 'text-gray-700'}`}
                     onClick={() => {
                       if (isAvailable) {
                         handleRemoverHorario(selectedViewDay, hora);
@@ -491,7 +612,7 @@ const AreaMedico = () => {
                         });
                         toast({
                           title: "Horário adicionado",
-                          description: `${hora} adicionado para ${format(selectedViewDay, 'EEEE', { locale: ptBR })}`,
+                          description: `${hora} adicionado para ${format(selectedViewDay, 'EEEE, dd/MM', { locale: ptBR })}`,
                         });
                       }
                     }}
@@ -503,8 +624,11 @@ const AreaMedico = () => {
             </div>
           </div>
           
-          <div>
-            <h3 className="text-sm font-medium mb-2">Período da tarde</h3>
+          <div className="bg-white p-4 rounded-lg border">
+            <h3 className="text-sm font-medium mb-4 flex items-center">
+              <Clock className="h-4 w-4 mr-2 text-hopecann-green" />
+              Período da tarde
+            </h3>
             <div className="grid grid-cols-4 gap-2">
               {horariosDisponiveis.tarde.map((hora) => {
                 const isAvailable = availableSlots.includes(hora);
@@ -512,7 +636,7 @@ const AreaMedico = () => {
                   <Button 
                     key={hora} 
                     variant={isAvailable ? "default" : "outline"} 
-                    className={`text-sm ${isAvailable ? 'bg-hopecann-teal text-white' : 'text-gray-700'}`}
+                    className={`text-sm ${isAvailable ? 'bg-hopecann-green text-white hover:bg-hopecann-green/90' : 'text-gray-700'}`}
                     onClick={() => {
                       if (isAvailable) {
                         handleRemoverHorario(selectedViewDay, hora);
@@ -524,7 +648,7 @@ const AreaMedico = () => {
                         });
                         toast({
                           title: "Horário adicionado",
-                          description: `${hora} adicionado para ${format(selectedViewDay, 'EEEE', { locale: ptBR })}`,
+                          description: `${hora} adicionado para ${format(selectedViewDay, 'EEEE, dd/MM', { locale: ptBR })}`,
                         });
                       }
                     }}
@@ -537,12 +661,22 @@ const AreaMedico = () => {
           </div>
         </div>
         
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-between">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setViewMode('calendar')}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            Voltar para calendário
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => setViewMode('week')}
+            className="flex items-center gap-2"
           >
-            Voltar para visualização semanal
+            <Calendar className="h-4 w-4" />
+            Visualização semanal
           </Button>
         </div>
       </div>
@@ -622,897 +756,3 @@ const AreaMedico = () => {
               </Button>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Improved dialog for time slot management
-  const renderHorarioDialog = () => {
-    if (!selectedDay) return null;
-    
-    const dayName = formatWeekday(selectedDay).toLowerCase() as keyof typeof horariosConfig;
-    const selectedDaySlots = horariosConfig[dayName] || [];
-    
-    return (
-      <Dialog open={horarioDialogOpen} onOpenChange={setHorarioDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Gerenciar Horários</DialogTitle>
-            <DialogDescription>
-              {`${format(selectedDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}`}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Disponibilidade</span>
-              <Switch 
-                checked={selectedDaySlots.length > 0}
-                onCheckedChange={(checked) => handleToggleDayAvailability(selectedDay, checked)}
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button 
-                variant={selectedDaySlots.every(slot => horariosDisponiveis.manha.includes(slot)) && 
-                  selectedDaySlots.length === horariosDisponiveis.manha.length && 
-                  !selectedDaySlots.some(slot => horariosDisponiveis.tarde.includes(slot)) 
-                  ? "default" : "outline"} 
-                size="sm" 
-                className="flex-1"
-                onClick={() => handleQuickSetAvailability(selectedDay, 'morning')}
-              >
-                Somente manhã
-              </Button>
-              <Button 
-                variant={selectedDaySlots.every(slot => horariosDisponiveis.tarde.includes(slot)) && 
-                  selectedDaySlots.length === horariosDisponiveis.tarde.length && 
-                  !selectedDaySlots.some(slot => horariosDisponiveis.manha.includes(slot)) 
-                  ? "default" : "outline"} 
-                size="sm" 
-                className="flex-1"
-                onClick={() => handleQuickSetAvailability(selectedDay, 'afternoon')}
-              >
-                Somente tarde
-              </Button>
-              <Button 
-                variant={selectedDaySlots.length === horariosDisponiveis.manha.length + horariosDisponiveis.tarde.length ? "default" : "outline"} 
-                size="sm" 
-                className="flex-1"
-                onClick={() => handleQuickSetAvailability(selectedDay, 'all')}
-              >
-                Dia todo
-              </Button>
-            </div>
-            
-            {selectedDaySlots.length > 0 && (
-              <>
-                <div className="border-t pt-4 mt-4">
-                  <h3 className="text-sm font-medium mb-3">Manhã</h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    {horariosDisponiveis.manha.map((hora) => {
-                      const isSelected = selectedDaySlots.includes(hora);
-                      return (
-                        <Button 
-                          key={hora} 
-                          variant={isSelected ? "default" : "outline"} 
-                          className="text-sm"
-                          onClick={() => {
-                            const newSlots = isSelected 
-                              ? selectedDaySlots.filter(h => h !== hora) 
-                              : [...selectedDaySlots, hora].sort();
-                            
-                            setHorariosConfig({
-                              ...horariosConfig,
-                              [dayName]: newSlots
-                            });
-                          }}
-                        >
-                          {hora}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium mb-3">Tarde</h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    {horariosDisponiveis.tarde.map((hora) => {
-                      const isSelected = selectedDaySlots.includes(hora);
-                      return (
-                        <Button 
-                          key={hora} 
-                          variant={isSelected ? "default" : "outline"} 
-                          className="text-sm"
-                          onClick={() => {
-                            const newSlots = isSelected 
-                              ? selectedDaySlots.filter(h => h !== hora) 
-                              : [...selectedDaySlots, hora].sort();
-                            
-                            setHorariosConfig({
-                              ...horariosConfig,
-                              [dayName]: newSlots
-                            });
-                          }}
-                        >
-                          {hora}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setHorarioDialogOpen(false)}
-            >
-              Fechar
-            </Button>
-            <Button 
-              className="bg-hopecann-green hover:bg-hopecann-green/90" 
-              onClick={() => {
-                toast({
-                  title: "Horários salvos",
-                  description: `Configuração salva para ${format(selectedDay, 'EEEE', { locale: ptBR })}`,
-                });
-                setHorarioDialogOpen(false);
-              }}
-            >
-              Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  };
-
-  // Gerar nova receita
-  const handleGerarReceita = () => {
-    toast({
-      title: "Receita gerada",
-      description: "A receita foi gerada e está disponível para download",
-    });
-    setReceitaDialogOpen(false);
-  };
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow py-8 bg-gray-50">
-        <div className="hopecann-container">
-          <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-hopecann-green">Área do Médico</h1>
-                <p className="text-gray-600">Dr. Samuel Rodrigo</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => navigate('/logout')}>
-                  Sair
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          <Tabs defaultValue="agenda" className="w-full">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-8">
-              <TabsTrigger value="agenda" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" /> Agenda
-              </TabsTrigger>
-              <TabsTrigger value="pacientes" className="flex items-center gap-2">
-                <Users className="h-4 w-4" /> Pacientes
-              </TabsTrigger>
-              <TabsTrigger value="historico" className="flex items-center gap-2">
-                <History className="h-4 w-4" /> Histórico
-              </TabsTrigger>
-              <TabsTrigger value="receitas" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Receitas
-              </TabsTrigger>
-              <TabsTrigger value="mensagens" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" /> 
-                Mensagens
-                {mensagens && mensagens.filter(m => !m.lida).length > 0 && (
-                  <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {mensagens.filter(m => !m.lida).length}
-                  </span>
-                )}
-              </TabsTrigger>
-            </TabsList>
-          
-            {/* Agenda e horários com usabilidade melhorada */}
-            <TabsContent value="agenda" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Gerenciar Disponibilidade</CardTitle>
-                  <CardDescription>Configure seus horários disponíveis para consultas</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4 flex flex-wrap gap-2 items-center justify-between">
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={prevWeek}>
-                        <ChevronLeft className="h-4 w-4 mr-1" /> Semana anterior
-                      </Button>
-                      <Button variant="outline" onClick={nextWeek}>
-                        Próxima semana <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    </div>
-                    
-                    <div className="font-medium">
-                      {format(selectedWeekStart, "dd/MM")} - {format(addDays(selectedWeekStart, 6), "dd/MM/yyyy")}
-                    </div>
-                    
-                    <ToggleGroup type="single" value={viewMode} onValueChange={(val) => val && setViewMode(val as 'week' | 'day')}>
-                      <ToggleGroupItem value="week" aria-label="Visualização semanal">
-                        <Calendar className="h-4 w-4 mr-1" /> Semana
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="day" aria-label="Visualização diária">
-                        <Clock className="h-4 w-4 mr-1" /> Dia
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
-                  
-                  {/* Ações em massa para configuração rápida */}
-                  {viewMode === 'week' && renderBulkActions()}
-                  
-                  {/* Grade de horários - Visualização semanal ou diária */}
-                  <div className="bg-white">
-                    {viewMode === 'week' ? (
-                      <div className="grid grid-cols-7 gap-3">{renderDaysOfWeek()}</div>
-                    ) : (
-                      <>
-                        {renderDaySelector()}
-                        {renderDayTimeSlots()}
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Próximas Consultas</CardTitle>
-                  <CardDescription>Consultas agendadas para os próximos dias</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Paciente</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Horário</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {consultas && consultas.length > 0 ? (
-                        consultas.filter(c => c.status === 'agendada').map((consulta) => (
-                          <TableRow key={consulta.id}>
-                            <TableCell className="font-medium">{consulta.paciente}</TableCell>
-                            <TableCell>{consulta.data}</TableCell>
-                            <TableCell>{consulta.horario}</TableCell>
-                            <TableCell>
-                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                                Agendada
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => {
-                                    const paciente = pacientesMock.find(p => p.nome === consulta.paciente);
-                                    setSelectedPaciente(paciente || null);
-                                    setProntuarioDialogOpen(true);
-                                  }}
-                                >
-                                  <FileText className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setConsultaDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={() => handleCancelarConsulta(consulta.id)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                            Não há consultas agendadas para os próximos dias
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          
-            {/* Lista de pacientes */}
-            <TabsContent value="pacientes" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Meus Pacientes</CardTitle>
-                  <CardDescription>Gerenciamento de pacientes e prontuários</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Idade</TableHead>
-                        <TableHead>Condição</TableHead>
-                        <TableHead>Última Consulta</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pacientesMock && pacientesMock.length > 0 ? (
-                        pacientesMock.map((paciente) => (
-                          <TableRow key={paciente.id}>
-                            <TableCell className="font-medium">{paciente.nome}</TableCell>
-                            <TableCell>{paciente.idade} anos</TableCell>
-                            <TableCell>{paciente.condicao}</TableCell>
-                            <TableCell>{paciente.ultimaConsulta}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedPaciente(paciente);
-                                    setProntuarioDialogOpen(true);
-                                  }}
-                                >
-                                  Prontuário
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedPaciente(paciente);
-                                    setReceitaDialogOpen(true);
-                                  }}
-                                >
-                                  Receita
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                            Nenhum paciente cadastrado
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            {/* Histórico de consultas */}
-            <TabsContent value="historico" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Histórico de Consultas</CardTitle>
-                  <CardDescription>Consultas realizadas</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Paciente</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Horário</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {consultas && consultas.length > 0 ? (
-                        consultas.filter(c => c.status === 'realizada').map((consulta) => (
-                          <TableRow key={consulta.id}>
-                            <TableCell className="font-medium">{consulta.paciente}</TableCell>
-                            <TableCell>{consulta.data}</TableCell>
-                            <TableCell>{consulta.horario}</TableCell>
-                            <TableCell>
-                              <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                                Realizada
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  const paciente = pacientesMock.find(p => p.nome === consulta.paciente);
-                                  setSelectedPaciente(paciente || null);
-                                  setProntuarioDialogOpen(true);
-                                }}
-                              >
-                                Ver detalhes
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                            Não há consultas realizadas no histórico
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            {/* Receitas */}
-            <TabsContent value="receitas" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Receitas Emitidas</CardTitle>
-                  <CardDescription>Histórico de receitas emitidas para pacientes</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Paciente</TableHead>
-                        <TableHead>Medicamento</TableHead>
-                        <TableHead>Posologia</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {receitasMock && receitasMock.length > 0 ? (
-                        receitasMock.map((receita) => (
-                          <TableRow key={receita.id}>
-                            <TableCell className="font-medium">{receita.paciente}</TableCell>
-                            <TableCell>{receita.medicamento}</TableCell>
-                            <TableCell>{receita.posologia}</TableCell>
-                            <TableCell>{receita.data}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button variant="outline" size="sm">
-                                  Imprimir
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => {
-                                    const paciente = pacientesMock.find(p => p.nome === receita.paciente);
-                                    setSelectedPaciente(paciente || null);
-                                    setReceitaDialogOpen(true);
-                                  }}
-                                >
-                                  Renovar
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                            Nenhuma receita emitida ainda
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            {/* Mensagens */}
-            <TabsContent value="mensagens" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mensagens de Pacientes</CardTitle>
-                  <CardDescription>Comunicação direta com seus pacientes</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Paciente</TableHead>
-                        <TableHead>Mensagem</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mensagens && mensagens.length > 0 ? (
-                        mensagens.map((msg) => (
-                          <TableRow key={msg.id} className={!msg.lida ? "bg-blue-50" : ""}>
-                            <TableCell className="font-medium">{msg.paciente}</TableCell>
-                            <TableCell className="max-w-[300px] truncate">{msg.mensagem}</TableCell>
-                            <TableCell>{msg.data}</TableCell>
-                            <TableCell>
-                              {msg.lida ? (
-                                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                                  Respondida
-                                </span>
-                              ) : (
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                                  Nova
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedMensagem(msg);
-                                  setMensagemDialogOpen(true);
-                                }}
-                              >
-                                Responder
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                            Nenhuma mensagem recebida
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
-      <Footer />
-      
-      {/* Diálogo de Configuração de Horário melhorado */}
-      {renderHorarioDialog()}
-      
-      {/* Diálogo de Edição de Consulta */}
-      <Dialog open={consultaDialogOpen} onOpenChange={setConsultaDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reagendar Consulta</DialogTitle>
-            <DialogDescription>
-              Selecione uma nova data e horário para a consulta
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Nova Data</label>
-                <div className="relative">
-                  <Input type="date" />
-                  <CalendarIcon className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Novo Horário</label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map((time) => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Observação</label>
-              <Textarea placeholder="Motivo do reagendamento (opcional)" />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConsultaDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              className="bg-hopecann-green hover:bg-hopecann-green/90" 
-              onClick={() => {
-                toast({
-                  title: "Consulta reagendada",
-                  description: "A consulta foi reagendada com sucesso",
-                });
-                setConsultaDialogOpen(false);
-              }}
-            >
-              Confirmar Reagendamento
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo de Prontuário */}
-      <Dialog open={prontuarioDialogOpen} onOpenChange={setProntuarioDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Prontuário do Paciente</DialogTitle>
-            <DialogDescription>
-              {selectedPaciente?.nome} - {selectedPaciente?.idade} anos
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-sm font-medium mb-2">Informações Pessoais</h3>
-                <Card>
-                  <CardContent className="pt-6">
-                    <dl className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <dt className="font-medium">Nome:</dt>
-                        <dd>{selectedPaciente?.nome}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="font-medium">Idade:</dt>
-                        <dd>{selectedPaciente?.idade} anos</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="font-medium">Condição:</dt>
-                        <dd>{selectedPaciente?.condicao}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="font-medium">Última consulta:</dt>
-                        <dd>{selectedPaciente?.ultimaConsulta}</dd>
-                      </div>
-                    </dl>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium mb-2">Histórico Médico</h3>
-                <Card>
-                  <CardContent className="pt-6 space-y-3 text-sm">
-                    <p><span className="font-medium">Alergias:</span> Nenhuma conhecida</p>
-                    <p><span className="font-medium">Medicações atuais:</span> Anti-inflamatórios convencionais</p>
-                    <p><span className="font-medium">Histórico familiar:</span> Sem dados relevantes</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium mb-2">Resumo das Consultas</h3>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="border-b pb-3">
-                      <div className="flex justify-between mb-2">
-                        <h4 className="font-medium">Consulta em 12/04/2025</h4>
-                        <span className="text-sm text-gray-500">Dr. Samuel Rodrigo</span>
-                      </div>
-                      <p className="text-sm">
-                        Paciente relata melhora significativa da dor com o uso do óleo CBD 5%. 
-                        Sono também melhorou. Mantida a prescrição com ajuste para 15 gotas à noite.
-                      </p>
-                    </div>
-                    <div className="border-b pb-3">
-                      <div className="flex justify-between mb-2">
-                        <h4 className="font-medium">Consulta em 15/03/2025</h4>
-                        <span className="text-sm text-gray-500">Dr. Samuel Rodrigo</span>
-                      </div>
-                      <p className="text-sm">
-                        Primeira consulta. Paciente apresenta quadro de dor crônica há 5 anos.
-                        Já tentou diversos tratamentos convencionais sem sucesso satisfatório.
-                        Iniciado tratamento com óleo CBD 5%, 10 gotas 2x ao dia.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium mb-2">Adicionar Anotação</h3>
-              <Textarea placeholder="Digite suas observações sobre o paciente" className="h-32" />
-            </div>
-          </div>
-          
-          <DialogFooter className="flex justify-between">
-            <div className="flex gap-2">
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  setSelectedPaciente(selectedPaciente);
-                  setProntuarioDialogOpen(false);
-                  setReceitaDialogOpen(true);
-                }}
-              >
-                Gerar Receita
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setProntuarioDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button 
-                className="bg-hopecann-green hover:bg-hopecann-green/90" 
-                onClick={() => {
-                  toast({
-                    title: "Prontuário atualizado",
-                    description: "As informações foram salvas com sucesso",
-                  });
-                  setProntuarioDialogOpen(false);
-                }}
-              >
-                Salvar
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo de Receita */}
-      <Dialog open={receitaDialogOpen} onOpenChange={setReceitaDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Gerar Receita</DialogTitle>
-            <DialogDescription>
-              Prescrição para {selectedPaciente?.nome}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Medicamento</label>
-              <Select defaultValue="cbd5">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cbd5">Óleo CBD 5%</SelectItem>
-                  <SelectItem value="cbd10">Óleo CBD 10%</SelectItem>
-                  <SelectItem value="cbdthc201">Óleo CBD:THC 20:1</SelectItem>
-                  <SelectItem value="cbdthc101">Óleo CBD:THC 10:1</SelectItem>
-                  <SelectItem value="cbdthc11">Óleo CBD:THC 1:1</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Dosagem</label>
-                <Select defaultValue="10">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 gotas</SelectItem>
-                    <SelectItem value="10">10 gotas</SelectItem>
-                    <SelectItem value="15">15 gotas</SelectItem>
-                    <SelectItem value="20">20 gotas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Frequência</label>
-                <Select defaultValue="2xdia">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1xdia">1x ao dia</SelectItem>
-                    <SelectItem value="2xdia">2x ao dia</SelectItem>
-                    <SelectItem value="3xdia">3x ao dia</SelectItem>
-                    <SelectItem value="noite">Apenas à noite</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Duração do Tratamento</label>
-              <Select defaultValue="30">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">30 dias</SelectItem>
-                  <SelectItem value="60">60 dias</SelectItem>
-                  <SelectItem value="90">90 dias</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Orientações Adicionais</label>
-              <Textarea placeholder="Observações e recomendações para o paciente" />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReceitaDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              className="bg-hopecann-green hover:bg-hopecann-green/90" 
-              onClick={handleGerarReceita}
-            >
-              Gerar e Assinar Receita
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo de Mensagem */}
-      <Dialog open={mensagemDialogOpen} onOpenChange={setMensagemDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Responder Mensagem</DialogTitle>
-            <DialogDescription>
-              Mensagem de {selectedMensagem?.paciente}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="bg-gray-50 p-4 rounded-md">
-              <p className="text-sm mb-2">{selectedMensagem?.data}</p>
-              <p>{selectedMensagem?.mensagem}</p>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Sua resposta</label>
-              <Textarea placeholder="Digite sua resposta para o paciente" className="h-32" />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMensagemDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              className="bg-hopecann-green hover:bg-hopecann-green/90" 
-              onClick={handleResponderMensagem}
-            >
-              Enviar Resposta
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default AreaMedico;
