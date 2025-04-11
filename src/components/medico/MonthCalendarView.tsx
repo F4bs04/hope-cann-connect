@@ -42,22 +42,6 @@ const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({
               day_selected: "bg-hopecann-teal text-white hover:bg-hopecann-teal hover:text-white",
               day: "hover:bg-hopecann-teal/10 focus:bg-hopecann-teal/10 rounded-md"
             }}
-            components={{
-              DayContent: (props) => {
-                const date = props.date;
-                const dayName = formatWeekday(date).toLowerCase() as keyof typeof horariosConfig;
-                const hasSlots = horariosConfig[dayName]?.length > 0;
-                
-                return (
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    <div>{props.date.getDate()}</div>
-                    {hasSlots && (
-                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-hopecann-green rounded-full" />
-                    )}
-                  </div>
-                );
-              }
-            }}
           />
         </div>
       </div>

@@ -24,6 +24,7 @@ interface DayCalendarViewProps {
   horariosConfig: Record<string, string[]>;
   setHorariosConfig: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
   setSelectedViewDay: React.Dispatch<React.SetStateAction<Date>>;
+  handleQuickSetAvailability: (day: Date, mode: 'morning' | 'afternoon' | 'all' | 'none') => void;
 }
 
 const DayCalendarView: React.FC<DayCalendarViewProps> = ({
@@ -38,11 +39,17 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
   formatWeekday,
   horariosConfig,
   setHorariosConfig,
-  setSelectedViewDay
+  setSelectedViewDay,
+  handleQuickSetAvailability
 }) => {
   const { toast } = useToast();
   const availableSlots = getAvailableSlotsForDay(selectedViewDay);
-  const allTimeSlots = [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde].sort();
+  
+  // Define time range from 5 AM to 9 PM
+  const allTimeSlots = [
+    '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
+    '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
+  ];
 
   const handleAddHorario = (hora: string) => {
     const diaSemana = formatWeekday(selectedViewDay).toLowerCase() as keyof typeof horariosConfig;
@@ -92,12 +99,11 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
         <div>
           <h3 className="text-sm font-medium mb-4 flex items-center">
             <Clock className="h-4 w-4 mr-2 text-hopecann-teal" />
-            Todos os horários disponíveis
+            Todos os horários disponíveis (5h - 21h)
           </h3>
           <div className="grid grid-cols-4 gap-2">
             {allTimeSlots.map((hora) => {
               const isAvailable = availableSlots.includes(hora);
-              const isMorning = horariosDisponiveis.manha.includes(hora);
               
               return (
                 <TooltipProvider key={hora}>
@@ -106,7 +112,7 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
                       <Button 
                         variant={isAvailable ? "default" : "outline"} 
                         className={`text-sm ${isAvailable 
-                          ? (isMorning ? 'bg-hopecann-teal text-white hover:bg-hopecann-teal/90' : 'bg-hopecann-green text-white hover:bg-hopecann-green/90') 
+                          ? 'bg-hopecann-teal text-white hover:bg-hopecann-teal/90'
                           : 'text-gray-700'}`}
                         onClick={() => {
                           if (isAvailable) {
@@ -128,40 +134,6 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
                 </TooltipProvider>
               );
             })}
-          </div>
-        </div>
-        
-        <div className="pt-4 border-t">
-          <div className="flex justify-between">
-            <div>
-              <h4 className="text-sm font-medium mb-1">Período da manhã</h4>
-              <p className="text-xs text-gray-500">08:00 - 12:00</p>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-xs"
-              onClick={() => handleQuickSetAvailability(selectedViewDay, 'morning')}
-            >
-              Disponibilizar manhã
-            </Button>
-          </div>
-        </div>
-        
-        <div className="pt-4 border-t">
-          <div className="flex justify-between">
-            <div>
-              <h4 className="text-sm font-medium mb-1">Período da tarde</h4>
-              <p className="text-xs text-gray-500">13:00 - 18:00</p>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-xs"
-              onClick={() => handleQuickSetAvailability(selectedViewDay, 'afternoon')}
-            >
-              Disponibilizar tarde
-            </Button>
           </div>
         </div>
         

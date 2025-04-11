@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { addDays } from 'date-fns';
 import WeeklyCalendarView from './WeeklyCalendarView';
@@ -133,6 +134,7 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
               horariosConfig={horariosConfig}
               setHorariosConfig={setHorariosConfig}
               setSelectedViewDay={setSelectedViewDay}
+              handleQuickSetAvailability={handleQuickSetAvailability}
             />
           </div>
         </div>
