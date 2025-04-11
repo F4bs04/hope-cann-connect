@@ -2,11 +2,10 @@
 import React from 'react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, MinusCircle } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, MinusCircle, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 
 interface DayCalendarViewProps {
@@ -43,6 +42,7 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
 }) => {
   const { toast } = useToast();
   const availableSlots = getAvailableSlotsForDay(selectedViewDay);
+  const allTimeSlots = [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde].sort();
 
   const handleAddHorario = (hora: string) => {
     const diaSemana = formatWeekday(selectedViewDay).toLowerCase() as keyof typeof horariosConfig;
@@ -57,30 +57,17 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white p-4 rounded-lg border">
+      <div className="flex justify-between items-center mb-4">
         <Button variant="outline" size="sm" onClick={prevDay}>
           <ChevronLeft className="h-4 w-4 mr-1" />
           Dia anterior
         </Button>
         
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="font-medium">
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              {format(selectedViewDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-              {isToday(selectedViewDay) && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Hoje</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="center">
-            <CalendarComponent
-              mode="single"
-              selected={selectedViewDay}
-              onSelect={(date) => date && setSelectedViewDay(date)}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <h3 className="font-medium">
+          {format(selectedViewDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+          {isToday(selectedViewDay) && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Hoje</span>}
+        </h3>
         
         <Button variant="outline" size="sm" onClick={nextDay}>
           Próximo dia
@@ -88,96 +75,103 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
         </Button>
       </div>
 
-      <div className="mt-4">
-        <div className="mb-6 flex justify-between items-center">
-          <div className="font-medium">
-            Disponibilidade para {format(selectedViewDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">{availableSlots.length > 0 ? `${availableSlots.length} horários disponíveis` : 'Indisponível'}</span>
-            <Switch 
-              checked={availableSlots.length > 0}
-              onCheckedChange={(checked) => handleToggleDayAvailability(selectedViewDay, checked)}
-            />
+      <div className="mb-6 flex justify-between items-center">
+        <div className="font-medium">
+          Disponibilidade para {format(selectedViewDay, "dd 'de' MMMM", { locale: ptBR })}
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">{availableSlots.length > 0 ? `${availableSlots.length} horários disponíveis` : 'Indisponível'}</span>
+          <Switch 
+            checked={availableSlots.length > 0}
+            onCheckedChange={(checked) => handleToggleDayAvailability(selectedViewDay, checked)}
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-sm font-medium mb-4 flex items-center">
+            <Clock className="h-4 w-4 mr-2 text-hopecann-teal" />
+            Todos os horários disponíveis
+          </h3>
+          <div className="grid grid-cols-4 gap-2">
+            {allTimeSlots.map((hora) => {
+              const isAvailable = availableSlots.includes(hora);
+              const isMorning = horariosDisponiveis.manha.includes(hora);
+              
+              return (
+                <TooltipProvider key={hora}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant={isAvailable ? "default" : "outline"} 
+                        className={`text-sm ${isAvailable 
+                          ? (isMorning ? 'bg-hopecann-teal text-white hover:bg-hopecann-teal/90' : 'bg-hopecann-green text-white hover:bg-hopecann-green/90') 
+                          : 'text-gray-700'}`}
+                        onClick={() => {
+                          if (isAvailable) {
+                            handleRemoverHorario(selectedViewDay, hora);
+                          } else {
+                            handleAddHorario(hora);
+                          }
+                        }}
+                      >
+                        {hora} {isAvailable 
+                          ? <MinusCircle className="h-3.5 w-3.5 ml-1" /> 
+                          : <PlusCircle className="h-3.5 w-3.5 ml-1" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isAvailable ? 'Remover horário' : 'Adicionar horário'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
           </div>
         </div>
         
-        <div className="space-y-6">
-          <div className="bg-white p-4 rounded-lg border">
-            <h3 className="text-sm font-medium mb-4 flex items-center">
-              <Clock className="h-4 w-4 mr-2 text-hopecann-teal" />
-              Período da manhã
-            </h3>
-            <div className="grid grid-cols-4 gap-2">
-              {horariosDisponiveis.manha.map((hora) => {
-                const isAvailable = availableSlots.includes(hora);
-                return (
-                  <Button 
-                    key={hora} 
-                    variant={isAvailable ? "default" : "outline"} 
-                    className={`text-sm ${isAvailable ? 'bg-hopecann-teal text-white hover:bg-hopecann-teal/90' : 'text-gray-700'}`}
-                    title={isAvailable ? "Remover horário" : "Adicionar horário"}
-                    onClick={() => {
-                      if (isAvailable) {
-                        handleRemoverHorario(selectedViewDay, hora);
-                      } else {
-                        handleAddHorario(hora);
-                      }
-                    }}
-                  >
-                    {hora} {isAvailable && <MinusCircle className="h-3.5 w-3.5 ml-1" />}
-                  </Button>
-                );
-              })}
+        <div className="pt-4 border-t">
+          <div className="flex justify-between">
+            <div>
+              <h4 className="text-sm font-medium mb-1">Período da manhã</h4>
+              <p className="text-xs text-gray-500">08:00 - 12:00</p>
             </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg border">
-            <h3 className="text-sm font-medium mb-4 flex items-center">
-              <Clock className="h-4 w-4 mr-2 text-hopecann-green" />
-              Período da tarde
-            </h3>
-            <div className="grid grid-cols-4 gap-2">
-              {horariosDisponiveis.tarde.map((hora) => {
-                const isAvailable = availableSlots.includes(hora);
-                return (
-                  <Button 
-                    key={hora} 
-                    variant={isAvailable ? "default" : "outline"} 
-                    className={`text-sm ${isAvailable ? 'bg-hopecann-green text-white hover:bg-hopecann-green/90' : 'text-gray-700'}`}
-                    title={isAvailable ? "Remover horário" : "Adicionar horário"}
-                    onClick={() => {
-                      if (isAvailable) {
-                        handleRemoverHorario(selectedViewDay, hora);
-                      } else {
-                        handleAddHorario(hora);
-                      }
-                    }}
-                  >
-                    {hora} {isAvailable && <MinusCircle className="h-3.5 w-3.5 ml-1" />}
-                  </Button>
-                );
-              })}
-            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs"
+              onClick={() => handleQuickSetAvailability(selectedViewDay, 'morning')}
+            >
+              Disponibilizar manhã
+            </Button>
           </div>
         </div>
         
-        <div className="mt-6 flex justify-between">
+        <div className="pt-4 border-t">
+          <div className="flex justify-between">
+            <div>
+              <h4 className="text-sm font-medium mb-1">Período da tarde</h4>
+              <p className="text-xs text-gray-500">13:00 - 18:00</p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs"
+              onClick={() => handleQuickSetAvailability(selectedViewDay, 'afternoon')}
+            >
+              Disponibilizar tarde
+            </Button>
+          </div>
+        </div>
+        
+        <div className="pt-4 border-t">
           <Button 
             variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setViewMode('calendar')}
+            className="w-full"
+            onClick={() => handleQuickSetAvailability(selectedViewDay, 'all')}
           >
-            <CalendarIcon className="h-4 w-4" />
-            Voltar para calendário
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setViewMode('week')}
-            className="flex items-center gap-2"
-          >
-            <CalendarIcon className="h-4 w-4" />
-            Visualização semanal
+            Disponibilizar dia todo
           </Button>
         </div>
       </div>

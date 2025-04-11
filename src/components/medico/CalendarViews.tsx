@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { addDays } from 'date-fns';
 import WeeklyCalendarView from './WeeklyCalendarView';
@@ -7,6 +6,7 @@ import MonthCalendarView from './MonthCalendarView';
 import BulkActionsPanel from './BulkActionsPanel';
 import DayCard from './DayCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 
 interface CalendarViewsProps {
   viewMode: 'week' | 'day' | 'calendar';
@@ -97,51 +97,47 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
   );
 
   return (
-    <Tabs defaultValue="week" value={viewMode} onValueChange={(value) => setViewMode(value as 'week' | 'day' | 'calendar')}>
-      <TabsList className="mb-4">
-        <TabsTrigger value="week">Semana</TabsTrigger>
-        <TabsTrigger value="day">Dia</TabsTrigger>
-        <TabsTrigger value="calendar">Calendário</TabsTrigger>
-      </TabsList>
+    <div>
+      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        Gerenciar disponibilidade
+      </h2>
       
-      <TabsContent value="week">
-        <WeeklyCalendarView
-          selectedWeekStart={selectedWeekStart}
-          prevWeek={prevWeek}
-          nextWeek={nextWeek}
-          renderDaysOfWeek={renderDaysOfWeek}
-          renderBulkActions={renderBulkActions}
-        />
-      </TabsContent>
-      
-      <TabsContent value="day">
-        <DayCalendarView
-          selectedViewDay={selectedViewDay}
-          prevDay={prevDay}
-          nextDay={nextDay}
-          setViewMode={setViewMode}
-          horariosDisponiveis={horariosDisponiveis}
-          getAvailableSlotsForDay={getAvailableSlotsForDay}
-          handleToggleDayAvailability={handleToggleDayAvailability}
-          handleRemoverHorario={handleRemoverHorario}
-          formatWeekday={formatWeekday}
-          horariosConfig={horariosConfig}
-          setHorariosConfig={setHorariosConfig}
-          setSelectedViewDay={setSelectedViewDay}
-        />
-      </TabsContent>
-      
-      <TabsContent value="calendar">
-        <MonthCalendarView
-          selectedDate={selectedDate}
-          handleDateSelect={handleDateSelect}
-          horariosConfig={horariosConfig}
-          formatWeekday={formatWeekday}
-          applyPatternToWeek={applyPatternToWeek}
-          setViewMode={setViewMode}
-        />
-      </TabsContent>
-    </Tabs>
+      <Card className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Calendar on the left */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Calendário</h3>
+            <MonthCalendarView
+              selectedDate={selectedDate}
+              handleDateSelect={handleDateSelect}
+              horariosConfig={horariosConfig}
+              formatWeekday={formatWeekday}
+              applyPatternToWeek={applyPatternToWeek}
+              setViewMode={setViewMode}
+            />
+          </div>
+          
+          {/* Available slots on the right */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Horários Disponíveis</h3>
+            <DayCalendarView
+              selectedViewDay={selectedViewDay}
+              prevDay={prevDay}
+              nextDay={nextDay}
+              setViewMode={setViewMode}
+              horariosDisponiveis={horariosDisponiveis}
+              getAvailableSlotsForDay={getAvailableSlotsForDay}
+              handleToggleDayAvailability={handleToggleDayAvailability}
+              handleRemoverHorario={handleRemoverHorario}
+              formatWeekday={formatWeekday}
+              horariosConfig={horariosConfig}
+              setHorariosConfig={setHorariosConfig}
+              setSelectedViewDay={setSelectedViewDay}
+            />
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 };
 
