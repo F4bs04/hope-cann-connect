@@ -127,6 +127,7 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
           formatWeekday={formatWeekday}
           horariosConfig={horariosConfig}
           setHorariosConfig={setHorariosConfig}
+          setSelectedViewDay={setSelectedViewDay}
         />
       </TabsContent>
       

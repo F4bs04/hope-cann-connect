@@ -2,7 +2,7 @@
 import React from 'react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Check, MinusCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, MinusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,6 +24,7 @@ interface DayCalendarViewProps {
   formatWeekday: (date: Date) => string;
   horariosConfig: Record<string, string[]>;
   setHorariosConfig: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
+  setSelectedViewDay: React.Dispatch<React.SetStateAction<Date>>;
 }
 
 const DayCalendarView: React.FC<DayCalendarViewProps> = ({
@@ -37,7 +38,8 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
   handleRemoverHorario,
   formatWeekday,
   horariosConfig,
-  setHorariosConfig
+  setHorariosConfig,
+  setSelectedViewDay
 }) => {
   const { toast } = useToast();
   const availableSlots = getAvailableSlotsForDay(selectedViewDay);
@@ -74,7 +76,7 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
             <CalendarComponent
               mode="single"
               selected={selectedViewDay}
-              onSelect={(date) => date && (setSelectedViewDay(date))}
+              onSelect={(date) => date && setSelectedViewDay(date)}
               initialFocus
             />
           </PopoverContent>
