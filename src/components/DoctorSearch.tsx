@@ -1,46 +1,68 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter } from 'lucide-react';
-
-// We'll use the same doctor data from the existing components
-const doctorsData = [
-  {
-    id: 1,
-    name: 'Dr. Ricardo Silva',
-    specialty: 'Neurologista',
-    bio: 'Especialista em tratamentos canábicos para distúrbios neurológicos.',
-    image: '/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png'
-  },
-  {
-    id: 2,
-    name: 'Dra. Ana Santos',
-    specialty: 'Psiquiatra',
-    bio: 'Especializada em tratamentos para ansiedade e depressão.',
-    image: '/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png'
-  },
-  {
-    id: 3,
-    name: 'Dr. Carlos Mendes',
-    specialty: 'Neurologista',
-    bio: 'Especialista em epilepsia e doenças neurodegenerativas.',
-    image: '/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png'
-  },
-  {
-    id: 4,
-    name: 'Dra. Mariana Costa',
-    specialty: 'Clínica Geral',
-    bio: 'Especialista em medicina integrativa e tratamentos canábicos.',
-    image: '/lovable-uploads/4357c3c3-e33d-4756-b440-f505e4170615.png'
-  }
-];
-
-// Extract unique specialties for filtering
-const specialties = [...new Set(doctorsData.map(doctor => doctor.specialty))];
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const DoctorSearch = ({ onSelectDoctor }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const [filteredDoctors, setFilteredDoctors] = useState(doctorsData);
+  const [filteredDoctors, setFilteredDoctors] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [specialties, setSpecialties] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  // Fetch doctors from Supabase
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        setIsLoading(true);
+        
+        const { data, error } = await supabase
+          .from('medicos')
+          .select('*')
+          .eq('status_disponibilidade', true);
+          
+        if (error) {
+          throw error;
+        }
+        
+        // Transform the data to match the component's expected format
+        const formattedDoctors = data.map(doctor => ({
+          id: doctor.id,
+          name: doctor.nome,
+          specialty: doctor.especialidade,
+          bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
+          image: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`
+        }));
+        
+        setDoctors(formattedDoctors);
+        setFilteredDoctors(formattedDoctors);
+        
+        // Extract unique specialties for filtering
+        const uniqueSpecialties = [...new Set(data.map(doctor => doctor.especialidade))];
+        setSpecialties(uniqueSpecialties);
+        
+      } catch (error) {
+        console.error('Error fetching doctors:', error);
+        toast({
+          title: "Erro ao carregar médicos",
+          description: "Não foi possível carregar a lista de médicos. Por favor, tente novamente mais tarde.",
+          variant: "destructive"
+        });
+        
+        // Fallback to empty arrays
+        setDoctors([]);
+        setFilteredDoctors([]);
+        setSpecialties([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDoctors();
+  }, [toast]);
 
   const handleSearch = (e) => {
     const term = e.target.value;
@@ -54,7 +76,7 @@ const DoctorSearch = ({ onSelectDoctor }) => {
   };
 
   const filterDoctors = (term, specialty) => {
-    let filtered = doctorsData;
+    let filtered = doctors;
     
     if (term) {
       filtered = filtered.filter(doctor => 
@@ -112,35 +134,46 @@ const DoctorSearch = ({ onSelectDoctor }) => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredDoctors.map(doctor => (
-          <div
-            key={doctor.id}
-            className="p-4 border rounded-lg cursor-pointer transition-colors border-gray-200 hover:border-hopecann-teal/50"
-            onClick={() => onSelectDoctor(doctor.id)}
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
-                <img 
-                  src={doctor.image} 
-                  alt={doctor.name} 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <h3 className="font-medium">{doctor.name}</h3>
-                <p className="text-sm text-hopecann-teal mb-1">{doctor.specialty}</p>
-                <p className="text-sm text-gray-600 line-clamp-2">{doctor.bio}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {filteredDoctors.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Nenhum médico encontrado com os critérios de busca.</p>
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-hopecann-teal"></div>
         </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredDoctors.map(doctor => (
+              <div
+                key={doctor.id}
+                className="p-4 border rounded-lg cursor-pointer transition-colors border-gray-200 hover:border-hopecann-teal/50"
+                onClick={() => onSelectDoctor(doctor.id)}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+                    <img 
+                      src={doctor.image} 
+                      alt={doctor.name} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.svg';
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">{doctor.name}</h3>
+                    <p className="text-sm text-hopecann-teal mb-1">{doctor.specialty}</p>
+                    <p className="text-sm text-gray-600 line-clamp-2">{doctor.bio}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {filteredDoctors.length === 0 && !isLoading && (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Nenhum médico encontrado com os critérios de busca.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

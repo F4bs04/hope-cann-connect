@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Calendar, ChevronLeft, ChevronRight, Clock, User, Mail, Phone, FileText, CalendarCheck, CheckCircle } from 'lucide-react';
+import DoctorSearch from '../components/DoctorSearch';
+import { supabase } from "@/integrations/supabase/client";
 
 const doctorsSchedule = [
   { id: 1, name: "Dr. Ricardo Silva", specialty: "Neurologista", available: true },
@@ -119,40 +121,7 @@ const Agendar = () => {
                   Escolha um Especialista
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  {doctorsSchedule.map(doctor => (
-                    <div 
-                      key={doctor.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedDoctor === doctor.id 
-                          ? 'border-hopecann-teal bg-hopecann-teal/5' 
-                          : 'border-gray-200 hover:border-hopecann-teal/50'
-                      }`}
-                      onClick={() => setSelectedDoctor(doctor.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div 
-                          className={`w-5 h-5 rounded-full border flex-shrink-0 mt-1 ${
-                            selectedDoctor === doctor.id 
-                              ? 'border-hopecann-teal bg-hopecann-teal' 
-                              : 'border-gray-300'
-                          }`}
-                        >
-                          {selectedDoctor === doctor.id && (
-                            <CheckCircle className="text-white w-5 h-5" />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{doctor.name}</h3>
-                          <p className="text-sm text-gray-600">{doctor.specialty}</p>
-                          {!doctor.available && (
-                            <p className="text-sm text-red-500 mt-1">Sem horários disponíveis</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <DoctorSearch onSelectDoctor={setSelectedDoctor} />
                 
                 <div className="flex justify-end">
                   <button

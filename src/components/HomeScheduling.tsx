@@ -116,7 +116,10 @@ const HomeScheduling = () => {
                 Escolha um Especialista
               </h2>
               
-              <DoctorSearch onSelectDoctor={setSelectedDoctor} />
+              <DoctorSearch onSelectDoctor={(doctorId) => {
+                setSelectedDoctor(doctorId);
+                console.log("Selected doctor ID:", doctorId);
+              }} />
               
               <div className="flex justify-end">
                 <button
