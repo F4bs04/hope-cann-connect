@@ -1,11 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Info, Upload, Camera, User, Clock, Plus, X } from 'lucide-react';
+import { Info } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -21,55 +20,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from "@/integrations/supabase/client";
 
-const formSchema = z.object({
-  crm: z.string().min(4, {
-    message: 'CRM inválido',
-  }).max(14),
-  telefone: z.string().min(10, {
-    message: 'Telefone inválido',
-  }).max(15),
-  especialidade: z.string().min(3, {
-    message: 'Especialidade é obrigatória',
-  }),
-  biografia: z.string().optional(),
-  certificado: z.instanceof(File, {
-    message: 'Certificado obrigatório',
-  }).optional(),
-  foto: z.instanceof(File, {
-    message: 'Foto de perfil',
-  }).optional(),
-  termoConciencia: z.boolean().refine((val) => val === true, {
-    message: 'Você deve aceitar os termos',
-  }),
-});
+// Import custom components
+import HorariosAtendimento, { diasSemana } from '@/components/medico/cadastro/HorariosAtendimento';
+import TermosResponsabilidade from '@/components/medico/cadastro/TermosResponsabilidade';
+import UploadCertificado from '@/components/medico/cadastro/UploadCertificado';
+import FotoPerfil from '@/components/medico/cadastro/FotoPerfil';
+import UserInfoCard from '@/components/medico/cadastro/UserInfoCard';
 
+// Import schemas and utils
+import { cadastroMedicoFormSchema, type CadastroMedicoFormValues } from '@/schemas/cadastroMedicoSchema';
+import { formatTelefone, formatCRM } from '@/utils/formatters';
+
+// Types
 interface DiaHorario {
   dia: string;
   horaInicio: string;
   horaFim: string;
 }
-
-type FormValues = z.infer<typeof formSchema>;
-
-const diasSemana = [
-  { value: "segunda", label: "Segunda-feira" },
-  { value: "terca", label: "Terça-feira" },
-  { value: "quarta", label: "Quarta-feira" },
-  { value: "quinta", label: "Quinta-feira" },
-  { value: "sexta", label: "Sexta-feira" },
-  { value: "sabado", label: "Sábado" },
-  { value: "domingo", label: "Domingo" },
-];
 
 const CompleteRegistroMedico = () => {
   const { toast } = useToast();
@@ -79,11 +48,19 @@ const CompleteRegistroMedico = () => {
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [horarios, setHorarios] = useState<DiaHorario[]>([]);
-  const [diaAtual, setDiaAtual] = useState<string>("");
-  const [horaInicio, setHoraInicio] = useState<string>("");
-  const [horaFim, setHoraFim] = useState<string>("");
   const [userInfo, setUserInfo] = useState<{name?: string, email?: string, photoUrl?: string, userId?: string} | null>(null);
   const [medicoId, setMedicoId] = useState<string | null>(null);
+
+  const form = useForm<CadastroMedicoFormValues>({
+    resolver: zodResolver(cadastroMedicoFormSchema),
+    defaultValues: {
+      crm: '',
+      telefone: '',
+      especialidade: '',
+      biografia: '',
+      termoConciencia: false,
+    },
+  });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -151,69 +128,50 @@ const CompleteRegistroMedico = () => {
     };
     
     checkAuth();
-  }, [navigate, toast]);
+  }, [navigate, toast, form]);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      crm: '',
-      telefone: '',
-      especialidade: '',
-      biografia: '',
-      termoConciencia: false,
-    },
-  });
-
-  const addHorario = () => {
-    if (!diaAtual || !horaInicio || !horaFim) {
-      toast({
-        variant: "destructive",
-        title: "Campos incompletos",
-        description: "Preencha todos os campos do horário",
-      });
-      return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'certificado' | 'foto') => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      
+      if (type === 'certificado') {
+        if (file.name.endsWith('.pfx')) {
+          form.setValue('certificado', file);
+          setCertificadoNome(file.name);
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Arquivo inválido",
+            description: "Apenas certificados PFX são aceitos",
+          });
+        }
+      } else if (type === 'foto') {
+        if (file.type.startsWith('image/')) {
+          form.setValue('foto', file);
+          setFotoPreview(URL.createObjectURL(file));
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Arquivo inválido",
+            description: "Apenas imagens são aceitas",
+          });
+        }
+      }
     }
-
-    // Check if time is valid
-    if (horaInicio >= horaFim) {
-      toast({
-        variant: "destructive",
-        title: "Horário inválido",
-        description: "A hora de início deve ser antes da hora de fim",
-      });
-      return;
-    }
-
-    // Check if overlapping with existing hours for the same day
-    const overlapping = horarios.some(h => 
-      h.dia === diaAtual && 
-      ((horaInicio >= h.horaInicio && horaInicio < h.horaFim) || 
-       (horaFim > h.horaInicio && horaFim <= h.horaFim) ||
-       (horaInicio <= h.horaInicio && horaFim >= h.horaFim))
-    );
-
-    if (overlapping) {
-      toast({
-        variant: "destructive",
-        title: "Horário sobreposto",
-        description: "Este horário se sobrepõe a outro já adicionado no mesmo dia",
-      });
-      return;
-    }
-
-    setHorarios([...horarios, { dia: diaAtual, horaInicio, horaFim }]);
-    setDiaAtual("");
-    setHoraInicio("");
-    setHoraFim("");
   };
 
-  const removeHorario = (index: number) => {
-    const newHorarios = [...horarios];
-    newHorarios.splice(index, 1);
-    setHorarios(newHorarios);
+  const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatTelefone(e.target.value);
+    form.setValue('telefone', formattedValue);
   };
 
-  const onSubmit = async (data: FormValues) => {
+  const handleCRMChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatCRM(e.target.value);
+    form.setValue('crm', formattedValue);
+  };
+
+  const onSubmit = async (data: CadastroMedicoFormValues) => {
     console.log('Dados complementares:', data);
     setIsLoading(true);
     
@@ -274,19 +232,18 @@ const CompleteRegistroMedico = () => {
         // Create new record if doesn't exist
         const { data: newMedico, error: createError } = await supabase
           .from('medicos')
-          .insert([
-            {
-              id_usuario: userData.id,
-              nome: userInfo.name || '',
-              crm: data.crm,
-              especialidade: data.especialidade,
-              biografia: data.biografia || null,
-              telefone: data.telefone,
-              foto_perfil: fotoUrl,
-              status_disponibilidade: true // Now active
-            }
-          ])
-          .select('id')
+          .insert({
+            id_usuario: userData.id,
+            nome: userInfo.name || '',
+            crm: data.crm,
+            cpf: '', // Required field in the database
+            especialidade: data.especialidade,
+            biografia: data.biografia || null,
+            telefone: data.telefone,
+            foto_perfil: fotoUrl,
+            status_disponibilidade: true // Now active
+          })
+          .select()
           .single();
           
         if (createError) {
@@ -306,7 +263,7 @@ const CompleteRegistroMedico = () => {
             foto_perfil: fotoUrl,
             status_disponibilidade: true // Now active
           })
-          .eq('id', medicoId);
+          .eq('id', parseInt(medicoId));
           
         if (updateError) {
           throw updateError;
@@ -315,19 +272,14 @@ const CompleteRegistroMedico = () => {
       
       // Save schedule information
       for (const horario of horarios) {
-        const { error: horarioError } = await supabase
+        await supabase
           .from('horarios_disponiveis')
-          .insert([{
-            id_medico: medicoIdToUse,
+          .insert({
+            id_medico: medicoIdToUse ? parseInt(medicoIdToUse) : null,
             dia_semana: horario.dia,
             hora_inicio: horario.horaInicio,
             hora_fim: horario.horaFim
-          }]);
-          
-        if (horarioError) {
-          console.error("Error saving schedule:", horarioError);
-          throw horarioError;
-        }
+          });
       }
       
       // Update usuario status to active
@@ -362,61 +314,6 @@ const CompleteRegistroMedico = () => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'certificado' | 'foto') => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      
-      if (type === 'certificado') {
-        if (file.name.endsWith('.pfx')) {
-          form.setValue('certificado', file);
-          setCertificadoNome(file.name);
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Arquivo inválido",
-            description: "Apenas certificados PFX são aceitos",
-          });
-        }
-      } else if (type === 'foto') {
-        if (file.type.startsWith('image/')) {
-          form.setValue('foto', file);
-          setFotoPreview(URL.createObjectURL(file));
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Arquivo inválido",
-            description: "Apenas imagens são aceitas",
-          });
-        }
-      }
-    }
-  };
-
-  const formatTelefone = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .replace(/(-\d{4})\d+?$/, '$1');
-  };
-
-  const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedValue = formatTelefone(e.target.value);
-    form.setValue('telefone', formattedValue);
-  };
-
-  const formatCRM = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{6})(\d)/, '$1/$2');
-  };
-
-  const handleCRMChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedValue = formatCRM(e.target.value);
-    form.setValue('crm', formattedValue);
-  };
-
   if (!userInfo) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -444,64 +341,15 @@ const CompleteRegistroMedico = () => {
 
             <Card>
               <CardContent className="pt-6">
-                <div className="mb-8">
-                  <div className="flex flex-col items-center p-4 bg-gray-50 rounded-md">
-                    {userInfo.photoUrl ? (
-                      <img 
-                        src={userInfo.photoUrl} 
-                        alt={userInfo.name || "Foto de perfil"} 
-                        className="w-20 h-20 rounded-full object-cover mb-3" 
-                      />
-                    ) : (
-                      <User className="w-20 h-20 p-4 bg-gray-200 text-gray-500 rounded-full mb-3" />
-                    )}
-                    <h3 className="font-medium text-lg">{userInfo.name}</h3>
-                    <p className="text-gray-500">{userInfo.email}</p>
-                  </div>
-                </div>
+                <UserInfoCard userInfo={userInfo} />
                 
-                <Form {...form}>
+                <FormProvider {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     {/* Foto de perfil (opcional se já tiver do Google) */}
                     {!userInfo.photoUrl && (
-                      <FormField
-                        control={form.control}
-                        name="foto"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col items-center">
-                            <FormLabel className="w-full text-left">Foto de perfil</FormLabel>
-                            <FormControl>
-                              <div className="flex flex-col items-center">
-                                <div 
-                                  className="w-32 h-32 rounded-full border-2 border-dashed border-hopecann-teal/50 flex items-center justify-center overflow-hidden mb-2 relative hover:border-hopecann-teal cursor-pointer"
-                                  onClick={() => document.getElementById('foto-perfil')?.click()}
-                                >
-                                  {fotoPreview ? (
-                                    <img 
-                                      src={fotoPreview} 
-                                      alt="Preview" 
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <User className="h-16 w-16 text-gray-400" />
-                                  )}
-                                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                    <Camera className="h-8 w-8 text-white" />
-                                  </div>
-                                </div>
-                                <input
-                                  id="foto-perfil"
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={(e) => handleFileChange(e, 'foto')}
-                                />
-                                <span className="text-sm text-gray-500">Clique para enviar uma foto</span>
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                      <FotoPerfil 
+                        fotoPreview={fotoPreview} 
+                        handleFileChange={handleFileChange}
                       />
                     )}
 
@@ -587,123 +435,12 @@ const CompleteRegistroMedico = () => {
                       )}
                     />
 
-                    <div className="border rounded-md p-4">
-                      <h3 className="font-medium text-lg mb-4">Horários de atendimento</h3>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Dia da semana</label>
-                          <Select value={diaAtual} onValueChange={setDiaAtual}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o dia" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {diasSemana.map((dia) => (
-                                <SelectItem key={dia.value} value={dia.value}>
-                                  {dia.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Hora de início</label>
-                          <Input 
-                            type="time" 
-                            value={horaInicio} 
-                            onChange={(e) => setHoraInicio(e.target.value)} 
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Hora de término</label>
-                          <Input 
-                            type="time" 
-                            value={horaFim} 
-                            onChange={(e) => setHoraFim(e.target.value)} 
-                          />
-                        </div>
-                      </div>
-                      
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full flex items-center justify-center gap-2"
-                        onClick={addHorario}
-                      >
-                        <Plus size={16} />
-                        Adicionar horário
-                      </Button>
-                      
-                      {horarios.length > 0 && (
-                        <div className="mt-4 border rounded-md p-2">
-                          <h4 className="font-medium mb-2">Horários adicionados:</h4>
-                          <ul className="space-y-2">
-                            {horarios.map((horario, index) => {
-                              const diaLabel = diasSemana.find(d => d.value === horario.dia)?.label;
-                              return (
-                                <li key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                                  <span>
-                                    {diaLabel} - {horario.horaInicio} até {horario.horaFim}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    className="text-red-500 hover:bg-red-50 p-1 rounded"
-                                    onClick={() => removeHorario(index)}
-                                  >
-                                    <X size={16} />
-                                  </button>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {horarios.length === 0 && (
-                        <p className="text-sm text-gray-500 mt-2">
-                          Adicione pelo menos um horário de atendimento.
-                        </p>
-                      )}
-                    </div>
+                    <HorariosAtendimento horarios={horarios} setHorarios={setHorarios} />
 
-                    <FormField
-                      control={form.control}
-                      name="certificado"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>Certificado Digital PFX A1</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center gap-3">
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                onClick={() => document.getElementById('certificado')?.click()}
-                                className="w-full py-8 border-dashed border-2 flex flex-col items-center justify-center gap-2"
-                              >
-                                <Upload className="h-6 w-6 text-hopecann-green" />
-                                <span>{certificadoNome || "Clique para enviar certificado"}</span>
-                                <span className="text-xs text-gray-500">Apenas arquivos .pfx</span>
-                                <input
-                                  id="certificado"
-                                  type="file"
-                                  accept=".pfx"
-                                  className="hidden"
-                                  onChange={(e) => handleFileChange(e, 'certificado')}
-                                />
-                              </Button>
-                            </div>
-                          </FormControl>
-                          <FormDescription>
-                            <div className="flex items-start gap-2 text-sm mt-2">
-                              <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                              <span>Este certificado é necessário para a assinatura digital de receitas e prontuários.</span>
-                            </div>
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <UploadCertificado 
+                      certificadoNome={certificadoNome}
+                      setCertificadoNome={setCertificadoNome} 
+                      handleFileChange={handleFileChange}
                     />
 
                     <FormField
@@ -749,7 +486,7 @@ const CompleteRegistroMedico = () => {
                       ) : "Concluir Cadastro"}
                     </Button>
                   </form>
-                </Form>
+                </FormProvider>
               </CardContent>
             </Card>
           </div>
@@ -757,33 +494,10 @@ const CompleteRegistroMedico = () => {
       </main>
       <Footer />
 
-      <Dialog open={termoDialogOpen} onOpenChange={setTermoDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Termo de Consciência e Responsabilidade</DialogTitle>
-            <DialogDescription>
-              Leia com atenção os termos abaixo
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 text-sm">
-            <p>Os produtos à base de cannabis medicinal são regulamentados pela Anvisa (Agência Nacional de Vigilância Sanitária) por meio da Resolução da Diretoria Colegiada (RDC) n° 327/2019, que estabelece os procedimentos para a concessão da Autorização Sanitária e para o registro de produtos derivados de cannabis.</p>
-            
-            <p>Como médico prescritor, declaro estar ciente que:</p>
-            
-            <ol className="list-decimal pl-5 space-y-2">
-              <li>A prescrição de produtos à base de cannabis deve seguir as diretrizes da RDC 327/2019, exigindo registro no Conselho Federal de Medicina e retenção de receita.</li>
-              <li>Sou responsável pelo acompanhamento do paciente, monitoramento de efeitos colaterais e reações adversas.</li>
-              <li>Devo informar adequadamente o paciente sobre riscos, benefícios e alternativas terapêuticas.</li>
-              <li>A prescrição deve ser baseada em evidências científicas e na resposta individual do paciente ao tratamento.</li>
-              <li>Reconheço que há limitações nos estudos sobre eficácia e segurança em longo prazo de alguns produtos canábicos.</li>
-              <li>Devo estar atualizado sobre as pesquisas e regulamentações referentes à cannabis medicinal.</li>
-              <li>Entendo que a prescrição deve ser feita em receituário do tipo B (azul), com identificação do prescritor e do paciente.</li>
-            </ol>
-            
-            <p className="font-semibold">Ao concordar com este termo, assumo total responsabilidade pela prescrição de produtos à base de cannabis, reconhecendo os aspectos éticos, legais e profissionais envolvidos.</p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TermosResponsabilidade 
+        open={termoDialogOpen} 
+        onOpenChange={setTermoDialogOpen} 
+      />
     </div>
   );
 };
