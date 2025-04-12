@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -16,10 +15,20 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
+interface Doctor {
+  id: number;
+  name: string;
+  specialty: string;
+  bio: string;
+  photo: string;
+  state: string;
+  availability: string[];
+}
+
 const Medicos = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [doctors, setDoctors] = useState([]);
-  const [filteredDoctors, setFilteredDoctors] = useState([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
   const [filters, setFilters] = useState({
     searchTerm: '',
     specialty: '',
@@ -27,7 +36,7 @@ const Medicos = () => {
     availability: 'any'
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [specialties, setSpecialties] = useState([]);
+  const [specialties, setSpecialties] = useState<string[]>([]);
   const { toast } = useToast();
   
   const itemsPerPage = 3;
@@ -48,14 +57,14 @@ const Medicos = () => {
         
         if (data && data.length > 0) {
           // Transform the data for our component
-          const formattedDoctors = data.map(doctor => ({
+          const formattedDoctors: Doctor[] = data.map(doctor => ({
             id: doctor.id,
             name: doctor.nome,
             specialty: doctor.especialidade,
             bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
             photo: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
-            state: doctor.estado || 'SP',
-            availability: ['today', 'this-week'] // Default availability
+            state: 'SP',
+            availability: ['today', 'this-week']
           }));
           
           setDoctors(formattedDoctors);
@@ -125,15 +134,13 @@ const Medicos = () => {
     }
     
     setFilteredDoctors(results);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   }, [filters, doctors]);
   
-  // Get current doctors
   const indexOfLastDoctor = currentPage * itemsPerPage;
   const indexOfFirstDoctor = indexOfLastDoctor - itemsPerPage;
   const currentDoctors = filteredDoctors.slice(indexOfFirstDoctor, indexOfLastDoctor);
   
-  // Calculate total pages
   const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
   
   const handleFilterChange = (newFilters) => {
@@ -169,7 +176,6 @@ const Medicos = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow">
-        {/* Banner Principal */}
         <section className="bg-hopecann-teal/10 py-16">
           <div className="hopecann-container">
             <h1 className="text-4xl md:text-5xl font-bold mb-6 text-center">Nossa Equipe Médica</h1>
@@ -179,11 +185,9 @@ const Medicos = () => {
           </div>
         </section>
         
-        {/* Filters and Doctor Listing */}
         <section className="py-16">
           <div className="hopecann-container">
             <div className="flex flex-col lg:flex-row gap-8">
-              {/* Sidebar with filters */}
               <div className="lg:w-1/4">
                 <DoctorFilters 
                   specialties={specialties} 
@@ -191,7 +195,6 @@ const Medicos = () => {
                 />
               </div>
               
-              {/* Main content with doctors */}
               <div className="lg:w-3/4">
                 {isLoading ? (
                   <div className="flex justify-center py-12">
@@ -256,7 +259,6 @@ const Medicos = () => {
                       </div>
                     ))}
                     
-                    {/* Pagination */}
                     {totalPages > 1 && (
                       <Pagination className="mt-8">
                         <PaginationContent>
@@ -327,7 +329,6 @@ const Medicos = () => {
           </div>
         </section>
         
-        {/* Chamada para ação */}
         <section className="bg-gray-50 py-16">
           <div className="hopecann-container text-center">
             <div className="max-w-3xl mx-auto">
@@ -353,7 +354,6 @@ const Medicos = () => {
   );
 };
 
-// Fallback doctor data if database fetch fails
 const doctorsData = [
   {
     id: 1,
@@ -439,7 +439,7 @@ const doctorsData = [
     credentials: [
       "Membro da Sociedade Brasileira de Neurologia Pediátrica",
       "Pesquisadora em epilepsia refratária infantil",
-      "Coordenadora do Núcleo de Cannabis Medicinal Pediátrica"
+      "Coordenadora do Núcleo de Cannabis Medicinal Pedi��trica"
     ],
     quote: "O tratamento com cannabis tem sido revolucionário para muitas famílias de crianças com epilepsia refratária.",
     state: "SP",

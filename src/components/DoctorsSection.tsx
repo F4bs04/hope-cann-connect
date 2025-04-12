@@ -6,8 +6,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Clock } from 'lucide-react';
 
-const DoctorCard = ({ id, name, specialty, bio, image, availability }) => {
-  const getAvailabilityText = (availabilityArray) => {
+// Doctor type definition
+interface Doctor {
+  id: number;
+  name: string;
+  specialty: string;
+  bio: string;
+  image: string;
+  availability: string[];
+}
+
+const DoctorCard = ({ id, name, specialty, bio, image, availability }: Doctor) => {
+  const getAvailabilityText = (availabilityArray: string[]) => {
     if (availabilityArray.includes('today')) {
       return 'Disponível hoje';
     } else if (availabilityArray.includes('this-week')) {
@@ -17,7 +27,7 @@ const DoctorCard = ({ id, name, specialty, bio, image, availability }) => {
     }
   };
   
-  const getAvailabilityColor = (availabilityArray) => {
+  const getAvailabilityColor = (availabilityArray: string[]) => {
     if (availabilityArray.includes('today')) {
       return 'text-green-600 bg-green-50';
     } else if (availabilityArray.includes('this-week')) {
@@ -63,7 +73,7 @@ const DoctorCard = ({ id, name, specialty, bio, image, availability }) => {
 };
 
 const DoctorsSection = () => {
-  const [doctors, setDoctors] = useState([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -83,7 +93,7 @@ const DoctorsSection = () => {
         }
         
         if (data && data.length > 0) {
-          // Check for doctor availability from consultas table
+          // Process doctor data
           const doctorsWithAvailability = await Promise.all(data.map(async (doctor) => {
             // Check for the nearest available appointment
             const { data: appointmentData } = await supabase

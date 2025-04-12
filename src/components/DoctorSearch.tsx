@@ -1,15 +1,29 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Clock } from 'lucide-react';
+import { Search, Clock } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-const DoctorSearch = ({ onSelectDoctor }) => {
+// Doctor type definition
+interface Doctor {
+  id: number;
+  name: string;
+  specialty: string;
+  bio: string;
+  image: string;
+  availability: string[];
+}
+
+interface DoctorSearchProps {
+  onSelectDoctor: (id: number) => void;
+}
+
+const DoctorSearch = ({ onSelectDoctor }: DoctorSearchProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const [filteredDoctors, setFilteredDoctors] = useState([]);
-  const [doctors, setDoctors] = useState([]);
-  const [specialties, setSpecialties] = useState([]);
+  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [specialties, setSpecialties] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -101,18 +115,18 @@ const DoctorSearch = ({ onSelectDoctor }) => {
     fetchDoctors();
   }, [toast]);
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
     setSearchTerm(term);
     filterDoctors(term, selectedSpecialty);
   };
 
-  const handleSpecialtyFilter = (specialty) => {
+  const handleSpecialtyFilter = (specialty: string) => {
     setSelectedSpecialty(specialty);
     filterDoctors(searchTerm, specialty);
   };
 
-  const filterDoctors = (term, specialty) => {
+  const filterDoctors = (term: string, specialty: string) => {
     let filtered = doctors;
     
     if (term) {
@@ -129,7 +143,7 @@ const DoctorSearch = ({ onSelectDoctor }) => {
     setFilteredDoctors(filtered);
   };
 
-  const getAvailabilityText = (availabilityArray) => {
+  const getAvailabilityText = (availabilityArray: string[]) => {
     if (availabilityArray.includes('today')) {
       return 'Disponível hoje';
     } else if (availabilityArray.includes('this-week')) {
@@ -139,7 +153,7 @@ const DoctorSearch = ({ onSelectDoctor }) => {
     }
   };
   
-  const getAvailabilityColor = (availabilityArray) => {
+  const getAvailabilityColor = (availabilityArray: string[]) => {
     if (availabilityArray.includes('today')) {
       return 'text-green-600 bg-green-50';
     } else if (availabilityArray.includes('this-week')) {
