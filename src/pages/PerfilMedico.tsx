@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateAvailability } from "@/utils/doctorUtils";
 
 // Tipos
 interface Mensagem {
@@ -74,7 +75,7 @@ const PerfilMedico = () => {
         const { data, error } = await supabase
           .from('medicos')
           .select('*')
-          .eq('id', id)
+          .eq('id', parseInt(id)) // Convert string id to number
           .eq('status_disponibilidade', true)
           .single();
           
@@ -98,23 +99,14 @@ const PerfilMedico = () => {
             console.error('Error fetching appointments:', appointmentError);
           }
           
-          let disponibilidade = ['next-week']; // Default to next week
-          
+          // Get the next appointment date
+          let appointmentDate = null;
           if (appointmentData && appointmentData.length > 0) {
-            const appointmentDate = new Date(appointmentData[0].data_hora);
-            const today = new Date();
-            const thisWeekEnd = new Date(today);
-            thisWeekEnd.setDate(today.getDate() + 7);
-            
-            // Check if appointment is today
-            if (appointmentDate.toDateString() === today.toDateString()) {
-              disponibilidade = ['today', 'this-week'];
-            } 
-            // Check if appointment is this week
-            else if (appointmentDate <= thisWeekEnd) {
-              disponibilidade = ['this-week'];
-            }
+            appointmentDate = new Date(appointmentData[0].data_hora);
           }
+          
+          // Calculate availability using utility function
+          const disponibilidade = calculateAvailability(appointmentDate);
           
           // Transform data para o formato usado pelo componente
           const medicoData: Medico = {
@@ -141,8 +133,9 @@ const PerfilMedico = () => {
           setMedico(medicoData);
         } else {
           // Dados fictícios do médico caso não encontre no banco
+          const medicoId = parseInt(id);
           const medicoData: Medico = {
-            id: Number(id),
+            id: medicoId,
             nome: id === "2" ? "Dra. Ana Santos" : "Dr. Carlos Mendes",
             especialidade: id === "2" ? "Psiquiatra" : "Neurologista",
             foto: id === "2" 
