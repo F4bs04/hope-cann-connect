@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -9,23 +9,44 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Define the login form schema
+const loginSchema = z.object({
+  email: z.string().email("Insira um email válido"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  captcha: z.string().min(1, "Por favor, resolva o CAPTCHA"),
+  rememberMe: z.boolean().default(false),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [captchaValue, setCaptchaValue] = useState('');
   const [captchaAnswer, setCaptchaAnswer] = useState('');
-  const [userCaptchaInput, setUserCaptchaInput] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Gerar um CAPTCHA simples (apenas para demonstração)
-  React.useEffect(() => {
+  // Setup form with react-hook-form
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      captcha: "",
+      rememberMe: false,
+    },
+  });
+
+  // Generate a simple CAPTCHA
+  useEffect(() => {
     generateCaptcha();
   }, []);
 
@@ -36,52 +57,79 @@ const Login = () => {
     setCaptchaAnswer((num1 + num2).toString());
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    // Validar CAPTCHA
-    if (userCaptchaInput !== captchaAnswer) {
-      setError('CAPTCHA incorreto');
-      setIsLoading(false);
+  const handleLogin = async (values: LoginFormValues) => {
+    if (values.captcha !== captchaAnswer) {
+      toast({
+        title: "CAPTCHA incorreto",
+        description: "Por favor, resolva o CAPTCHA corretamente",
+        variant: "destructive",
+      });
       generateCaptcha();
+      form.setValue("captcha", "");
       return;
     }
 
-    // Simulação de login (em um app real, isso seria uma chamada à API)
-    setTimeout(() => {
-      // Aqui seria a lógica real de autenticação
+    setIsLoading(true);
+
+    try {
+      // Step 1: Authenticate with Supabase
+      const { data, error } = await supabase.from('usuarios').select('*').eq('email', values.email).single();
+
+      if (error) {
+        throw new Error("Credenciais inválidas. Verifique seu email e senha.");
+      }
+
+      if (!data) {
+        throw new Error("Usuário não encontrado");
+      }
+
+      // Verify password (in a real app, use proper password hashing)
+      if (data.senha !== values.password) {
+        throw new Error("Senha incorreta");
+      }
+
+      // Update last access time
+      await supabase
+        .from('usuarios')
+        .update({ ultimo_acesso: new Date().toISOString() })
+        .eq('id', data.id);
+
+      // Store user info in localStorage
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userEmail', email);
-      
+      localStorage.setItem('userEmail', values.email);
+      localStorage.setItem('userId', data.id.toString());
+      localStorage.setItem('userType', data.tipo_usuario);
+
       toast({
         title: "Login bem-sucedido",
-        description: "Bem-vindo à área do paciente!",
+        description: "Bem-vindo ao sistema!",
       });
-      
-      // Redirecionar para a área do paciente
-      navigate('/area-paciente');
-      setIsLoading(false);
-    }, 1500);
-  };
 
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    
-    // Simulação de login com Google (em um app real, isso usaria OAuth)
-    setTimeout(() => {
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userEmail', 'usuario@gmail.com');
+      // Redirect based on user type
+      switch (data.tipo_usuario) {
+        case 'paciente':
+          navigate('/area-paciente');
+          break;
+        case 'medico':
+          navigate('/area-medico');
+          break;
+        case 'admin_clinica':
+          navigate('/admin');
+          break;
+        default:
+          navigate('/area-paciente');
+      }
       
+    } catch (error: any) {
+      console.error("Login error:", error);
       toast({
-        title: "Login com Google bem-sucedido",
-        description: "Bem-vindo à área do paciente!",
+        title: "Erro ao fazer login",
+        description: error.message || "Ocorreu um erro ao fazer login. Tente novamente.",
+        variant: "destructive",
       });
-      
-      navigate('/area-paciente');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -91,90 +139,114 @@ const Login = () => {
         <div className="max-w-md mx-auto bg-white p-8 rounded-xl shadow-sm">
           <h1 className="text-2xl font-bold text-center mb-6">Acesse sua conta</h1>
           
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 flex items-center gap-2">
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
-          
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  className="pl-10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="pl-10"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-3 text-gray-400"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="captcha">CAPTCHA</Label>
-              <div className="bg-gray-100 p-3 rounded-md text-center font-semibold mb-2">
-                {captchaValue}
-              </div>
-              <Input
-                id="captcha"
-                type="text"
-                placeholder="Digite a resposta"
-                value={userCaptchaInput}
-                onChange={(e) => setUserCaptchaInput(e.target.value)}
-                required
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <FormControl>
+                        <Input
+                          placeholder="seu@email.com"
+                          className="pl-10"
+                          {...field}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <button
-                type="button"
-                className="text-sm text-hopecann-teal hover:underline"
-                onClick={generateCaptcha}
+              
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <FormControl>
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pl-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <button
+                        type="button"
+                        className="absolute right-3 top-3 text-gray-400"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="captcha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CAPTCHA</FormLabel>
+                    <div className="bg-gray-100 p-3 rounded-md text-center font-semibold mb-2">
+                      {captchaValue}
+                    </div>
+                    <FormControl>
+                      <Input
+                        placeholder="Digite a resposta"
+                        {...field}
+                      />
+                    </FormControl>
+                    <button
+                      type="button"
+                      className="text-sm text-hopecann-teal hover:underline mt-1"
+                      onClick={generateCaptcha}
+                    >
+                      Gerar novo CAPTCHA
+                    </button>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="rememberMe"
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm cursor-pointer">
+                        Lembrar de mim
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              
+              <Button 
+                type="submit" 
+                className="w-full bg-hopecann-teal hover:bg-hopecann-teal/90" 
+                disabled={isLoading}
               >
-                Gerar novo CAPTCHA
-              </button>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-              />
-              <Label htmlFor="remember" className="text-sm cursor-pointer">
-                Lembrar de mim
-              </Label>
-            </div>
-            
-            <Button type="submit" className="w-full bg-hopecann-teal hover:bg-hopecann-teal/90" disabled={isLoading}>
-              {isLoading ? "Processando..." : "Entrar"}
-            </Button>
-          </form>
+                {isLoading ? "Processando..." : "Entrar"}
+              </Button>
+            </form>
+          </Form>
           
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
@@ -189,7 +261,12 @@ const Login = () => {
             type="button"
             variant="outline"
             className="w-full flex items-center justify-center gap-2 mb-4"
-            onClick={handleGoogleLogin}
+            onClick={() => {
+              toast({
+                title: "Login Google indisponível",
+                description: "Esta funcionalidade será implementada em breve.",
+              });
+            }}
             disabled={isLoading}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
