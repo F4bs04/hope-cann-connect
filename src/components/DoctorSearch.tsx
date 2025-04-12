@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Clock } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -28,22 +28,59 @@ const DoctorSearch = ({ onSelectDoctor }) => {
           throw error;
         }
         
-        // Transform the data to match the component's expected format
-        const formattedDoctors = data.map(doctor => ({
-          id: doctor.id,
-          name: doctor.nome,
-          specialty: doctor.especialidade,
-          bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
-          image: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`
-        }));
-        
-        setDoctors(formattedDoctors);
-        setFilteredDoctors(formattedDoctors);
-        
-        // Extract unique specialties for filtering
-        const uniqueSpecialties = [...new Set(data.map(doctor => doctor.especialidade))];
-        setSpecialties(uniqueSpecialties);
-        
+        if (data && data.length > 0) {
+          // Check for doctor availability from consultas table
+          const doctorsWithAvailability = await Promise.all(data.map(async (doctor) => {
+            // Check for the nearest available appointment
+            const { data: appointmentData } = await supabase
+              .from('consultas')
+              .select('data_hora')
+              .eq('id_medico', doctor.id)
+              .eq('status', 'agendada')
+              .gte('data_hora', new Date().toISOString())
+              .order('data_hora', { ascending: true })
+              .limit(1);
+            
+            let availability = ['next-week']; // Default to next week
+            
+            if (appointmentData && appointmentData.length > 0) {
+              const appointmentDate = new Date(appointmentData[0].data_hora);
+              const today = new Date();
+              const tomorrow = new Date(today);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              
+              // Check if appointment is today
+              if (appointmentDate.toDateString() === today.toDateString()) {
+                availability = ['today', 'this-week'];
+              } 
+              // Check if appointment is this week
+              else if (appointmentDate <= new Date(today.setDate(today.getDate() + 7))) {
+                availability = ['this-week'];
+              }
+            }
+            
+            return {
+              id: doctor.id,
+              name: doctor.nome,
+              specialty: doctor.especialidade,
+              bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
+              image: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+              availability
+            };
+          }));
+          
+          setDoctors(doctorsWithAvailability);
+          setFilteredDoctors(doctorsWithAvailability);
+          
+          // Extract unique specialties for filtering
+          const uniqueSpecialties = [...new Set(data.map(doctor => doctor.especialidade))];
+          setSpecialties(uniqueSpecialties);
+        } else {
+          // Fallback to empty arrays
+          setDoctors([]);
+          setFilteredDoctors([]);
+          setSpecialties([]);
+        }
       } catch (error) {
         console.error('Error fetching doctors:', error);
         toast({
@@ -90,6 +127,26 @@ const DoctorSearch = ({ onSelectDoctor }) => {
     }
     
     setFilteredDoctors(filtered);
+  };
+
+  const getAvailabilityText = (availabilityArray) => {
+    if (availabilityArray.includes('today')) {
+      return 'Disponível hoje';
+    } else if (availabilityArray.includes('this-week')) {
+      return 'Disponível esta semana';
+    } else {
+      return 'Disponível próxima semana';
+    }
+  };
+  
+  const getAvailabilityColor = (availabilityArray) => {
+    if (availabilityArray.includes('today')) {
+      return 'text-green-600 bg-green-50';
+    } else if (availabilityArray.includes('this-week')) {
+      return 'text-blue-600 bg-blue-50';
+    } else {
+      return 'text-orange-600 bg-orange-50';
+    }
   };
 
   return (
@@ -158,9 +215,17 @@ const DoctorSearch = ({ onSelectDoctor }) => {
                       }}
                     />
                   </div>
-                  <div>
-                    <h3 className="font-medium">{doctor.name}</h3>
-                    <p className="text-sm text-hopecann-teal mb-1">{doctor.specialty}</p>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">{doctor.name}</h3>
+                        <p className="text-sm text-hopecann-teal mb-1">{doctor.specialty}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getAvailabilityColor(doctor.availability)}`}>
+                        <Clock size={12} />
+                        {getAvailabilityText(doctor.availability)}
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-600 line-clamp-2">{doctor.bio}</p>
                   </div>
                 </div>

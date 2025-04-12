@@ -1,11 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogIn } from 'lucide-react';
+import { Menu, X, LogIn, User, Stethoscope } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [session, setSession] = useState(null);
+  const [userType, setUserType] = useState(null);
   const location = useLocation();
 
   const toggleMenu = () => {
@@ -26,6 +29,65 @@ const Header = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        fetchUserType(session.user.id);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        if (session) {
+          fetchUserType(session.user.id);
+        } else {
+          setUserType(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserType = async (userId) => {
+    try {
+      // First check if user is a doctor
+      const { data: medico } = await supabase
+        .from('medicos')
+        .select('id')
+        .eq('id_usuario', userId)
+        .single();
+
+      if (medico) {
+        setUserType('medico');
+        return;
+      }
+
+      // If not a doctor, check if user is a patient
+      const { data: paciente } = await supabase
+        .from('pacientes')
+        .select('id')
+        .eq('id_usuario', userId)
+        .single();
+
+      if (paciente) {
+        setUserType('paciente');
+        return;
+      }
+
+      // Default to paciente if user type is not determined
+      setUserType('paciente');
+    } catch (error) {
+      console.error('Error fetching user type:', error);
+      // Default to paciente on error
+      setUserType('paciente');
+    }
+  };
 
   // Function to scroll to the scheduling section on the homepage
   const scrollToScheduling = (e) => {
@@ -84,13 +146,33 @@ const Header = () => {
             Contato
           </NavLink>
           
-          <Link 
-            to="/login"
-            className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm flex items-center gap-2"
-          >
-            <LogIn size={18} />
-            Login
-          </Link>
+          {session ? (
+            userType === 'medico' ? (
+              <Link 
+                to="/area-medico"
+                className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm flex items-center gap-2"
+              >
+                <Stethoscope size={18} />
+                Área do Médico
+              </Link>
+            ) : (
+              <Link 
+                to="/area-paciente"
+                className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm flex items-center gap-2"
+              >
+                <User size={18} />
+                Área do Paciente
+              </Link>
+            )
+          ) : (
+            <Link 
+              to="/login"
+              className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm flex items-center gap-2"
+            >
+              <LogIn size={18} />
+              Login
+            </Link>
+          )}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -136,14 +218,36 @@ const Header = () => {
               Contato
             </MobileNavLink>
             
-            <Link 
-              to="/login"
-              onClick={() => setIsMenuOpen(false)}
-              className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center flex items-center justify-center gap-2"
-            >
-              <LogIn size={18} />
-              Login
-            </Link>
+            {session ? (
+              userType === 'medico' ? (
+                <Link 
+                  to="/area-medico"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center flex items-center justify-center gap-2"
+                >
+                  <Stethoscope size={18} />
+                  Área do Médico
+                </Link>
+              ) : (
+                <Link 
+                  to="/area-paciente"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center flex items-center justify-center gap-2"
+                >
+                  <User size={18} />
+                  Área do Paciente
+                </Link>
+              )
+            ) : (
+              <Link 
+                to="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center flex items-center justify-center gap-2"
+              >
+                <LogIn size={18} />
+                Login
+              </Link>
+            )}
           </div>
         </div>
       )}
