@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Info, Check, Upload, Calendar, Camera, User, Mail, Google } from 'lucide-react';
+import { Info, Upload, Camera, User } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -22,28 +22,15 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
 import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
-  nome: z.string().min(3, {
-    message: 'O nome deve ter pelo menos 3 caracteres',
-  }),
-  email: z.string().email({
-    message: 'Digite um email válido',
-  }),
   crm: z.string().min(4, {
     message: 'CRM inválido',
   }).max(14),
-  cpf: z.string().min(11, {
-    message: 'CPF inválido',
-  }).max(14),
-  dataNascimento: z.string().min(1, {
-    message: 'Data de nascimento obrigatória',
-  }),
   certificado: z.instanceof(File, {
     message: 'Certificado obrigatório',
-  }).optional(),
+  }),
   foto: z.instanceof(File, {
     message: 'Foto de perfil',
   }).optional(),
@@ -54,42 +41,63 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CadastroMedico = () => {
+const CompleteRegistroMedico = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [termoDialogOpen, setTermoDialogOpen] = useState(false);
   const [certificadoNome, setCertificadoNome] = useState<string | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [userInfo, setUserInfo] = useState<{name?: string, email?: string, photoUrl?: string} | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Sessão expirada",
+          description: "Sua sessão expirou ou você não está autenticado. Redirecionando para a página de login.",
+        });
+        navigate('/cadastro-medico');
+        return;
+      }
+      
+      const user = session.user;
+      if (user) {
+        setUserInfo({
+          name: user.user_metadata?.full_name,
+          email: user.email,
+          photoUrl: user.user_metadata?.avatar_url
+        });
+        
+        if (user.user_metadata?.avatar_url) {
+          setFotoPreview(user.user_metadata.avatar_url);
+        }
+      }
+    };
+    
+    checkAuth();
+  }, [navigate, toast]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nome: '',
-      email: '',
       crm: '',
-      cpf: '',
-      dataNascimento: '',
       termoConciencia: false,
     },
   });
 
   const onSubmit = async (data: FormValues) => {
-    console.log('Dados do formulário:', data);
+    console.log('Dados complementares:', data);
     setIsLoading(true);
     
     try {
       // Aqui seria feito o upload da foto e registro no banco de dados
-      let fotoUrl = null;
-      
-      if (data.foto) {
-        // Upload da foto para o storage (simulado)
-        fotoUrl = URL.createObjectURL(data.foto);
-      }
-      
       toast({
-        title: "Cadastro enviado com sucesso!",
-        description: "Aguarde a verificação das suas informações",
+        title: "Cadastro concluído com sucesso!",
+        description: "Suas informações foram enviadas para verificação.",
       });
       
       // Normalmente enviaríamos os dados para o backend aqui
@@ -99,39 +107,11 @@ const CadastroMedico = () => {
         setIsLoading(false);
       }, 2000);
     } catch (error) {
-      console.error("Erro ao enviar cadastro:", error);
+      console.error("Erro ao enviar dados complementares:", error);
       toast({
         variant: "destructive",
         title: "Erro no cadastro",
-        description: "Ocorreu um erro ao enviar seu cadastro. Por favor, tente novamente.",
-      });
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/complete-registro-medico'
-        }
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Autenticação com Google iniciada",
-        description: "Você será redirecionado para completar o processo.",
-      });
-    } catch (error) {
-      console.error("Erro ao logar com Google:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro na autenticação",
-        description: "Não foi possível fazer login com o Google. Por favor, tente novamente.",
+        description: "Ocorreu um erro ao enviar seus dados. Por favor, tente novamente.",
       });
       setIsLoading(false);
     }
@@ -168,20 +148,6 @@ const CadastroMedico = () => {
     }
   };
 
-  const formatCPF = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-      .replace(/(-\d{2})\d+?$/, '$1');
-  };
-
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedValue = formatCPF(e.target.value);
-    form.setValue('cpf', formattedValue);
-  };
-
   const formatCRM = (value: string) => {
     return value
       .replace(/\D/g, '')
@@ -193,6 +159,18 @@ const CadastroMedico = () => {
     form.setValue('crm', formattedValue);
   };
 
+  if (!userInfo) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-hopecann-teal"></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -200,161 +178,90 @@ const CadastroMedico = () => {
         <div className="hopecann-container">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-10">
-              <h1 className="text-3xl font-bold text-hopecann-green mb-4">Cadastro de Médico</h1>
+              <h1 className="text-3xl font-bold text-hopecann-green mb-4">Complete seu cadastro</h1>
               <p className="text-gray-600">
-                Junte-se à nossa rede de especialistas em tratamentos canábicos
+                Precisamos de algumas informações adicionais para concluir seu cadastro como médico
               </p>
             </div>
 
             <Card>
               <CardContent className="pt-6">
                 <div className="mb-8">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full py-3 flex items-center justify-center gap-2"
-                    onClick={handleGoogleSignIn}
-                    disabled={isLoading}
-                  >
-                    <Google className="h-5 w-5" />
-                    Continuar com o Google
-                  </Button>
-                  
-                  <div className="relative my-6">
-                    <Separator />
-                    <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-50 px-2 text-gray-500 text-sm">
-                      ou preencha o formulário
-                    </span>
+                  <div className="flex flex-col items-center p-4 bg-gray-50 rounded-md">
+                    {userInfo.photoUrl ? (
+                      <img 
+                        src={userInfo.photoUrl} 
+                        alt={userInfo.name || "Foto de perfil"} 
+                        className="w-20 h-20 rounded-full object-cover mb-3" 
+                      />
+                    ) : (
+                      <User className="w-20 h-20 p-4 bg-gray-200 text-gray-500 rounded-full mb-3" />
+                    )}
+                    <h3 className="font-medium text-lg">{userInfo.name}</h3>
+                    <p className="text-gray-500">{userInfo.email}</p>
                   </div>
                 </div>
                 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    {/* Foto de perfil upload */}
-                    <FormField
-                      control={form.control}
-                      name="foto"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col items-center">
-                          <FormLabel className="w-full text-left">Foto de perfil</FormLabel>
-                          <FormControl>
-                            <div className="flex flex-col items-center">
-                              <div 
-                                className="w-32 h-32 rounded-full border-2 border-dashed border-hopecann-teal/50 flex items-center justify-center overflow-hidden mb-2 relative hover:border-hopecann-teal cursor-pointer"
-                                onClick={() => document.getElementById('foto-perfil')?.click()}
-                              >
-                                {fotoPreview ? (
-                                  <img 
-                                    src={fotoPreview} 
-                                    alt="Preview" 
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <User className="h-16 w-16 text-gray-400" />
-                                )}
-                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                  <Camera className="h-8 w-8 text-white" />
+                    {/* Foto de perfil (opcional se já tiver do Google) */}
+                    {!userInfo.photoUrl && (
+                      <FormField
+                        control={form.control}
+                        name="foto"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col items-center">
+                            <FormLabel className="w-full text-left">Foto de perfil</FormLabel>
+                            <FormControl>
+                              <div className="flex flex-col items-center">
+                                <div 
+                                  className="w-32 h-32 rounded-full border-2 border-dashed border-hopecann-teal/50 flex items-center justify-center overflow-hidden mb-2 relative hover:border-hopecann-teal cursor-pointer"
+                                  onClick={() => document.getElementById('foto-perfil')?.click()}
+                                >
+                                  {fotoPreview ? (
+                                    <img 
+                                      src={fotoPreview} 
+                                      alt="Preview" 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="h-16 w-16 text-gray-400" />
+                                  )}
+                                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                    <Camera className="h-8 w-8 text-white" />
+                                  </div>
                                 </div>
+                                <input
+                                  id="foto-perfil"
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleFileChange(e, 'foto')}
+                                />
+                                <span className="text-sm text-gray-500">Clique para enviar uma foto</span>
                               </div>
-                              <input
-                                id="foto-perfil"
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => handleFileChange(e, 'foto')}
-                              />
-                              <span className="text-sm text-gray-500">Clique para enviar uma foto</span>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="nome"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome completo</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Dr. Nome Sobrenome" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="seu@email.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="crm"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CRM</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="000000/UF" 
-                                {...field} 
-                                onChange={(e) => {
-                                  handleCRMChange(e);
-                                  field.onChange(e);
-                                }}
-                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-
-                      <FormField
-                        control={form.control}
-                        name="cpf"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CPF</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="000.000.000-00" 
-                                {...field} 
-                                onChange={(e) => {
-                                  handleCPFChange(e);
-                                  field.onChange(e);
-                                }}
-                                maxLength={14}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    )}
 
                     <FormField
                       control={form.control}
-                      name="dataNascimento"
+                      name="crm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Data de Nascimento</FormLabel>
+                          <FormLabel>CRM</FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <Input type="date" {...field} />
-                              <Calendar className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none" />
-                            </div>
+                            <Input 
+                              placeholder="000000/UF" 
+                              {...field} 
+                              onChange={(e) => {
+                                handleCRMChange(e);
+                                field.onChange(e);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -439,7 +346,7 @@ const CadastroMedico = () => {
                           <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
                           Processando...
                         </span>
-                      ) : "Enviar Cadastro"}
+                      ) : "Concluir Cadastro"}
                     </Button>
                   </form>
                 </Form>
@@ -481,4 +388,4 @@ const CadastroMedico = () => {
   );
 };
 
-export default CadastroMedico;
+export default CompleteRegistroMedico;
