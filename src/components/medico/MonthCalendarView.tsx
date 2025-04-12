@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
-import { Check, X, Calendar } from 'lucide-react';
+import { Check, X, Calendar, Save } from 'lucide-react';
 
 interface MonthCalendarViewProps {
   selectedDate: Date | undefined;
@@ -84,3 +84,4 @@ const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({
 };
 
 export default MonthCalendarView;
+

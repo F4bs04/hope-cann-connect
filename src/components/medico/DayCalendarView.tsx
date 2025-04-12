@@ -2,7 +2,7 @@
 import React from 'react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Clock, ChevronLeft, ChevronRight, MinusCircle, PlusCircle } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, MinusCircle, PlusCircle, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -140,10 +140,11 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
         <div className="pt-4 border-t">
           <Button 
             variant="outline" 
-            className="w-full"
+            className="w-full flex items-center justify-center"
             onClick={() => handleQuickSetAvailability(selectedViewDay, 'all')}
           >
-            Disponibilizar dia todo
+            <Save className="h-4 w-4 mr-2" />
+            Salvar informações
           </Button>
         </div>
       </div>
@@ -152,3 +153,4 @@ const DayCalendarView: React.FC<DayCalendarViewProps> = ({
 };
 
 export default DayCalendarView;
+
