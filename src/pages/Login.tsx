@@ -410,7 +410,7 @@ const Login = () => {
           <div className="text-center mt-6">
             <p className="text-sm text-gray-600">
               Não tem uma conta?{" "}
-              <a href="#" className="text-hopecann-teal hover:underline">
+              <a href="/cadastro" className="text-hopecann-teal hover:underline">
                 Cadastre-se
               </a>
             </p>

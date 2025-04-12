@@ -10,6 +10,7 @@ import Medicos from "./pages/Medicos";
 import Contato from "./pages/Contato";
 import Agendar from "./pages/Agendar";
 import Login from "./pages/Login";
+import Cadastro from "./pages/Cadastro";
 import AreaPaciente from "./pages/AreaPaciente";
 import AreaMedico from "./pages/AreaMedico";
 import PerfilMedico from "./pages/PerfilMedico";
@@ -36,6 +37,7 @@ function App() {
             <Route path="/contato" element={<Contato />} />
             <Route path="/agendar" element={<Agendar />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/area-paciente" element={<AreaPaciente />} />
             <Route path="/area-medico" element={<AreaMedico />} />
             <Route path="/cadastro-medico" element={<CadastroMedico />} />
