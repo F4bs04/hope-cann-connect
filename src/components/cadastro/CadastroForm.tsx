@@ -37,13 +37,39 @@ const CadastroForm = () => {
     setIsLoading(true);
 
     try {
+      // Format CPF to match database requirements (remove any non-digit characters)
+      const formattedCpf = values.cpf.replace(/\D/g, '');
+      
       // First try to create the usuario record
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.senha,
+        options: {
+          data: {
+            full_name: values.nome,
+            tipo_usuario: 'paciente',
+          }
+        }
+      });
+
+      if (authError) {
+        console.error("Authentication error:", authError);
+        throw new Error(authError.message || "Erro ao cadastrar usuário");
+      }
+
+      if (!authData?.user?.id) {
+        throw new Error("Não foi possível obter o ID do usuário");
+      }
+
+      console.log("User created successfully, ID:", authData.user.id);
+
+      // Now insert the user into the usuarios table
       const { data: userData, error: userError } = await supabase
         .from('usuarios')
         .insert([
           {
             email: values.email,
-            senha: values.senha,
+            senha: values.senha, // Note: This is redundant as auth will handle passwords
             tipo_usuario: 'paciente',
             status: true
           }
@@ -56,12 +82,6 @@ const CadastroForm = () => {
         throw new Error(userError.message || "Erro ao cadastrar usuário");
       }
 
-      if (!userData || !userData.id) {
-        throw new Error("Não foi possível obter o ID do usuário");
-      }
-
-      console.log("User created successfully, ID:", userData.id);
-
       // Then create a new patient record
       const { error: pacienteError } = await supabase
         .from('pacientes')
@@ -69,7 +89,7 @@ const CadastroForm = () => {
           {
             id_usuario: userData.id,
             nome: values.nome,
-            cpf: values.cpf,
+            cpf: formattedCpf,
             data_nascimento: values.data_nascimento,
             endereco: values.endereco,
             telefone: values.telefone,
@@ -146,6 +166,18 @@ const CadastroForm = () => {
                       placeholder="000.000.000-00"
                       className="pl-10"
                       {...field}
+                      onChange={(e) => {
+                        // Format CPF as user types
+                        let value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 11) {
+                          value = value
+                            .replace(/(\d{3})(\d)/, '$1.$2')
+                            .replace(/(\d{3})(\d)/, '$1.$2')
+                            .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+                            .replace(/(-\d{2})\d+?$/, '$1');
+                        }
+                        field.onChange(value);
+                      }}
                     />
                   </FormControl>
                 </div>
@@ -191,6 +223,17 @@ const CadastroForm = () => {
                       placeholder="(00) 00000-0000"
                       className="pl-10"
                       {...field}
+                      onChange={(e) => {
+                        // Format phone number as user types
+                        let value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 11) {
+                          value = value
+                            .replace(/(\d{2})(\d)/, '($1) $2')
+                            .replace(/(\d{5})(\d)/, '$1-$2')
+                            .replace(/(-\d{4})\d+?$/, '$1');
+                        }
+                        field.onChange(value);
+                      }}
                     />
                   </FormControl>
                 </div>

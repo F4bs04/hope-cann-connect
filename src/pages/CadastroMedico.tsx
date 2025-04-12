@@ -50,6 +50,10 @@ const formSchema = z.object({
   termoConciencia: z.boolean().refine((val) => val === true, {
     message: 'Você deve aceitar os termos',
   }),
+  especialidade: z.string().min(3, {
+    message: 'Especialidade é obrigatória',
+  }),
+  biografia: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -71,6 +75,8 @@ const CadastroMedico = () => {
       cpf: '',
       dataNascimento: '',
       termoConciencia: false,
+      especialidade: '',
+      biografia: '',
     },
   });
 
@@ -79,32 +85,108 @@ const CadastroMedico = () => {
     setIsLoading(true);
     
     try {
-      // Aqui seria feito o upload da foto e registro no banco de dados
-      let fotoUrl = null;
+      // Format CPF to match database requirements (remove any non-digit characters)
+      const formattedCpf = data.cpf.replace(/\D/g, '');
       
+      // First, create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: 'Temppass123!', // Temporary password that will be changed later
+        options: {
+          data: {
+            full_name: data.nome,
+            tipo_usuario: 'medico',
+          }
+        }
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (!authData?.user?.id) {
+        throw new Error("Falha ao criar usuário");
+      }
+
+      // Then create usuario record
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .insert([
+          {
+            email: data.email,
+            senha: 'Temppass123!', // Temporary password
+            tipo_usuario: 'medico',
+            status: false // Starts as inactive until verified
+          }
+        ])
+        .select('id')
+        .single();
+
+      if (userError) {
+        throw userError;
+      }
+
+      // Upload profile photo if provided
+      let fotoUrl = null;
       if (data.foto) {
-        // Upload da foto para o storage (simulado)
-        fotoUrl = URL.createObjectURL(data.foto);
+        const fileExt = data.foto.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `medicos/${fileName}`;
+        
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('profiles')
+          .upload(filePath, data.foto);
+          
+        if (uploadError) {
+          console.error("Error uploading photo:", uploadError);
+          throw new Error("Erro ao fazer upload da foto");
+        }
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('profiles')
+          .getPublicUrl(filePath);
+          
+        fotoUrl = publicUrl;
+      }
+      
+      // Create medico record
+      const { error: medicoError } = await supabase
+        .from('medicos')
+        .insert([
+          {
+            id_usuario: userData.id,
+            nome: data.nome,
+            crm: data.crm,
+            cpf: formattedCpf,
+            especialidade: data.especialidade,
+            biografia: data.biografia || null,
+            telefone: '', // Will be filled in later
+            foto_perfil: fotoUrl,
+            status_disponibilidade: false // Starts as inactive until verified and schedule is set
+          }
+        ]);
+
+      if (medicoError) {
+        throw medicoError;
       }
       
       toast({
         title: "Cadastro enviado com sucesso!",
-        description: "Aguarde a verificação das suas informações",
+        description: "Aguarde a verificação das suas informações e complete seu cadastro para começar a atender.",
       });
       
-      // Normalmente enviaríamos os dados para o backend aqui
+      // Redirect to complete registration page (where they'll set schedule and more)
+      navigate('/complete-registro-medico');
       
-      setTimeout(() => {
-        navigate('/login');
-        setIsLoading(false);
-      }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao enviar cadastro:", error);
       toast({
         variant: "destructive",
         title: "Erro no cadastro",
-        description: "Ocorreu um erro ao enviar seu cadastro. Por favor, tente novamente.",
+        description: error.message || "Ocorreu um erro ao enviar seu cadastro. Por favor, tente novamente.",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -363,6 +445,41 @@ const CadastroMedico = () => {
                               <Calendar className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none" />
                             </div>
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="especialidade"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Especialidade</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: Neurologia, Psiquiatria, etc." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="biografia"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Biografia Profissional</FormLabel>
+                          <FormControl>
+                            <textarea 
+                              className="w-full min-h-[100px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-hopecann-teal/40" 
+                              placeholder="Descreva sua experiência profissional e formação"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Esta informação será exibida em seu perfil público.
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

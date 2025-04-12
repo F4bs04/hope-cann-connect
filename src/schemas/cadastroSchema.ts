@@ -20,3 +20,25 @@ export const cadastroSchema = z.object({
 });
 
 export type CadastroFormValues = z.infer<typeof cadastroSchema>;
+
+// Schema for doctor registration
+export const cadastroMedicoSchema = z.object({
+  nome: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
+  email: z.string().email("Email inválido"),
+  crm: z.string().min(4, "CRM inválido").max(14, "CRM inválido"),
+  cpf: z.string().min(11, "CPF inválido").max(14, "CPF inválido"),
+  dataNascimento: z.string().min(1, "Data de nascimento obrigatória"),
+  certificado: z.instanceof(File, {
+    message: "Certificado obrigatório",
+  }).optional(),
+  foto: z.instanceof(File, {
+    message: "Foto de perfil",
+  }).optional(),
+  especialidade: z.string().min(3, "Especialidade é obrigatória"),
+  biografia: z.string().optional(),
+  termoConciencia: z.boolean().refine((val) => val === true, {
+    message: "Você deve aceitar os termos",
+  }),
+});
+
+export type CadastroMedicoFormValues = z.infer<typeof cadastroMedicoSchema>;

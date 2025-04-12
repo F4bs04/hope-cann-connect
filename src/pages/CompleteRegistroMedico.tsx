@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Info, Upload, Camera, User } from 'lucide-react';
+import { Info, Upload, Camera, User, Clock, Plus, X } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,9 +35,16 @@ const formSchema = z.object({
   crm: z.string().min(4, {
     message: 'CRM inválido',
   }).max(14),
+  telefone: z.string().min(10, {
+    message: 'Telefone inválido',
+  }).max(15),
+  especialidade: z.string().min(3, {
+    message: 'Especialidade é obrigatória',
+  }),
+  biografia: z.string().optional(),
   certificado: z.instanceof(File, {
     message: 'Certificado obrigatório',
-  }),
+  }).optional(),
   foto: z.instanceof(File, {
     message: 'Foto de perfil',
   }).optional(),
@@ -39,7 +53,23 @@ const formSchema = z.object({
   }),
 });
 
+interface DiaHorario {
+  dia: string;
+  horaInicio: string;
+  horaFim: string;
+}
+
 type FormValues = z.infer<typeof formSchema>;
+
+const diasSemana = [
+  { value: "segunda", label: "Segunda-feira" },
+  { value: "terca", label: "Terça-feira" },
+  { value: "quarta", label: "Quarta-feira" },
+  { value: "quinta", label: "Quinta-feira" },
+  { value: "sexta", label: "Sexta-feira" },
+  { value: "sabado", label: "Sábado" },
+  { value: "domingo", label: "Domingo" },
+];
 
 const CompleteRegistroMedico = () => {
   const { toast } = useToast();
@@ -48,7 +78,12 @@ const CompleteRegistroMedico = () => {
   const [certificadoNome, setCertificadoNome] = useState<string | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [userInfo, setUserInfo] = useState<{name?: string, email?: string, photoUrl?: string} | null>(null);
+  const [horarios, setHorarios] = useState<DiaHorario[]>([]);
+  const [diaAtual, setDiaAtual] = useState<string>("");
+  const [horaInicio, setHoraInicio] = useState<string>("");
+  const [horaFim, setHoraFim] = useState<string>("");
+  const [userInfo, setUserInfo] = useState<{name?: string, email?: string, photoUrl?: string, userId?: string} | null>(null);
+  const [medicoId, setMedicoId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -66,14 +101,51 @@ const CompleteRegistroMedico = () => {
       
       const user = session.user;
       if (user) {
+        // Get user info from auth
         setUserInfo({
           name: user.user_metadata?.full_name,
           email: user.email,
-          photoUrl: user.user_metadata?.avatar_url
+          photoUrl: user.user_metadata?.avatar_url,
+          userId: user.id
         });
         
         if (user.user_metadata?.avatar_url) {
           setFotoPreview(user.user_metadata.avatar_url);
+        }
+
+        // Get user ID from our usuarios table
+        const { data: userData, error: userError } = await supabase
+          .from('usuarios')
+          .select('id')
+          .eq('email', user.email)
+          .single();
+
+        if (userError) {
+          console.error("Error fetching user data:", userError);
+          return;
+        }
+
+        // Get medico data if exists
+        if (userData) {
+          const { data: medicoData, error: medicoError } = await supabase
+            .from('medicos')
+            .select('*')
+            .eq('id_usuario', userData.id)
+            .single();
+
+          if (!medicoError && medicoData) {
+            setMedicoId(medicoData.id.toString());
+            
+            // Pre-fill form with existing data
+            form.setValue('crm', medicoData.crm || '');
+            form.setValue('telefone', medicoData.telefone || '');
+            form.setValue('especialidade', medicoData.especialidade || '');
+            form.setValue('biografia', medicoData.biografia || '');
+            
+            if (medicoData.foto_perfil) {
+              setFotoPreview(medicoData.foto_perfil);
+            }
+          }
         }
       }
     };
@@ -85,34 +157,207 @@ const CompleteRegistroMedico = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       crm: '',
+      telefone: '',
+      especialidade: '',
+      biografia: '',
       termoConciencia: false,
     },
   });
+
+  const addHorario = () => {
+    if (!diaAtual || !horaInicio || !horaFim) {
+      toast({
+        variant: "destructive",
+        title: "Campos incompletos",
+        description: "Preencha todos os campos do horário",
+      });
+      return;
+    }
+
+    // Check if time is valid
+    if (horaInicio >= horaFim) {
+      toast({
+        variant: "destructive",
+        title: "Horário inválido",
+        description: "A hora de início deve ser antes da hora de fim",
+      });
+      return;
+    }
+
+    // Check if overlapping with existing hours for the same day
+    const overlapping = horarios.some(h => 
+      h.dia === diaAtual && 
+      ((horaInicio >= h.horaInicio && horaInicio < h.horaFim) || 
+       (horaFim > h.horaInicio && horaFim <= h.horaFim) ||
+       (horaInicio <= h.horaInicio && horaFim >= h.horaFim))
+    );
+
+    if (overlapping) {
+      toast({
+        variant: "destructive",
+        title: "Horário sobreposto",
+        description: "Este horário se sobrepõe a outro já adicionado no mesmo dia",
+      });
+      return;
+    }
+
+    setHorarios([...horarios, { dia: diaAtual, horaInicio, horaFim }]);
+    setDiaAtual("");
+    setHoraInicio("");
+    setHoraFim("");
+  };
+
+  const removeHorario = (index: number) => {
+    const newHorarios = [...horarios];
+    newHorarios.splice(index, 1);
+    setHorarios(newHorarios);
+  };
 
   const onSubmit = async (data: FormValues) => {
     console.log('Dados complementares:', data);
     setIsLoading(true);
     
+    if (horarios.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Horários não definidos",
+        description: "Você precisa adicionar pelo menos um horário de atendimento",
+      });
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      // Aqui seria feito o upload da foto e registro no banco de dados
+      if (!userInfo?.email) {
+        throw new Error("Informações de usuário não encontradas");
+      }
+      
+      // Get user ID from usuarios table
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('email', userInfo.email)
+        .single();
+      
+      if (userError) {
+        throw userError;
+      }
+      
+      // Upload profile photo if provided
+      let fotoUrl = fotoPreview;
+      if (data.foto) {
+        const fileExt = data.foto.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `medicos/${fileName}`;
+        
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('profiles')
+          .upload(filePath, data.foto);
+          
+        if (uploadError) {
+          console.error("Error uploading photo:", uploadError);
+          throw new Error("Erro ao fazer upload da foto");
+        }
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('profiles')
+          .getPublicUrl(filePath);
+          
+        fotoUrl = publicUrl;
+      }
+      
+      // Update or create medico record
+      let medicoIdToUse = medicoId;
+      
+      if (!medicoId) {
+        // Create new record if doesn't exist
+        const { data: newMedico, error: createError } = await supabase
+          .from('medicos')
+          .insert([
+            {
+              id_usuario: userData.id,
+              nome: userInfo.name || '',
+              crm: data.crm,
+              especialidade: data.especialidade,
+              biografia: data.biografia || null,
+              telefone: data.telefone,
+              foto_perfil: fotoUrl,
+              status_disponibilidade: true // Now active
+            }
+          ])
+          .select('id')
+          .single();
+          
+        if (createError) {
+          throw createError;
+        }
+        
+        medicoIdToUse = newMedico.id.toString();
+      } else {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('medicos')
+          .update({
+            crm: data.crm,
+            especialidade: data.especialidade,
+            biografia: data.biografia || null,
+            telefone: data.telefone,
+            foto_perfil: fotoUrl,
+            status_disponibilidade: true // Now active
+          })
+          .eq('id', medicoId);
+          
+        if (updateError) {
+          throw updateError;
+        }
+      }
+      
+      // Save schedule information
+      for (const horario of horarios) {
+        const { error: horarioError } = await supabase
+          .from('horarios_disponiveis')
+          .insert([{
+            id_medico: medicoIdToUse,
+            dia_semana: horario.dia,
+            hora_inicio: horario.horaInicio,
+            hora_fim: horario.horaFim
+          }]);
+          
+        if (horarioError) {
+          console.error("Error saving schedule:", horarioError);
+          throw horarioError;
+        }
+      }
+      
+      // Update usuario status to active
+      const { error: statusError } = await supabase
+        .from('usuarios')
+        .update({
+          status: true
+        })
+        .eq('id', userData.id);
+        
+      if (statusError) {
+        throw statusError;
+      }
+      
       toast({
         title: "Cadastro concluído com sucesso!",
-        description: "Suas informações foram enviadas para verificação.",
+        description: "Você já pode começar a atender pacientes na plataforma.",
       });
       
-      // Normalmente enviaríamos os dados para o backend aqui
+      // Redirect to doctor dashboard
+      navigate('/area-medico');
       
-      setTimeout(() => {
-        navigate('/login');
-        setIsLoading(false);
-      }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao enviar dados complementares:", error);
       toast({
         variant: "destructive",
         title: "Erro no cadastro",
-        description: "Ocorreu um erro ao enviar seus dados. Por favor, tente novamente.",
+        description: error.message || "Ocorreu um erro ao enviar seus dados. Por favor, tente novamente.",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -146,6 +391,19 @@ const CompleteRegistroMedico = () => {
         }
       }
     }
+  };
+
+  const formatTelefone = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{5})(\d)/, '$1-$2')
+      .replace(/(-\d{4})\d+?$/, '$1');
+  };
+
+  const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatTelefone(e.target.value);
+    form.setValue('telefone', formattedValue);
   };
 
   const formatCRM = (value: string) => {
@@ -247,26 +505,168 @@ const CompleteRegistroMedico = () => {
                       />
                     )}
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="crm"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>CRM</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="000000/UF" 
+                                {...field} 
+                                onChange={(e) => {
+                                  handleCRMChange(e);
+                                  field.onChange(e);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="telefone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Telefone de contato</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="(00) 00000-0000" 
+                                {...field} 
+                                onChange={(e) => {
+                                  handleTelefoneChange(e);
+                                  field.onChange(e);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={form.control}
-                      name="crm"
+                      name="especialidade"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>CRM</FormLabel>
+                          <FormLabel>Especialidade</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="000000/UF" 
+                              placeholder="Ex: Neurologia, Psiquiatria, etc." 
                               {...field} 
-                              onChange={(e) => {
-                                handleCRMChange(e);
-                                field.onChange(e);
-                              }}
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={form.control}
+                      name="biografia"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Biografia Profissional</FormLabel>
+                          <FormControl>
+                            <textarea 
+                              className="w-full min-h-[100px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-hopecann-teal/40" 
+                              placeholder="Descreva sua experiência profissional e formação"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Esta informação será exibida em seu perfil público.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="border rounded-md p-4">
+                      <h3 className="font-medium text-lg mb-4">Horários de atendimento</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Dia da semana</label>
+                          <Select value={diaAtual} onValueChange={setDiaAtual}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o dia" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {diasSemana.map((dia) => (
+                                <SelectItem key={dia.value} value={dia.value}>
+                                  {dia.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Hora de início</label>
+                          <Input 
+                            type="time" 
+                            value={horaInicio} 
+                            onChange={(e) => setHoraInicio(e.target.value)} 
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Hora de término</label>
+                          <Input 
+                            type="time" 
+                            value={horaFim} 
+                            onChange={(e) => setHoraFim(e.target.value)} 
+                          />
+                        </div>
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2"
+                        onClick={addHorario}
+                      >
+                        <Plus size={16} />
+                        Adicionar horário
+                      </Button>
+                      
+                      {horarios.length > 0 && (
+                        <div className="mt-4 border rounded-md p-2">
+                          <h4 className="font-medium mb-2">Horários adicionados:</h4>
+                          <ul className="space-y-2">
+                            {horarios.map((horario, index) => {
+                              const diaLabel = diasSemana.find(d => d.value === horario.dia)?.label;
+                              return (
+                                <li key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                                  <span>
+                                    {diaLabel} - {horario.horaInicio} até {horario.horaFim}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="text-red-500 hover:bg-red-50 p-1 rounded"
+                                    onClick={() => removeHorario(index)}
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {horarios.length === 0 && (
+                        <p className="text-sm text-gray-500 mt-2">
+                          Adicione pelo menos um horário de atendimento.
+                        </p>
+                      )}
+                    </div>
 
                     <FormField
                       control={form.control}
