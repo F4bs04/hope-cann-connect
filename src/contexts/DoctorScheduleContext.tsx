@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { format, addDays, startOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,6 +36,26 @@ type Mensagem = {
   lida: boolean;
 };
 
+type HistoricoPaciente = {
+  id?: number;
+  id_paciente: number;
+  condicoes_medicas: string;
+  alergias: string;
+  medicamentos_atuais: string;
+  historico_familiar: string;
+  ultima_atualizacao: string;
+};
+
+type AcompanhamentoPaciente = {
+  id?: number;
+  id_paciente: number;
+  data_registro: string;
+  sintomas: string;
+  efeitos_colaterais: string;
+  eficacia: string;
+  notas_adicionais: string;
+};
+
 type HorariosConfig = {
   segunda: string[];
   terca: string[];
@@ -56,7 +75,7 @@ const pacientesMock = [
   { id: 5, nome: 'Roberto Almeida', idade: 63, condicao: 'Fibromialgia', ultimaConsulta: '2025-04-05' }
 ];
 
-const consultasMock = [
+const consultasMock: Consulta[] = [
   { id: 1, paciente: 'João Silva', data: '2025-04-15', horario: '09:00', status: 'agendada' },
   { id: 2, paciente: 'Maria Oliveira', data: '2025-04-16', horario: '14:30', status: 'agendada' },
   { id: 3, paciente: 'Carlos Souza', data: '2025-04-12', horario: '10:15', status: 'realizada' },
@@ -76,9 +95,51 @@ const mensagensMock = [
   { id: 3, paciente: 'Roberto Almeida', mensagem: 'Posso aumentar a dosagem? Ainda estou sentindo dores.', data: '2025-04-13', lida: false }
 ];
 
+const historicosPacientesMock: HistoricoPaciente[] = [
+  { 
+    id: 1, 
+    id_paciente: 1, 
+    condicoes_medicas: 'Dor crônica lombar, hipertensão controlada', 
+    alergias: 'Penicilina, sulfas', 
+    medicamentos_atuais: 'Losartana 50mg 1x/dia', 
+    historico_familiar: 'Pai com diabetes, mãe com hipertensão',
+    ultima_atualizacao: '2025-03-15T14:30:00Z'
+  },
+  { 
+    id: 2, 
+    id_paciente: 2, 
+    condicoes_medicas: 'Transtorno de ansiedade generalizada, enxaqueca', 
+    alergias: 'Dipirona', 
+    medicamentos_atuais: 'Escitalopram 10mg 1x/dia', 
+    historico_familiar: 'Irmã com depressão',
+    ultima_atualizacao: '2025-03-28T10:15:00Z'
+  }
+];
+
+const acompanhamentosPacientesMock: AcompanhamentoPaciente[] = [
+  {
+    id: 1,
+    id_paciente: 1,
+    data_registro: '2025-03-15T14:30:00Z',
+    sintomas: 'Dor moderada na região lombar, dificuldade para dormir',
+    efeitos_colaterais: 'Sonolência leve pela manhã',
+    eficacia: 'Alívio parcial da dor após o uso do medicamento',
+    notas_adicionais: 'Paciente relata melhora na qualidade do sono'
+  },
+  {
+    id: 2,
+    id_paciente: 2,
+    data_registro: '2025-03-28T10:15:00Z',
+    sintomas: 'Episódios de ansiedade menos frequentes, melhor controle da respiração',
+    efeitos_colaterais: 'Boca seca ocasional',
+    eficacia: 'Boa resposta ao tratamento com CBD',
+    notas_adicionais: 'Considerar redução gradual da dose de ansiolítico'
+  }
+];
+
 const horariosDisponiveis = {
-  manha: ['08:00', '09:00', '10:00', '11:00'],
-  tarde: ['13:00', '14:00', '15:00', '16:00', '17:00']
+  manha: ['05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00'],
+  tarde: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00']
 };
 
 const todosHorariosDisponiveis = [...horariosDisponiveis.manha, ...horariosDisponiveis.tarde];
@@ -107,6 +168,8 @@ interface DoctorScheduleContextType {
   todosHorariosDisponiveis: string[];
   pacientes: Paciente[];
   receitas: Receita[];
+  historicoPaciente: HistoricoPaciente | null;
+  acompanhamentosPaciente: AcompanhamentoPaciente[];
   
   // Setters
   setCurrentDate: React.Dispatch<React.SetStateAction<Date>>;
@@ -144,6 +207,7 @@ interface DoctorScheduleContextType {
   handleToggleDayAvailability: (day: Date, isAvailable: boolean) => void;
   handleDateSelect: (date: Date | undefined) => void;
   handleAddSlot: (day: Date, time: string) => void;
+  handleSaveProntuario: (historico: HistoricoPaciente, acompanhamento: AcompanhamentoPaciente) => void;
 }
 
 const DoctorScheduleContext = createContext<DoctorScheduleContextType | undefined>(undefined);
@@ -167,6 +231,8 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
   const [selectedViewDay, setSelectedViewDay] = useState<Date>(new Date());
   const [quickSetMode, setQuickSetMode] = useState<'morning' | 'afternoon' | 'all' | 'custom'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [historicos, setHistoricos] = useState<HistoricoPaciente[]>(historicosPacientesMock);
+  const [acompanhamentos, setAcompanhamentos] = useState<AcompanhamentoPaciente[]>(acompanhamentosPacientesMock);
   const [horariosConfig, setHorariosConfig] = useState<HorariosConfig>({
     segunda: todosHorariosDisponiveis,
     terca: todosHorariosDisponiveis,
@@ -176,6 +242,14 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     sabado: todosHorariosDisponiveis,
     domingo: todosHorariosDisponiveis
   });
+
+  const historicoPaciente = selectedPaciente 
+    ? historicos.find(h => h.id_paciente === selectedPaciente.id) || null
+    : null;
+
+  const acompanhamentosPaciente = selectedPaciente
+    ? acompanhamentos.filter(a => a.id_paciente === selectedPaciente.id)
+    : [];
 
   const nextWeek = () => {
     setSelectedWeekStart(addWeeks(selectedWeekStart, 1));
@@ -368,7 +442,37 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     handleAdicionarHorario();
   };
 
-  // Initial setup
+  const handleSaveProntuario = (historico: HistoricoPaciente, acompanhamento: AcompanhamentoPaciente) => {
+    const existingHistoricoIndex = historicos.findIndex(h => h.id_paciente === historico.id_paciente);
+    
+    if (existingHistoricoIndex >= 0) {
+      const updatedHistoricos = [...historicos];
+      updatedHistoricos[existingHistoricoIndex] = {
+        ...updatedHistoricos[existingHistoricoIndex],
+        ...historico,
+        ultima_atualizacao: new Date().toISOString()
+      };
+      setHistoricos(updatedHistoricos);
+    } else {
+      setHistoricos([...historicos, {
+        ...historico,
+        id: historicos.length + 1,
+        ultima_atualizacao: new Date().toISOString()
+      }]);
+    }
+    
+    setAcompanhamentos([...acompanhamentos, {
+      ...acompanhamento,
+      id: acompanhamentos.length + 1,
+      data_registro: new Date().toISOString()
+    }]);
+    
+    toast({
+      title: "Prontuário atualizado",
+      description: "As informações do paciente foram salvas com sucesso",
+    });
+  };
+
   React.useEffect(() => {
     applyPatternToWeek('all', 'all');
     toast({
@@ -378,7 +482,6 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
   }, []);
 
   const value = {
-    // Estado
     currentDate,
     selectedWeekStart,
     selectedSlot,
@@ -401,8 +504,9 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     todosHorariosDisponiveis,
     pacientes: pacientesMock,
     receitas: receitasMock,
+    historicoPaciente,
+    acompanhamentosPaciente,
     
-    // Setters
     setCurrentDate,
     setSelectedWeekStart,
     setSelectedSlot,
@@ -422,7 +526,6 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     setSelectedDate,
     setHorariosConfig,
     
-    // Funções
     nextWeek,
     prevWeek,
     nextDay,
@@ -437,7 +540,8 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     handleRemoverHorario,
     handleToggleDayAvailability,
     handleDateSelect,
-    handleAddSlot
+    handleAddSlot,
+    handleSaveProntuario
   };
 
   return (
