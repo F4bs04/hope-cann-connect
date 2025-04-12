@@ -23,6 +23,7 @@ interface Doctor {
   photo: string;
   state: string;
   availability: string[];
+  address?: string;
 }
 
 const Medicos = () => {
@@ -57,16 +58,52 @@ const Medicos = () => {
         
         if (data && data.length > 0) {
           // Transform the data for our component
-          const formattedDoctors: Doctor[] = data.map(doctor => ({
-            id: doctor.id,
-            name: doctor.nome,
-            specialty: doctor.especialidade,
-            bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
-            photo: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
-            state: 'SP',
-            availability: ['today', 'this-week']
-          }));
+          const doctorsPromises = data.map(async (doctor) => {
+            // Check for the nearest available appointment
+            const { data: appointmentData, error: appointmentError } = await supabase
+              .from('consultas')
+              .select('data_hora')
+              .eq('id_medico', doctor.id)
+              .eq('status', 'agendada')
+              .gte('data_hora', new Date().toISOString())
+              .order('data_hora', { ascending: true })
+              .limit(1);
+              
+            if (appointmentError) {
+              console.error('Error fetching appointments:', appointmentError);
+            }
+            
+            let availability = ['next-week']; // Default to next week
+            
+            if (appointmentData && appointmentData.length > 0) {
+              const appointmentDate = new Date(appointmentData[0].data_hora);
+              const today = new Date();
+              const thisWeekEnd = new Date(today);
+              thisWeekEnd.setDate(today.getDate() + 7);
+              
+              // Check if appointment is today
+              if (appointmentDate.toDateString() === today.toDateString()) {
+                availability = ['today', 'this-week'];
+              } 
+              // Check if appointment is this week
+              else if (appointmentDate <= thisWeekEnd) {
+                availability = ['this-week'];
+              }
+            }
+            
+            return {
+              id: doctor.id,
+              name: doctor.nome,
+              specialty: doctor.especialidade,
+              bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
+              photo: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+              state: 'SP', // Default state for now
+              availability,
+              address: 'Av. Paulista, 1000 - São Paulo, SP' // Default address for now
+            };
+          });
           
+          const formattedDoctors = await Promise.all(doctorsPromises);
           setDoctors(formattedDoctors);
           setFilteredDoctors(formattedDoctors);
           

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -14,6 +13,7 @@ import { Star, Calendar, MapPin, Phone, Mail, Clock, FileText, Flag, Send, User 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 // Tipos
 interface Mensagem {
@@ -66,70 +66,154 @@ const PerfilMedico = () => {
   useEffect(() => {
     if (!id) return;
     
-    // Simulação de API (em um app real, seria uma chamada à API)
-    setTimeout(() => {
-      // Dados fictícios do médico
-      const medicoData: Medico = {
-        id: Number(id),
-        nome: id === "2" ? "Dra. Ana Santos" : "Dr. Carlos Mendes",
-        especialidade: id === "2" ? "Psiquiatra" : "Neurologista",
-        foto: id === "2" 
-          ? "/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png" 
-          : "/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png",
-        bio: id === "2" 
-          ? "Especializada em tratamentos para ansiedade e depressão com abordagem integrativa. Formada pela UFRJ com residência em Psiquiatria pelo Instituto de Psiquiatria da USP." 
-          : "Especialista em epilepsia e doenças neurodegenerativas, com foco em tratamentos inovadores. Formado pela UNICAMP com doutorado em Neurologia Clínica.",
-        credenciais: id === "2" 
-          ? [
-              "Membro da Associação Brasileira de Psiquiatria",
-              "Mestrado em Neurociências",
-              "Especialização em Cannabis Medicinal para Transtornos Mentais"
-            ] 
-          : [
-              "Membro da Academia Brasileira de Neurologia",
-              "Pesquisador clínico em canabinoides para doenças neurológicas",
-              "Coordenador do Centro de Tratamento Avançado em Epilepsia"
-            ],
-        citacao: id === "2" 
-          ? "Minha abordagem combina a psiquiatria tradicional com os avanços da medicina canábica, buscando sempre o melhor resultado para cada paciente." 
-          : "Vejo diariamente como o tratamento canábico pode transformar a vida de pacientes com condições neurológicas complexas.",
-        estado: id === "2" ? "RJ" : "SP",
-        disponibilidade: id === "2" ? ["this-week", "next-week"] : ["next-week"],
-        telefone: "+55 (11) 99999-9999",
-        email: id === "2" ? "dra.ana.santos@ejemplo.com" : "dr.carlos.mendes@ejemplo.com",
-        avaliacao: id === "2" ? 4.9 : 4.7,
-        endereco: id === "2" ? "Av. Rio Branco, 156 - Centro, Rio de Janeiro - RJ" : "Av. Paulista, 1000 - Bela Vista, São Paulo - SP",
-        horarios: ["Segunda a Sexta: 08:00 - 18:00", "Sábados: 08:00 - 12:00"]
-      };
-      
-      setMedico(medicoData);
-      setLoading(false);
-      
-      // Carregar histórico de mensagens (em um app real, viria do backend)
-      const historicoDeMensagens: Mensagem[] = [
-        {
-          id: 1,
-          texto: `Olá! Como posso ajudar você hoje?`,
-          data: new Date(2025, 3, 5, 14, 30),
-          remetente: 'medico'
-        },
-        {
-          id: 2,
-          texto: "Boa tarde! Gostaria de tirar algumas dúvidas sobre o medicamento que me receitou na última consulta.",
-          data: new Date(2025, 3, 5, 14, 32),
-          remetente: 'paciente'
-        },
-        {
-          id: 3,
-          texto: "Claro, estou à disposição. Quais são suas dúvidas?",
-          data: new Date(2025, 3, 5, 14, 35),
-          remetente: 'medico'
+    const fetchMedico = async () => {
+      try {
+        setLoading(true);
+        
+        // Buscar dados do médico no Supabase
+        const { data, error } = await supabase
+          .from('medicos')
+          .select('*')
+          .eq('id', id)
+          .eq('status_disponibilidade', true)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching doctor:', error);
+          throw error;
         }
-      ];
-      
-      setMensagens(historicoDeMensagens);
-    }, 1000);
-  }, [id]);
+        
+        if (data) {
+          // Check for the nearest available appointment
+          const { data: appointmentData, error: appointmentError } = await supabase
+            .from('consultas')
+            .select('data_hora')
+            .eq('id_medico', data.id)
+            .eq('status', 'agendada')
+            .gte('data_hora', new Date().toISOString())
+            .order('data_hora', { ascending: true })
+            .limit(1);
+          
+          if (appointmentError) {
+            console.error('Error fetching appointments:', appointmentError);
+          }
+          
+          let disponibilidade = ['next-week']; // Default to next week
+          
+          if (appointmentData && appointmentData.length > 0) {
+            const appointmentDate = new Date(appointmentData[0].data_hora);
+            const today = new Date();
+            const thisWeekEnd = new Date(today);
+            thisWeekEnd.setDate(today.getDate() + 7);
+            
+            // Check if appointment is today
+            if (appointmentDate.toDateString() === today.toDateString()) {
+              disponibilidade = ['today', 'this-week'];
+            } 
+            // Check if appointment is this week
+            else if (appointmentDate <= thisWeekEnd) {
+              disponibilidade = ['this-week'];
+            }
+          }
+          
+          // Transform data para o formato usado pelo componente
+          const medicoData: Medico = {
+            id: data.id,
+            nome: data.nome,
+            especialidade: data.especialidade,
+            foto: data.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+            bio: data.biografia || 'Especialista em tratamentos canábicos.',
+            credenciais: [
+              "Membro da Sociedade Brasileira de " + data.especialidade,
+              "Especialização em Cannabis Medicinal",
+              "Experiência em tratamentos inovadores"
+            ],
+            citacao: "Acredito no poder da medicina canábica como uma alternativa eficaz para pacientes que não respondem aos tratamentos convencionais.",
+            estado: "SP",
+            disponibilidade,
+            telefone: data.telefone || "+55 (11) 99999-9999",
+            email: "dr." + data.nome.toLowerCase().replace(' ', '.') + "@hopecann.com.br",
+            avaliacao: 4.8,
+            endereco: "Av. Paulista, 1000 - Bela Vista, São Paulo - SP",
+            horarios: ["Segunda a Sexta: 08:00 - 18:00", "Sábados: 08:00 - 12:00"]
+          };
+          
+          setMedico(medicoData);
+        } else {
+          // Dados fictícios do médico caso não encontre no banco
+          const medicoData: Medico = {
+            id: Number(id),
+            nome: id === "2" ? "Dra. Ana Santos" : "Dr. Carlos Mendes",
+            especialidade: id === "2" ? "Psiquiatra" : "Neurologista",
+            foto: id === "2" 
+              ? "/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png" 
+              : "/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png",
+            bio: id === "2" 
+              ? "Especializada em tratamentos para ansiedade e depressão com abordagem integrativa. Formada pela UFRJ com residência em Psiquiatria pelo Instituto de Psiquiatria da USP." 
+              : "Especialista em epilepsia e doenças neurodegenerativas, com foco em tratamentos inovadores. Formado pela UNICAMP com doutorado em Neurologia Clínica.",
+            credenciais: id === "2" 
+              ? [
+                  "Membro da Associação Brasileira de Psiquiatria",
+                  "Mestrado em Neurociências",
+                  "Especialização em Cannabis Medicinal para Transtornos Mentais"
+                ] 
+              : [
+                  "Membro da Academia Brasileira de Neurologia",
+                  "Pesquisador clínico em canabinoides para doenças neurológicas",
+                  "Coordenador do Centro de Tratamento Avançado em Epilepsia"
+                ],
+            citacao: id === "2" 
+              ? "Minha abordagem combina a psiquiatria tradicional com os avanços da medicina canábica, buscando sempre o melhor resultado para cada paciente." 
+              : "Vejo diariamente como o tratamento canábico pode transformar a vida de pacientes com condições neurológicas complexas.",
+            estado: id === "2" ? "RJ" : "SP",
+            disponibilidade: id === "2" ? ["this-week", "next-week"] : ["next-week"],
+            telefone: "+55 (11) 99999-9999",
+            email: id === "2" ? "dra.ana.santos@hopecann.com.br" : "dr.carlos.mendes@hopecann.com.br",
+            avaliacao: id === "2" ? 4.9 : 4.7,
+            endereco: id === "2" ? "Av. Rio Branco, 156 - Centro, Rio de Janeiro - RJ" : "Av. Paulista, 1000 - Bela Vista, São Paulo - SP",
+            horarios: ["Segunda a Sexta: 08:00 - 18:00", "Sábados: 08:00 - 12:00"]
+          };
+          
+          setMedico(medicoData);
+        }
+        
+        // Carregar histórico de mensagens (em um app real, viria do backend)
+        const historicoDeMensagens: Mensagem[] = [
+          {
+            id: 1,
+            texto: `Olá! Como posso ajudar você hoje?`,
+            data: new Date(2025, 3, 5, 14, 30),
+            remetente: 'medico'
+          },
+          {
+            id: 2,
+            texto: "Boa tarde! Gostaria de tirar algumas dúvidas sobre o medicamento que me receitou na última consulta.",
+            data: new Date(2025, 3, 5, 14, 32),
+            remetente: 'paciente'
+          },
+          {
+            id: 3,
+            texto: "Claro, estou à disposição. Quais são suas dúvidas?",
+            data: new Date(2025, 3, 5, 14, 35),
+            remetente: 'medico'
+          }
+        ];
+        
+        setMensagens(historicoDeMensagens);
+      } catch (error) {
+        console.error('Error:', error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar as informações do médico. Por favor, tente novamente mais tarde.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMedico();
+  }, [id, toast]);
 
   const handleEnviarMensagem = () => {
     if (!novaMensagem.trim()) return;

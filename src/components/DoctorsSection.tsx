@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Clock } from 'lucide-react';
+import { getAvailabilityText, getAvailabilityColor } from "@/utils/doctorUtils";
 
 // Doctor type definition
 interface Doctor {
@@ -17,26 +18,6 @@ interface Doctor {
 }
 
 const DoctorCard = ({ id, name, specialty, bio, image, availability }: Doctor) => {
-  const getAvailabilityText = (availabilityArray: string[]) => {
-    if (availabilityArray.includes('today')) {
-      return 'Disponível hoje';
-    } else if (availabilityArray.includes('this-week')) {
-      return 'Disponível esta semana';
-    } else {
-      return 'Disponível próxima semana';
-    }
-  };
-  
-  const getAvailabilityColor = (availabilityArray: string[]) => {
-    if (availabilityArray.includes('today')) {
-      return 'text-green-600 bg-green-50';
-    } else if (availabilityArray.includes('this-week')) {
-      return 'text-blue-600 bg-blue-50';
-    } else {
-      return 'text-orange-600 bg-orange-50';
-    }
-  };
-
   return (
     <Card className="overflow-hidden h-full flex flex-col">
       <div className="h-52 relative overflow-hidden">
@@ -96,7 +77,7 @@ const DoctorsSection = () => {
           // Process doctor data
           const doctorsWithAvailability = await Promise.all(data.map(async (doctor) => {
             // Check for the nearest available appointment
-            const { data: appointmentData } = await supabase
+            const { data: appointmentData, error: appointmentError } = await supabase
               .from('consultas')
               .select('data_hora')
               .eq('id_medico', doctor.id)
@@ -105,20 +86,24 @@ const DoctorsSection = () => {
               .order('data_hora', { ascending: true })
               .limit(1);
             
+            if (appointmentError) {
+              console.error('Error fetching appointments:', appointmentError);
+            }
+            
             let availability = ['next-week']; // Default to next week
             
             if (appointmentData && appointmentData.length > 0) {
               const appointmentDate = new Date(appointmentData[0].data_hora);
               const today = new Date();
-              const tomorrow = new Date(today);
-              tomorrow.setDate(tomorrow.getDate() + 1);
+              const thisWeekEnd = new Date(today);
+              thisWeekEnd.setDate(today.getDate() + 7);
               
               // Check if appointment is today
               if (appointmentDate.toDateString() === today.toDateString()) {
                 availability = ['today', 'this-week'];
               } 
               // Check if appointment is this week
-              else if (appointmentDate <= new Date(today.setDate(today.getDate() + 7))) {
+              else if (appointmentDate <= thisWeekEnd) {
                 availability = ['this-week'];
               }
             }
