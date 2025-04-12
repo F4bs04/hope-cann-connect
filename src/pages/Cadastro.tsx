@@ -60,7 +60,7 @@ const Cadastro = () => {
     setIsLoading(true);
 
     try {
-      // First create a new user in usuarios table
+      // First try to create the usuario record
       const { data: userData, error: userError } = await supabase
         .from('usuarios')
         .insert([
@@ -71,14 +71,21 @@ const Cadastro = () => {
             status: true
           }
         ])
-        .select()
+        .select('id')
         .single();
 
       if (userError) {
+        console.error("User creation error:", userError);
         throw new Error(userError.message || "Erro ao cadastrar usuário");
       }
 
-      // Then create a new patient record in pacientes table
+      if (!userData || !userData.id) {
+        throw new Error("Não foi possível obter o ID do usuário");
+      }
+
+      console.log("User created successfully, ID:", userData.id);
+
+      // Then create a new patient record
       const { error: pacienteError } = await supabase
         .from('pacientes')
         .insert([
@@ -94,6 +101,8 @@ const Cadastro = () => {
         ]);
 
       if (pacienteError) {
+        console.error("Patient creation error:", pacienteError);
+        
         // If patient creation fails, delete the user we just created
         await supabase
           .from('usuarios')

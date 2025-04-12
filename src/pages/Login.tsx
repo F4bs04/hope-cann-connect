@@ -75,10 +75,17 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      console.log("Attempting login with:", values.email);
+      
       // Step 1: Authenticate with Supabase
-      const { data, error } = await supabase.from('usuarios').select('*').eq('email', values.email).single();
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('email', values.email)
+        .single();
 
       if (error) {
+        console.error("Login query error:", error);
         throw new Error("Credenciais inválidas. Verifique seu email e senha.");
       }
 
@@ -86,16 +93,23 @@ const Login = () => {
         throw new Error("Usuário não encontrado");
       }
 
+      console.log("User found:", data);
+
       // Verify password (in a real app, use proper password hashing)
       if (data.senha !== values.password) {
         throw new Error("Senha incorreta");
       }
 
       // Update last access time
-      await supabase
+      const { error: updateError } = await supabase
         .from('usuarios')
         .update({ ultimo_acesso: new Date().toISOString() })
         .eq('id', data.id);
+        
+      if (updateError) {
+        console.error("Failed to update last access time:", updateError);
+        // Don't throw here, continue with login
+      }
 
       // Store user info in localStorage
       localStorage.setItem('isAuthenticated', 'true');
