@@ -1,19 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Clock } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { getAvailabilityText, getAvailabilityColor } from "@/utils/doctorUtils";
-
-// Doctor type definition
-interface Doctor {
-  id: number;
-  name: string;
-  specialty: string;
-  bio: string;
-  image: string;
-  availability: string[];
-}
+import { supabase } from "@/integrations/supabase/client";
+import SearchBar from './doctor/SearchBar';
+import SpecialtyFilter from './doctor/SpecialtyFilter';
+import DoctorList from './doctor/DoctorList';
+import { Doctor } from './doctor/DoctorCard';
 
 interface DoctorSearchProps {
   onSelectDoctor: (id: number) => void;
@@ -147,111 +139,29 @@ const DoctorSearch = ({ onSelectDoctor }: DoctorSearchProps) => {
     setFilteredDoctors(filtered);
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSelectedSpecialty('');
+    filterDoctors('', '');
+  };
+
   return (
     <div className="mb-8">
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-grow">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Buscar médico por nome ou especialidade..."
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-hopecann-teal/50"
-            value={searchTerm}
-            onChange={handleSearch}
-          />
-        </div>
-        
-        <div className="flex-shrink-0 flex flex-wrap gap-2">
-          <button
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedSpecialty === '' 
-                ? 'bg-hopecann-teal text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            onClick={() => handleSpecialtyFilter('')}
-          >
-            Todos
-          </button>
-          
-          {specialties.map(specialty => (
-            <button
-              key={specialty}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                selectedSpecialty === specialty 
-                  ? 'bg-hopecann-teal text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              onClick={() => handleSpecialtyFilter(specialty)}
-            >
-              {specialty}
-            </button>
-          ))}
-        </div>
+        <SearchBar searchTerm={searchTerm} onSearch={handleSearch} />
+        <SpecialtyFilter 
+          specialties={specialties} 
+          selectedSpecialty={selectedSpecialty} 
+          onSpecialtySelect={handleSpecialtyFilter} 
+        />
       </div>
       
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-hopecann-teal"></div>
-        </div>
-      ) : (
-        <>
-          {filteredDoctors.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredDoctors.map(doctor => (
-                <div
-                  key={doctor.id}
-                  className="p-4 border rounded-lg cursor-pointer transition-colors border-gray-200 hover:border-hopecann-teal/50"
-                  onClick={() => onSelectDoctor(doctor.id)}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
-                      <img 
-                        src={doctor.image} 
-                        alt={doctor.name} 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = '/placeholder.svg';
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium">{doctor.name}</h3>
-                          <p className="text-sm text-hopecann-teal mb-1">{doctor.specialty}</p>
-                        </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getAvailabilityColor(doctor.availability)}`}>
-                          <Clock size={12} />
-                          {getAvailabilityText(doctor.availability)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 line-clamp-2">{doctor.bio}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
-              <Search className="mx-auto mb-4 text-gray-400" size={48} />
-              <h3 className="text-xl font-medium mb-2">Nenhum médico encontrado</h3>
-              <p className="text-gray-600 mb-4">
-                Não encontramos médicos com os critérios de busca. Tente ajustar seus critérios ou volte mais tarde.
-              </p>
-              <button 
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedSpecialty('');
-                  filterDoctors('', '');
-                }}
-                className="text-hopecann-teal hover:text-hopecann-teal/80 font-medium"
-              >
-                Limpar todos os filtros
-              </button>
-            </div>
-          )}
-        </>
-      )}
+      <DoctorList 
+        doctors={filteredDoctors} 
+        isLoading={isLoading} 
+        onSelectDoctor={onSelectDoctor}
+        onClearFilters={handleClearFilters}
+      />
     </div>
   );
 };
