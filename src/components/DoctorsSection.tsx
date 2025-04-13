@@ -53,12 +53,43 @@ const DoctorCard = ({
 const DoctorsSection = () => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [dbStatus, setDbStatus] = useState<{success: boolean, message: string}>({
+    success: true,
+    message: ''
+  });
   const { toast } = useToast();
   
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setIsLoading(true);
+        console.log("Fetching doctors from Supabase...");
+        
+        // Verificando todos os médicos para diagnóstico
+        const { data: allDoctors, error: allDoctorsError } = await supabase
+          .from('medicos')
+          .select('*');
+        
+        if (allDoctorsError) {
+          console.error('Error fetching all doctors:', allDoctorsError);
+          setDbStatus({
+            success: false,
+            message: `Erro ao consultar todos os médicos: ${allDoctorsError.message}`
+          });
+        } else {
+          console.log(`Total de médicos no banco: ${allDoctors?.length || 0}`);
+          if (allDoctors && allDoctors.length > 0) {
+            console.log("Médicos encontrados (todos):", allDoctors);
+          } else {
+            console.log("Nenhum médico encontrado na tabela");
+            setDbStatus({
+              success: false,
+              message: 'Nenhum médico encontrado na tabela'
+            });
+          }
+        }
+        
+        // Buscando médicos disponíveis (original)
         const { data, error } = await supabase
           .from('medicos')
           .select('*')
@@ -66,10 +97,18 @@ const DoctorsSection = () => {
           .limit(3);
           
         if (error) {
+          console.error('Error fetching available doctors:', error);
+          setDbStatus({
+            success: false,
+            message: `Erro ao consultar médicos disponíveis: ${error.message}`
+          });
           throw error;
         }
         
+        console.log(`Médicos disponíveis: ${data?.length || 0}`);
+        
         if (data && data.length > 0) {
+          console.log("Médicos disponíveis encontrados:", data);
           // Process doctor data
           const doctorsWithAvailability = await Promise.all(data.map(async doctor => {
             // Check for the nearest available appointment
@@ -115,7 +154,16 @@ const DoctorsSection = () => {
           }));
           
           setDoctors(doctorsWithAvailability);
+          setDbStatus({
+            success: true,
+            message: `${doctorsWithAvailability.length} médicos disponíveis encontrados`
+          });
         } else {
+          setDbStatus({
+            success: false,
+            message: 'Nenhum médico disponível encontrado (status_disponibilidade = true)'
+          });
+          
           // Use fallback data if no doctors are found
           setDoctors([{
             id: 1,
@@ -187,6 +235,13 @@ const DoctorsSection = () => {
           <p className="text-lg text-gray-700 max-w-3xl mx-auto">
             Conheça os profissionais especializados que transformam vidas através do tratamento canábico personalizado
           </p>
+          
+          {/* Status do banco de dados - apenas em desenvolvimento */}
+          {!dbStatus.success && (
+            <div className="mt-4 p-3 bg-orange-100 text-orange-800 rounded-md inline-block text-sm">
+              <p>Informação para desenvolvedor: {dbStatus.message}</p>
+            </div>
+          )}
         </div>
         
         {isLoading ? (
