@@ -75,3 +75,27 @@ export const createFallbackDoctors = (): Doctor[] => {
     availability: ['next-week']
   }];
 };
+
+/**
+ * Fetch doctor by ID with error handling
+ */
+export const fetchDoctorById = async (id: string): Promise<any> => {
+  try {
+    // Buscar dados do médico no Supabase
+    const { data, error } = await supabase
+      .from('medicos')
+      .select('*')
+      .eq('id', parseInt(id))
+      .maybeSingle(); // Use maybeSingle instead of single to handle case when no doctor is found
+      
+    if (error) {
+      console.error('Error fetching doctor:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in fetchDoctorById:', error);
+    return null;
+  }
+};

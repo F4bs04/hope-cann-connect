@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Calendar, MapPin, Phone, Mail, Clock, FileText, Flag, Send, User } from 'lucide-react';
+import { Star, Calendar, MapPin, Phone, Mail, Clock, Flag, Send } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateAvailability } from "@/utils/doctorUtils";
+import { fetchDoctorById } from "@/utils/doctorDataUtils";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
-// Tipos
 interface Mensagem {
   id: number;
   texto: string;
@@ -50,42 +49,34 @@ const PerfilMedico = () => {
   const [activeTab, setActiveTab] = useState<string>('sobre');
   const [medico, setMedico] = useState<Medico | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [novaMensagem, setNovaMensagem] = useState('');
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDescription, setReportDescription] = useState('');
 
-  // Verificar se há uma aba ativa passada como state
   useEffect(() => {
     if (location.state && location.state.activeTab) {
       setActiveTab(location.state.activeTab);
     }
   }, [location]);
 
-  // Carregar dados do médico
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setError("ID do médico não fornecido");
+      setLoading(false);
+      return;
+    }
     
     const fetchMedico = async () => {
       try {
         setLoading(true);
+        setError(null);
         
-        // Buscar dados do médico no Supabase
-        const { data, error } = await supabase
-          .from('medicos')
-          .select('*')
-          .eq('id', parseInt(id)) // Convert string id to number
-          .eq('status_disponibilidade', true)
-          .single();
-          
-        if (error) {
-          console.error('Error fetching doctor:', error);
-          throw error;
-        }
+        const data = await fetchDoctorById(id);
         
         if (data) {
-          // Check for the nearest available appointment
           const { data: appointmentData, error: appointmentError } = await supabase
             .from('consultas')
             .select('data_hora')
@@ -99,16 +90,13 @@ const PerfilMedico = () => {
             console.error('Error fetching appointments:', appointmentError);
           }
           
-          // Get the next appointment date
           let appointmentDate = null;
           if (appointmentData && appointmentData.length > 0) {
             appointmentDate = new Date(appointmentData[0].data_hora);
           }
           
-          // Calculate availability using utility function
           const disponibilidade = calculateAvailability(appointmentDate);
           
-          // Transform data para o formato usado pelo componente
           const medicoData: Medico = {
             id: data.id,
             nome: data.nome,
@@ -132,69 +120,77 @@ const PerfilMedico = () => {
           
           setMedico(medicoData);
         } else {
-          // Dados fictícios do médico caso não encontre no banco
           const medicoId = parseInt(id);
-          const medicoData: Medico = {
-            id: medicoId,
-            nome: id === "2" ? "Dra. Ana Santos" : "Dr. Carlos Mendes",
-            especialidade: id === "2" ? "Psiquiatra" : "Neurologista",
-            foto: id === "2" 
-              ? "/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png" 
-              : "/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png",
-            bio: id === "2" 
-              ? "Especializada em tratamentos para ansiedade e depressão com abordagem integrativa. Formada pela UFRJ com residência em Psiquiatria pelo Instituto de Psiquiatria da USP." 
-              : "Especialista em epilepsia e doenças neurodegenerativas, com foco em tratamentos inovadores. Formado pela UNICAMP com doutorado em Neurologia Clínica.",
-            credenciais: id === "2" 
-              ? [
-                  "Membro da Associação Brasileira de Psiquiatria",
-                  "Mestrado em Neurociências",
-                  "Especialização em Cannabis Medicinal para Transtornos Mentais"
-                ] 
-              : [
-                  "Membro da Academia Brasileira de Neurologia",
-                  "Pesquisador clínico em canabinoides para doenças neurológicas",
-                  "Coordenador do Centro de Tratamento Avançado em Epilepsia"
-                ],
-            citacao: id === "2" 
-              ? "Minha abordagem combina a psiquiatria tradicional com os avanços da medicina canábica, buscando sempre o melhor resultado para cada paciente." 
-              : "Vejo diariamente como o tratamento canábico pode transformar a vida de pacientes com condições neurológicas complexas.",
-            estado: id === "2" ? "RJ" : "SP",
-            disponibilidade: id === "2" ? ["this-week", "next-week"] : ["next-week"],
-            telefone: "+55 (11) 99999-9999",
-            email: id === "2" ? "dra.ana.santos@hopecann.com.br" : "dr.carlos.mendes@hopecann.com.br",
-            avaliacao: id === "2" ? 4.9 : 4.7,
-            endereco: id === "2" ? "Av. Rio Branco, 156 - Centro, Rio de Janeiro - RJ" : "Av. Paulista, 1000 - Bela Vista, São Paulo - SP",
-            horarios: ["Segunda a Sexta: 08:00 - 18:00", "Sábados: 08:00 - 12:00"]
-          };
           
-          setMedico(medicoData);
+          if (medicoId && (medicoId === 1 || medicoId === 2 || medicoId === 3)) {
+            const medicoData: Medico = {
+              id: medicoId,
+              nome: medicoId === 1 ? "Dr. Ricardo Silva" : medicoId === 2 ? "Dra. Ana Santos" : "Dr. Carlos Mendes",
+              especialidade: medicoId === 2 ? "Psiquiatra" : "Neurologista",
+              foto: medicoId === 1 
+                ? "/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png"
+                : medicoId === 2 
+                  ? "/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png" 
+                  : "/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png",
+              bio: medicoId === 2 
+                ? "Especializada em tratamentos para ansiedade e depressão com abordagem integrativa. Formada pela UFRJ com residência em Psiquiatria pelo Instituto de Psiquiatria da USP." 
+                : "Especialista em epilepsia e doenças neurodegenerativas, com foco em tratamentos inovadores. Formado pela UNICAMP com doutorado em Neurologia Clínica.",
+              credenciais: medicoId === 2 
+                ? [
+                    "Membro da Associação Brasileira de Psiquiatria",
+                    "Mestrado em Neurociências",
+                    "Especialização em Cannabis Medicinal para Transtornos Mentais"
+                  ] 
+                : [
+                    "Membro da Academia Brasileira de Neurologia",
+                    "Pesquisador clínico em canabinoides para doenças neurológicas",
+                    "Coordenador do Centro de Tratamento Avançado em Epilepsia"
+                  ],
+              citacao: medicoId === 2 
+                ? "Minha abordagem combina a psiquiatria tradicional com os avanços da medicina canábica, buscando sempre o melhor resultado para cada paciente." 
+                : "Vejo diariamente como o tratamento canábico pode transformar a vida de pacientes com condições neurológicas complexas.",
+              estado: medicoId === 2 ? "RJ" : "SP",
+              disponibilidade: medicoId === 2 ? ["this-week", "next-week"] : ["next-week"],
+              telefone: "+55 (11) 99999-9999",
+              email: medicoId === 2 ? "dra.ana.santos@hopecann.com.br" : "dr.carlos.mendes@hopecann.com.br",
+              avaliacao: medicoId === 2 ? 4.9 : 4.7,
+              endereco: medicoId === 2 ? "Av. Rio Branco, 156 - Centro, Rio de Janeiro - RJ" : "Av. Paulista, 1000 - Bela Vista, São Paulo - SP",
+              horarios: ["Segunda a Sexta: 08:00 - 18:00", "Sábados: 08:00 - 12:00"]
+            };
+            
+            setMedico(medicoData);
+          } else {
+            setError("Médico não encontrado");
+          }
         }
         
-        // Carregar histórico de mensagens (em um app real, viria do backend)
-        const historicoDeMensagens: Mensagem[] = [
-          {
-            id: 1,
-            texto: `Olá! Como posso ajudar você hoje?`,
-            data: new Date(2025, 3, 5, 14, 30),
-            remetente: 'medico'
-          },
-          {
-            id: 2,
-            texto: "Boa tarde! Gostaria de tirar algumas dúvidas sobre o medicamento que me receitou na última consulta.",
-            data: new Date(2025, 3, 5, 14, 32),
-            remetente: 'paciente'
-          },
-          {
-            id: 3,
-            texto: "Claro, estou à disposição. Quais são suas dúvidas?",
-            data: new Date(2025, 3, 5, 14, 35),
-            remetente: 'medico'
-          }
-        ];
-        
-        setMensagens(historicoDeMensagens);
+        if (!error) {
+          const historicoDeMensagens: Mensagem[] = [
+            {
+              id: 1,
+              texto: `Olá! Como posso ajudar você hoje?`,
+              data: new Date(2025, 3, 5, 14, 30),
+              remetente: 'medico'
+            },
+            {
+              id: 2,
+              texto: "Boa tarde! Gostaria de tirar algumas dúvidas sobre o medicamento que me receitou na última consulta.",
+              data: new Date(2025, 3, 5, 14, 32),
+              remetente: 'paciente'
+            },
+            {
+              id: 3,
+              texto: "Claro, estou à disposição. Quais são suas dúvidas?",
+              data: new Date(2025, 3, 5, 14, 35),
+              remetente: 'medico'
+            }
+          ];
+          
+          setMensagens(historicoDeMensagens);
+        }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error in fetchMedico:', error);
+        setError("Erro ao carregar dados do médico");
         toast({
           title: "Erro ao carregar dados",
           description: "Não foi possível carregar as informações do médico. Por favor, tente novamente mais tarde.",
@@ -208,10 +204,9 @@ const PerfilMedico = () => {
     fetchMedico();
   }, [id, toast]);
 
-  const handleEnviarMensagem = () => {
+  function handleEnviarMensagem() {
     if (!novaMensagem.trim()) return;
     
-    // Adiciona a mensagem do paciente
     const novaMensagemObj: Mensagem = {
       id: mensagens.length + 1,
       texto: novaMensagem,
@@ -222,7 +217,6 @@ const PerfilMedico = () => {
     setMensagens([...mensagens, novaMensagemObj]);
     setNovaMensagem('');
     
-    // Simula resposta do médico após 1 segundo
     setTimeout(() => {
       const respostaMedico: Mensagem = {
         id: mensagens.length + 2,
@@ -233,9 +227,9 @@ const PerfilMedico = () => {
       
       setMensagens(prev => [...prev, respostaMedico]);
     }, 1000);
-  };
+  }
 
-  const handleEnviarReporte = () => {
+  function handleEnviarReporte() {
     if (!reportReason || !reportDescription) {
       toast({
         title: "Campos obrigatórios",
@@ -245,7 +239,6 @@ const PerfilMedico = () => {
       return;
     }
     
-    // Simulação de envio (em um app real, seria uma chamada à API)
     toast({
       title: "Reporte enviado",
       description: "Sua denúncia foi enviada com sucesso e será analisada pela nossa equipe.",
@@ -254,11 +247,11 @@ const PerfilMedico = () => {
     setShowReportDialog(false);
     setReportReason('');
     setReportDescription('');
-  };
+  }
 
-  const handleAgendarConsulta = () => {
+  function handleAgendarConsulta() {
     navigate('/agendar', { state: { medicoId: id } });
-  };
+  }
 
   if (loading) {
     return (
@@ -275,7 +268,7 @@ const PerfilMedico = () => {
     );
   }
 
-  if (!medico) {
+  if (error || !medico) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -283,6 +276,12 @@ const PerfilMedico = () => {
           <div className="hopecann-container text-center">
             <h1 className="text-2xl font-bold mb-4">Médico não encontrado</h1>
             <p className="text-gray-600 mb-8">O médico que você está procurando não foi encontrado.</p>
+            <Alert variant="destructive" className="mx-auto max-w-md mb-8">
+              <AlertTitle>Erro ao carregar dados</AlertTitle>
+              <AlertDescription>
+                Não foi possível carregar as informações do médico. Por favor, tente novamente mais tarde.
+              </AlertDescription>
+            </Alert>
             <Button onClick={() => navigate('/medicos')}>
               Ver todos os médicos
             </Button>
@@ -298,7 +297,6 @@ const PerfilMedico = () => {
       <Header />
       <main className="flex-grow py-12 bg-gray-50">
         <div className="hopecann-container">
-          {/* Perfil do médico */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
             <div className="p-8 md:flex">
               <div className="md:w-1/3 flex justify-center md:justify-start mb-6 md:mb-0">
@@ -368,7 +366,6 @@ const PerfilMedico = () => {
             </div>
           </div>
           
-          {/* Tabs de conteúdo */}
           <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex">
               <TabsTrigger value="sobre">Sobre o Médico</TabsTrigger>
@@ -510,7 +507,6 @@ const PerfilMedico = () => {
       </main>
       <Footer />
       
-      {/* Dialog para reportar problema */}
       <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
         <DialogContent>
           <DialogHeader>
@@ -574,7 +570,6 @@ const PerfilMedico = () => {
   );
 };
 
-// Helper component para o ícone de mensagem
 const MessageIcon = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
