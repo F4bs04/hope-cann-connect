@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ const CadastroForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Setup form with react-hook-form
   const form = useForm<CadastroFormValues>({
     resolver: zodResolver(cadastroSchema),
     defaultValues: {
@@ -37,10 +35,24 @@ const CadastroForm = () => {
     setIsLoading(true);
 
     try {
-      // Format CPF to match database requirements (remove any non-digit characters)
+      const { data: existingUser, error: checkError } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('email', values.email)
+        .single();
+      
+      if (existingUser) {
+        toast({
+          variant: "destructive",
+          title: "Email já cadastrado",
+          description: "Este email já está sendo utilizado. Tente fazer login ou use outro email.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const formattedCpf = values.cpf.replace(/\D/g, '');
       
-      // First try to create the usuario record
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
         password: values.senha,
@@ -54,6 +66,9 @@ const CadastroForm = () => {
 
       if (authError) {
         console.error("Authentication error:", authError);
+        if (authError.message?.includes('User already registered')) {
+          throw new Error("Este email já está cadastrado. Tente fazer login ou use outro email.");
+        }
         throw new Error(authError.message || "Erro ao cadastrar usuário");
       }
 
@@ -63,13 +78,12 @@ const CadastroForm = () => {
 
       console.log("User created successfully, ID:", authData.user.id);
 
-      // Now insert the user into the usuarios table
       const { data: userData, error: userError } = await supabase
         .from('usuarios')
         .insert([
           {
             email: values.email,
-            senha: values.senha, // Note: This is redundant as auth will handle passwords
+            senha: values.senha,
             tipo_usuario: 'paciente',
             status: true
           }
@@ -82,7 +96,6 @@ const CadastroForm = () => {
         throw new Error(userError.message || "Erro ao cadastrar usuário");
       }
 
-      // Then create a new patient record
       const { error: pacienteError } = await supabase
         .from('pacientes')
         .insert([
@@ -100,7 +113,6 @@ const CadastroForm = () => {
       if (pacienteError) {
         console.error("Patient creation error:", pacienteError);
         
-        // If patient creation fails, delete the user we just created
         await supabase
           .from('usuarios')
           .delete()
@@ -118,11 +130,20 @@ const CadastroForm = () => {
       
     } catch (error: any) {
       console.error("Registration error:", error);
-      toast({
-        title: "Erro ao cadastrar",
-        description: error.message || "Ocorreu um erro ao fazer o cadastro. Tente novamente.",
-        variant: "destructive",
-      });
+      
+      if (error.code === '23505' || error.message?.includes('already registered') || error.message?.includes('já está cadastrado')) {
+        toast({
+          title: "Email já cadastrado",
+          description: "Este email já está sendo utilizado. Tente fazer login ou use outro email.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao cadastrar",
+          description: error.message || "Ocorreu um erro ao fazer o cadastro. Tente novamente.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -167,7 +188,6 @@ const CadastroForm = () => {
                       className="pl-10"
                       {...field}
                       onChange={(e) => {
-                        // Format CPF as user types
                         let value = e.target.value.replace(/\D/g, '');
                         if (value.length <= 11) {
                           value = value
@@ -224,7 +244,6 @@ const CadastroForm = () => {
                       className="pl-10"
                       {...field}
                       onChange={(e) => {
-                        // Format phone number as user types
                         let value = e.target.value.replace(/\D/g, '');
                         if (value.length <= 11) {
                           value = value

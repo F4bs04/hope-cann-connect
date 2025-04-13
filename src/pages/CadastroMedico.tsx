@@ -85,6 +85,23 @@ const CadastroMedico = () => {
     setIsLoading(true);
     
     try {
+      // Check if email already exists before proceeding
+      const { data: existingUser, error: checkError } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('email', data.email)
+        .single();
+      
+      if (existingUser) {
+        toast({
+          variant: "destructive",
+          title: "Email já cadastrado",
+          description: "Este email já está sendo utilizado. Tente fazer login ou use outro email.",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       // Format CPF to match database requirements (remove any non-digit characters)
       const formattedCpf = data.cpf.replace(/\D/g, '');
       
@@ -123,6 +140,16 @@ const CadastroMedico = () => {
         .single();
 
       if (userError) {
+        // If error is duplicate key, provide a clear message
+        if (userError.code === '23505') {
+          toast({
+            variant: "destructive",
+            title: "Email já cadastrado",
+            description: "Este email já está sendo utilizado. Tente fazer login ou use outro email.",
+          });
+          setIsLoading(false);
+          return;
+        }
         throw userError;
       }
 
@@ -181,11 +208,21 @@ const CadastroMedico = () => {
       
     } catch (error: any) {
       console.error("Erro ao enviar cadastro:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro no cadastro",
-        description: error.message || "Ocorreu um erro ao enviar seu cadastro. Por favor, tente novamente.",
-      });
+      
+      // Handle specific error types
+      if (error.code === '23505' || error.message?.includes('unique constraint')) {
+        toast({
+          variant: "destructive",
+          title: "Email já cadastrado",
+          description: "Este email já está sendo utilizado. Tente fazer login ou use outro email.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro no cadastro",
+          description: error.message || "Ocorreu um erro ao enviar seu cadastro. Por favor, tente novamente.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
