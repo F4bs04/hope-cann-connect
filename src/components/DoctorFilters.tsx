@@ -44,32 +44,37 @@ const brazilianStates = [
   { value: 'TO', label: 'Tocantins' }
 ];
 
-const DoctorFilters = ({ 
-  specialties, 
-  onFilterChange 
-}) => {
+const DoctorFilters = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
   const [selectedState, setSelectedState] = useState('all');
   const [selectedAvailability, setSelectedAvailability] = useState('any');
+  const [specialties, setSpecialties] = useState([
+    'Neurologista',
+    'Psiquiatra',
+    'Clínica Geral',
+    'Reumatologista',
+    'Neurologista Pediátrica'
+  ]);
   
-  useEffect(() => {
-    // Debounce the filter change to avoid too many updates
-    const timeoutId = setTimeout(() => {
-      onFilterChange({
-        searchTerm,
-        specialty: selectedSpecialty === 'all' ? '' : selectedSpecialty,
-        state: selectedState === 'all' ? '' : selectedState,
-        availability: selectedAvailability
-      });
-    }, 300);
-    
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, selectedSpecialty, selectedState, selectedAvailability, onFilterChange]);
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedSpecialty('all');
+    setSelectedState('all');
+    setSelectedAvailability('any');
+  };
 
   return (
     <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold">Filtrar Médicos</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Filtrar Médicos</h3>
+        <button 
+          onClick={resetFilters}
+          className="text-sm text-hopecann-teal hover:text-hopecann-teal/80"
+        >
+          Limpar filtros
+        </button>
+      </div>
       
       <div className="space-y-4">
         {/* Search by name */}
