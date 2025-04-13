@@ -1,13 +1,15 @@
 
 import React from 'react';
-import { addDays } from 'date-fns';
-import WeeklyCalendarView from './WeeklyCalendarView';
-import DayCalendarView from './DayCalendarView';
-import MonthCalendarView from './MonthCalendarView';
-import BulkActionsPanel from './BulkActionsPanel';
-import DayCard from './DayCard';
+import { addDays, startOfWeek } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, CalendarDays, CalendarIcon, Calendar as CalendarIcon2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
+import DayCard from './DayCard';
+import WeeklyCalendarView from './WeeklyCalendarView';
+import MonthCalendarView from './MonthCalendarView';
+import DayCalendarView from './DayCalendarView';
+import BulkActionsPanel from './BulkActionsPanel';
 
 interface CalendarViewsProps {
   viewMode: 'week' | 'day' | 'calendar';
@@ -17,10 +19,7 @@ interface CalendarViewsProps {
   selectedDate: Date | undefined;
   quickSetMode: 'morning' | 'afternoon' | 'all' | 'custom';
   horariosConfig: Record<string, string[]>;
-  horariosDisponiveis: {
-    manha: string[];
-    tarde: string[];
-  };
+  horariosDisponiveis: { manha: string[]; tarde: string[] };
   handleDateSelect: (date: Date | undefined) => void;
   applyPatternToWeek: (pattern: 'workdays' | 'weekend' | 'all' | 'none', timePattern: 'morning' | 'afternoon' | 'all' | 'none') => void;
   handleToggleDayAvailability: (day: Date, isAvailable: boolean) => void;
@@ -32,9 +31,9 @@ interface CalendarViewsProps {
   prevDay: () => void;
   nextDay: () => void;
   setQuickSetMode: (mode: 'morning' | 'afternoon' | 'all' | 'custom') => void;
-  setSelectedViewDay: React.Dispatch<React.SetStateAction<Date>>;
-  setSelectedDay: React.Dispatch<React.SetStateAction<Date | null>>;
-  setHorarioDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setSelectedViewDay: (day: Date) => void;
+  setSelectedDay: (day: Date | null) => void;
+  setHorarioDialogOpen: (open: boolean) => void;
   setHorariosConfig: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
   getAvailableSlotsForDay: (date: Date) => string[];
 }
@@ -65,32 +64,29 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
   setHorariosConfig,
   getAvailableSlotsForDay
 }) => {
+
   const renderDaysOfWeek = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
       const day = addDays(selectedWeekStart, i);
-      days.push(day);
+      days.push(
+        <DayCard
+          key={i}
+          day={day}
+          handleToggleDayAvailability={handleToggleDayAvailability}
+          handleQuickSetAvailability={handleQuickSetAvailability}
+          formatWeekday={formatWeekday}
+          getAvailableSlotsForDay={getAvailableSlotsForDay}
+          setSelectedViewDay={setSelectedViewDay}
+          setViewMode={setViewMode}
+        />
+      );
     }
-    
-    return days.map((day, index) => (
-      <DayCard
-        key={index}
-        day={day}
-        formatWeekday={formatWeekday}
-        horariosConfig={horariosConfig}
-        horariosDisponiveis={horariosDisponiveis}
-        handleToggleDayAvailability={handleToggleDayAvailability}
-        handleQuickSetAvailability={handleQuickSetAvailability}
-        setSelectedDay={setSelectedDay}
-        setHorarioDialogOpen={setHorarioDialogOpen}
-        setSelectedViewDay={setSelectedViewDay}
-        setViewMode={setViewMode}
-      />
-    ));
+    return days;
   };
 
   const renderBulkActions = () => (
-    <BulkActionsPanel 
+    <BulkActionsPanel
       quickSetMode={quickSetMode}
       setQuickSetMode={setQuickSetMode}
       applyPatternToWeek={applyPatternToWeek}
@@ -98,47 +94,77 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
   );
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        Gerenciar disponibilidade
-      </h2>
-      
-      <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Calendar on the left */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Calendário</h3>
-            <MonthCalendarView
-              selectedDate={selectedDate}
-              handleDateSelect={handleDateSelect}
-              horariosConfig={horariosConfig}
-              formatWeekday={formatWeekday}
-              applyPatternToWeek={applyPatternToWeek}
-              setViewMode={setViewMode}
-            />
-          </div>
-          
-          {/* Available slots on the right */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Horários Disponíveis</h3>
-            <DayCalendarView
-              selectedViewDay={selectedViewDay}
-              prevDay={prevDay}
-              nextDay={nextDay}
-              setViewMode={setViewMode}
-              horariosDisponiveis={horariosDisponiveis}
-              getAvailableSlotsForDay={getAvailableSlotsForDay}
-              handleToggleDayAvailability={handleToggleDayAvailability}
-              handleRemoverHorario={handleRemoverHorario}
-              formatWeekday={formatWeekday}
-              horariosConfig={horariosConfig}
-              setHorariosConfig={setHorariosConfig}
-              setSelectedViewDay={setSelectedViewDay}
-              handleQuickSetAvailability={handleQuickSetAvailability}
-            />
-          </div>
-        </div>
-      </Card>
+    <div className="bg-white rounded-lg border p-4">
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Button
+          variant={viewMode === 'week' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('week')}
+          className="flex items-center gap-1"
+        >
+          <CalendarDays className="h-4 w-4" />
+          Semana
+        </Button>
+        <Button
+          variant={viewMode === 'day' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('day')}
+          className="flex items-center gap-1"
+        >
+          <CalendarIcon className="h-4 w-4" />
+          Dia
+        </Button>
+        <Button
+          variant={viewMode === 'calendar' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('calendar')}
+          className="flex items-center gap-1"
+        >
+          <CalendarIcon2 className="h-4 w-4" />
+          Calendário
+        </Button>
+      </div>
+
+      {viewMode === 'week' && (
+        <WeeklyCalendarView
+          selectedWeekStart={selectedWeekStart}
+          prevWeek={prevWeek}
+          nextWeek={nextWeek}
+          renderDaysOfWeek={renderDaysOfWeek}
+          renderBulkActions={renderBulkActions}
+          horariosConfig={horariosConfig}
+          formatWeekday={formatWeekday}
+        />
+      )}
+
+      {viewMode === 'day' && (
+        <DayCalendarView
+          selectedViewDay={selectedViewDay}
+          prevDay={prevDay}
+          nextDay={nextDay}
+          setViewMode={setViewMode}
+          horariosDisponiveis={horariosDisponiveis}
+          getAvailableSlotsForDay={getAvailableSlotsForDay}
+          handleToggleDayAvailability={handleToggleDayAvailability}
+          handleRemoverHorario={handleRemoverHorario}
+          formatWeekday={formatWeekday}
+          horariosConfig={horariosConfig}
+          setHorariosConfig={setHorariosConfig}
+          setSelectedViewDay={setSelectedViewDay}
+          handleQuickSetAvailability={handleQuickSetAvailability}
+        />
+      )}
+
+      {viewMode === 'calendar' && (
+        <MonthCalendarView
+          selectedDate={selectedDate}
+          handleDateSelect={handleDateSelect}
+          horariosConfig={horariosConfig}
+          formatWeekday={formatWeekday}
+          applyPatternToWeek={applyPatternToWeek}
+          setViewMode={setViewMode}
+        />
+      )}
     </div>
   );
 };
