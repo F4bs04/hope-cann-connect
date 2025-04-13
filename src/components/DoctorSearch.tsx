@@ -95,10 +95,14 @@ const DoctorSearch = ({ onSelectDoctor }: DoctorSearchProps) => {
           const uniqueSpecialties = [...new Set(data.map(doctor => doctor.especialidade))];
           setSpecialties(uniqueSpecialties);
         } else {
-          // Fallback to empty arrays
+          // Fallback to empty arrays if no data
+          console.log("No doctors found in database");
+          toast({
+            title: "Nenhum médico encontrado",
+            description: "Não há médicos disponíveis no momento.",
+          });
           setDoctors([]);
           setFilteredDoctors([]);
-          setSpecialties([]);
         }
       } catch (error) {
         console.error('Error fetching doctors:', error);
@@ -107,11 +111,6 @@ const DoctorSearch = ({ onSelectDoctor }: DoctorSearchProps) => {
           description: "Não foi possível carregar a lista de médicos. Por favor, tente novamente mais tarde.",
           variant: "destructive"
         });
-        
-        // Fallback to empty arrays
-        setDoctors([]);
-        setFilteredDoctors([]);
-        setSpecialties([]);
       } finally {
         setIsLoading(false);
       }
@@ -196,45 +195,59 @@ const DoctorSearch = ({ onSelectDoctor }: DoctorSearchProps) => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredDoctors.map(doctor => (
-              <div
-                key={doctor.id}
-                className="p-4 border rounded-lg cursor-pointer transition-colors border-gray-200 hover:border-hopecann-teal/50"
-                onClick={() => onSelectDoctor(doctor.id)}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
-                    <img 
-                      src={doctor.image} 
-                      alt={doctor.name} 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder.svg';
-                      }}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">{doctor.name}</h3>
-                        <p className="text-sm text-hopecann-teal mb-1">{doctor.specialty}</p>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getAvailabilityColor(doctor.availability)}`}>
-                        <Clock size={12} />
-                        {getAvailabilityText(doctor.availability)}
-                      </span>
+          {filteredDoctors.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredDoctors.map(doctor => (
+                <div
+                  key={doctor.id}
+                  className="p-4 border rounded-lg cursor-pointer transition-colors border-gray-200 hover:border-hopecann-teal/50"
+                  onClick={() => onSelectDoctor(doctor.id)}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+                      <img 
+                        src={doctor.image} 
+                        alt={doctor.name} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
+                      />
                     </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">{doctor.bio}</p>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium">{doctor.name}</h3>
+                          <p className="text-sm text-hopecann-teal mb-1">{doctor.specialty}</p>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getAvailabilityColor(doctor.availability)}`}>
+                          <Clock size={12} />
+                          {getAvailabilityText(doctor.availability)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 line-clamp-2">{doctor.bio}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          
-          {filteredDoctors.length === 0 && !isLoading && (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Nenhum médico encontrado com os critérios de busca.</p>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
+              <Search className="mx-auto mb-4 text-gray-400" size={48} />
+              <h3 className="text-xl font-medium mb-2">Nenhum médico encontrado</h3>
+              <p className="text-gray-600 mb-4">
+                Não encontramos médicos com os critérios de busca. Tente ajustar seus critérios ou volte mais tarde.
+              </p>
+              <button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedSpecialty('');
+                  filterDoctors('', '');
+                }}
+                className="text-hopecann-teal hover:text-hopecann-teal/80 font-medium"
+              >
+                Limpar todos os filtros
+              </button>
             </div>
           )}
         </>

@@ -1,16 +1,13 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, ChevronLeft, ChevronRight, Clock, User, Mail, Phone, FileText, CalendarCheck, CheckCircle, Search } from 'lucide-react';
 import DoctorSearch from './DoctorSearch';
-
-const doctorsSchedule = [
-  { id: 1, name: "Dr. Ricardo Silva", specialty: "Neurologista", available: true },
-  { id: 2, name: "Dra. Ana Santos", specialty: "Psiquiatra", available: true },
-  { id: 3, name: "Dr. Carlos Mendes", specialty: "Neurologista", available: true },
-  { id: 4, name: "Dra. Mariana Costa", specialty: "Clínica Geral", available: true }
-];
+import { formatTelefone } from '@/utils/formatters';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const timeSlots = [
   "08:00", "09:00", "10:00", "11:00", 
@@ -52,13 +49,51 @@ const HomeScheduling = () => {
     symptoms: "",
     previous_treatments: ""
   });
+  const [selectedDoctorInfo, setSelectedDoctorInfo] = useState(null);
+  const { toast } = useToast();
   
   const navigate = useNavigate();
   const availableDays = generateAvailableDays();
   
+  // Fetch selected doctor info when doctor is selected
+  useEffect(() => {
+    if (selectedDoctor) {
+      const fetchDoctorInfo = async () => {
+        const { data, error } = await supabase
+          .from('medicos')
+          .select('*')
+          .eq('id', selectedDoctor)
+          .single();
+          
+        if (error) {
+          console.error("Error fetching doctor info:", error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível carregar informações do médico selecionado.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        if (data) {
+          setSelectedDoctorInfo(data);
+        }
+      };
+      
+      fetchDoctorInfo();
+    }
+  }, [selectedDoctor, toast]);
+  
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let formattedValue = value;
+    
+    // Apply phone number formatting
+    if (name === 'phone') {
+      formattedValue = formatTelefone(value);
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: formattedValue }));
   };
   
   const handleNext = () => {
@@ -69,9 +104,28 @@ const HomeScheduling = () => {
     setStep(prev => prev - 1);
   };
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/login');
+    
+    try {
+      // Here you could add the logic to create a consultation in the database
+      // For now, we'll just show a success message
+      toast({
+        title: "Agendamento recebido",
+        description: "Você será redirecionado para fazer login ou criar uma conta para confirmar seu agendamento.",
+      });
+      
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } catch (error) {
+      console.error("Error submitting appointment:", error);
+      toast({
+        title: "Erro no agendamento",
+        description: "Ocorreu um erro ao processar seu agendamento. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
@@ -371,7 +425,7 @@ const HomeScheduling = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Médico:</span>
                     <span className="font-medium">
-                      {doctorsSchedule.find(d => d.id === selectedDoctor)?.name}
+                      {selectedDoctorInfo?.nome || "Médico não especificado"}
                     </span>
                   </div>
                   
