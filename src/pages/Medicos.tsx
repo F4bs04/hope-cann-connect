@@ -7,10 +7,12 @@ import { Link } from 'react-router-dom';
 import DoctorFilters from '../components/DoctorFilters';
 import DoctorSearch from '../components/DoctorSearch';
 import { useNavigate } from 'react-router-dom';
+import { useDoctors } from '@/hooks/useDoctors';
 
 const Medicos = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
+  const { doctors, isLoading, dbStatus } = useDoctors();
   
   const handleSelectDoctor = (id: number) => {
     navigate(`/medico/${id}`);
@@ -42,7 +44,11 @@ const Medicos = () => {
               </div>
               
               <div className="lg:w-3/4">
-                <DoctorSearch onSelectDoctor={handleSelectDoctor} />
+                <DoctorSearch 
+                  onSelectDoctor={handleSelectDoctor} 
+                  initialDoctors={doctors}
+                  isInitialLoading={isLoading}
+                />
               </div>
             </div>
           </div>
