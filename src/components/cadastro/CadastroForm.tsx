@@ -10,7 +10,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cadastroSchema, CadastroFormValues } from '@/schemas/cadastroSchema';
 
-const CadastroForm = () => {
+interface CadastroFormProps {
+  fromScheduling?: boolean;
+}
+
+const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -126,7 +130,11 @@ const CadastroForm = () => {
         description: "Você já pode fazer login no sistema.",
       });
 
-      navigate('/login');
+      if (fromScheduling) {
+        navigate('/agendar');
+      } else {
+        navigate('/login');
+      }
       
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -383,6 +391,14 @@ const CadastroForm = () => {
               Faça login
             </a>
           </p>
+          
+          {fromScheduling && (
+            <p className="text-sm text-hopecann-teal mt-2">
+              <a href="/agendar" className="hover:underline">
+                Voltar para agendamento
+              </a>
+            </p>
+          )}
         </div>
       </form>
     </Form>
