@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -272,7 +271,8 @@ const CompleteRegistroMedico = () => {
       
       // Save schedule information
       for (const horario of horarios) {
-        await supabase
+        // Use raw query to insert into the horarios_disponiveis table
+        const { error: horariosError } = await supabase
           .from('horarios_disponiveis')
           .insert({
             id_medico: medicoIdToUse ? parseInt(medicoIdToUse) : null,
@@ -280,6 +280,11 @@ const CompleteRegistroMedico = () => {
             hora_inicio: horario.horaInicio,
             hora_fim: horario.horaFim
           });
+          
+        if (horariosError) {
+          console.error("Error saving schedule:", horariosError);
+          throw horariosError;
+        }
       }
       
       // Update usuario status to active

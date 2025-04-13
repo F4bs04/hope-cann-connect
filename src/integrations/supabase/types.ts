@@ -282,6 +282,38 @@ export type Database = {
           },
         ]
       }
+      horarios_disponiveis: {
+        Row: {
+          dia_semana: string
+          hora_fim: string
+          hora_inicio: string
+          id: number
+          id_medico: number | null
+        }
+        Insert: {
+          dia_semana: string
+          hora_fim: string
+          hora_inicio: string
+          id?: number
+          id_medico?: number | null
+        }
+        Update: {
+          dia_semana?: string
+          hora_fim?: string
+          hora_inicio?: string
+          id?: number
+          id_medico?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horarios_disponiveis_id_medico_fkey"
+            columns: ["id_medico"]
+            isOneToOne: false
+            referencedRelation: "medicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       log_atividades: {
         Row: {
           data_hora: string | null
