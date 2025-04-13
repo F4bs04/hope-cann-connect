@@ -1,13 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, ChevronLeft, ChevronRight, Clock, User, Mail, Phone, FileText, CalendarCheck, CheckCircle, Search } from 'lucide-react';
-import DoctorSearch from './DoctorSearch';
 import { formatTelefone } from '@/utils/formatters';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+
+interface Doctor {
+  id: number;
+  name: string;
+  specialty: string;
+  bio: string;
+  image: string;
+  availability: string[];
+}
 
 const timeSlots = [
   "08:00", "09:00", "10:00", "11:00", 
@@ -50,12 +57,127 @@ const HomeScheduling = () => {
     previous_treatments: ""
   });
   const [selectedDoctorInfo, setSelectedDoctorInfo] = useState(null);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dbStatus, setDbStatus] = useState<{success: boolean, message: string}>({
+    success: true,
+    message: ''
+  });
   const { toast } = useToast();
   
   const navigate = useNavigate();
   const availableDays = generateAvailableDays();
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        setIsLoading(true);
+        console.log("Fetching doctors for scheduling from Supabase...");
+        
+        const { data, error } = await supabase
+          .from('medicos')
+          .select('*');
+          
+        if (error) {
+          console.error('Error fetching doctors:', error);
+          setDbStatus({
+            success: false,
+            message: `Erro ao buscar médicos: ${error.message}`
+          });
+          throw error;
+        }
+        
+        console.log(`Total de médicos encontrados: ${data?.length || 0}`);
+        
+        if (data && data.length > 0) {
+          console.log("Médicos encontrados:", data);
+          
+          const doctorsWithAvailability = data.map(doctor => {
+            const availability = ['next-week'];
+            
+            return {
+              id: doctor.id,
+              name: doctor.nome,
+              specialty: doctor.especialidade || "Medicina Canábica",
+              bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
+              image: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+              availability
+            };
+          });
+          
+          setDoctors(doctorsWithAvailability);
+          setDbStatus({
+            success: true,
+            message: `${doctorsWithAvailability.length} médicos encontrados`
+          });
+        } else {
+          console.log("Nenhum médico encontrado, usando dados de fallback");
+          setDbStatus({
+            success: false,
+            message: 'Nenhum médico encontrado na tabela medicos'
+          });
+          
+          setDoctors([{
+            id: 1,
+            name: "Dr. Ricardo Silva",
+            specialty: "Neurologista",
+            bio: "Especialista em tratamentos canábicos para distúrbios neurológicos.",
+            image: `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+            availability: ['today', 'this-week']
+          }, {
+            id: 2,
+            name: "Dra. Ana Santos",
+            specialty: "Psiquiatra",
+            bio: "Especializada em tratamentos para ansiedade e depressão com abordagem integrativa.",
+            image: `/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png`,
+            availability: ['this-week']
+          }, {
+            id: 3,
+            name: "Dr. Carlos Mendes",
+            specialty: "Neurologista",
+            bio: "Especialista em epilepsia e doenças neurodegenerativas, com foco em tratamentos inovadores.",
+            image: `/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png`,
+            availability: ['next-week']
+          }]);
+        }
+      } catch (error) {
+        console.error('Error in fetchDoctors:', error);
+        toast({
+          title: "Erro ao carregar médicos",
+          description: "Não foi possível carregar a lista de médicos. Por favor, tente novamente mais tarde.",
+          variant: "destructive"
+        });
+
+        setDoctors([{
+          id: 1,
+          name: "Dr. Ricardo Silva",
+          specialty: "Neurologista",
+          bio: "Especialista em tratamentos canábicos para distúrbios neurológicos.",
+          image: `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+          availability: ['today', 'this-week']
+        }, {
+          id: 2,
+          name: "Dra. Ana Santos",
+          specialty: "Psiquiatra",
+          bio: "Especializada em tratamentos para ansiedade e depressão com abordagem integrativa.",
+          image: `/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png`,
+          availability: ['this-week']
+        }, {
+          id: 3,
+          name: "Dr. Carlos Mendes",
+          specialty: "Neurologista",
+          bio: "Especialista em epilepsia e doenças neurodegenerativas, com foco em tratamentos inovadores.",
+          image: `/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png`,
+          availability: ['next-week']
+        }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDoctors();
+  }, [toast]);
   
-  // Fetch selected doctor info when doctor is selected
   useEffect(() => {
     if (selectedDoctor) {
       const fetchDoctorInfo = async () => {
@@ -88,7 +210,6 @@ const HomeScheduling = () => {
     const { name, value } = e.target;
     let formattedValue = value;
     
-    // Apply phone number formatting
     if (name === 'phone') {
       formattedValue = formatTelefone(value);
     }
@@ -108,8 +229,6 @@ const HomeScheduling = () => {
     e.preventDefault();
     
     try {
-      // Here you could add the logic to create a consultation in the database
-      // For now, we'll just show a success message
       toast({
         title: "Agendamento recebido",
         description: "Você será redirecionado para fazer login ou criar uma conta para confirmar seu agendamento.",
@@ -127,6 +246,11 @@ const HomeScheduling = () => {
       });
     }
   };
+
+  const handleDoctorSelection = (doctorId) => {
+    setSelectedDoctor(doctorId);
+    console.log("Selected doctor ID:", doctorId);
+  };
   
   return (
     <section className="py-16 bg-white">
@@ -135,6 +259,12 @@ const HomeScheduling = () => {
         <p className="text-lg text-center text-gray-600 mb-10">
           Preencha os dados abaixo para agendar sua consulta com um de nossos especialistas
         </p>
+        
+        {!dbStatus.success && (
+          <div className="mb-6 p-3 bg-orange-100 text-orange-800 rounded-md text-sm mx-auto max-w-lg text-center">
+            <p>Informação para desenvolvedor: {dbStatus.message}</p>
+          </div>
+        )}
         
         <div className="mb-12">
           <div className="flex justify-between items-center w-full max-w-3xl mx-auto relative">
@@ -170,10 +300,85 @@ const HomeScheduling = () => {
                 Escolha um Especialista
               </h2>
               
-              <DoctorSearch onSelectDoctor={(doctorId) => {
-                setSelectedDoctor(doctorId);
-                console.log("Selected doctor ID:", doctorId);
-              }} />
+              <div className="mb-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                      type="text"
+                      placeholder="Buscar médico por nome ou especialidade..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hopecann-teal/50"
+                    />
+                  </div>
+                </div>
+                
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-hopecann-teal"></div>
+                  </div>
+                ) : doctors.length === 0 ? (
+                  <div className="text-center py-10">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">Nenhum médico encontrado</h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      Não encontramos médicos com os critérios de busca. Tente ajustar seus critérios ou volte mais tarde.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {doctors.map((doctor) => (
+                      <div
+                        key={doctor.id}
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedDoctor === doctor.id 
+                            ? 'border-hopecann-teal bg-hopecann-teal/5' 
+                            : 'border-gray-200 hover:border-hopecann-teal/50'
+                        }`}
+                        onClick={() => handleDoctorSelection(doctor.id)}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+                            <img 
+                              src={doctor.image} 
+                              alt={doctor.name} 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder.svg';
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-medium">{doctor.name}</h3>
+                                <p className="text-sm text-hopecann-teal mb-1">{doctor.specialty}</p>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 
+                                ${doctor.availability.includes('today') 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : doctor.availability.includes('this-week')
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                <Clock size={12} />
+                                {doctor.availability.includes('today') 
+                                  ? 'Hoje' 
+                                  : doctor.availability.includes('this-week')
+                                  ? 'Esta semana'
+                                  : 'Próxima semana'
+                                }
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 line-clamp-2">{doctor.bio}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               
               <div className="flex justify-end">
                 <button
