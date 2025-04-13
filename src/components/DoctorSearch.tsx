@@ -6,6 +6,8 @@ import SearchBar from './doctor/SearchBar';
 import SpecialtyFilter from './doctor/SpecialtyFilter';
 import DoctorList from './doctor/DoctorList';
 import { Doctor } from './doctor/DoctorCard';
+import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DoctorSearchProps {
   onSelectDoctor: (id: number) => void;
@@ -147,13 +149,24 @@ const DoctorSearch = ({ onSelectDoctor }: DoctorSearchProps) => {
 
   return (
     <div className="mb-8">
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <SearchBar searchTerm={searchTerm} onSearch={handleSearch} />
-        <SpecialtyFilter 
-          specialties={specialties} 
-          selectedSpecialty={selectedSpecialty} 
-          onSpecialtySelect={handleSpecialtyFilter} 
-        />
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex w-full gap-2">
+          <div className="relative flex-grow">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Buscar médico por nome ou especialidade..."
+              className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-hopecann-teal/50"
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
+          <Button 
+            className="bg-[#00BCD4] hover:bg-[#00BCD4]/90 text-white rounded-full px-6"
+          >
+            Todos
+          </Button>
+        </div>
       </div>
       
       <DoctorList 

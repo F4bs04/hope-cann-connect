@@ -1,61 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
-import { Search, Filter } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// Doctor availability options
-const availabilityOptions = [
-  { value: 'any', label: 'Qualquer disponibilidade' },
-  { value: 'today', label: 'Hoje' },
-  { value: 'this-week', label: 'Esta semana' },
-  { value: 'next-week', label: 'Próxima semana' }
-];
-
-// Brazilian states
-const brazilianStates = [
-  { value: 'all', label: 'Todos os estados' },
-  { value: 'AC', label: 'Acre' },
-  { value: 'AL', label: 'Alagoas' },
-  { value: 'AP', label: 'Amapá' },
-  { value: 'AM', label: 'Amazonas' },
-  { value: 'BA', label: 'Bahia' },
-  { value: 'CE', label: 'Ceará' },
-  { value: 'DF', label: 'Distrito Federal' },
-  { value: 'ES', label: 'Espírito Santo' },
-  { value: 'GO', label: 'Goiás' },
-  { value: 'MA', label: 'Maranhão' },
-  { value: 'MT', label: 'Mato Grosso' },
-  { value: 'MS', label: 'Mato Grosso do Sul' },
-  { value: 'MG', label: 'Minas Gerais' },
-  { value: 'PA', label: 'Pará' },
-  { value: 'PB', label: 'Paraíba' },
-  { value: 'PR', label: 'Paraná' },
-  { value: 'PE', label: 'Pernambuco' },
-  { value: 'PI', label: 'Piauí' },
-  { value: 'RJ', label: 'Rio de Janeiro' },
-  { value: 'RN', label: 'Rio Grande do Norte' },
-  { value: 'RS', label: 'Rio Grande do Sul' },
-  { value: 'RO', label: 'Rondônia' },
-  { value: 'RR', label: 'Roraima' },
-  { value: 'SC', label: 'Santa Catarina' },
-  { value: 'SP', label: 'São Paulo' },
-  { value: 'SE', label: 'Sergipe' },
-  { value: 'TO', label: 'Tocantins' }
-];
 
 const DoctorFilters = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
   const [selectedState, setSelectedState] = useState('all');
   const [selectedAvailability, setSelectedAvailability] = useState('any');
-  const [specialties, setSpecialties] = useState([
-    'Neurologista',
-    'Psiquiatra',
-    'Clínica Geral',
-    'Reumatologista',
-    'Neurologista Pediátrica'
-  ]);
   
   const resetFilters = () => {
     setSearchTerm('');
@@ -65,21 +18,21 @@ const DoctorFilters = () => {
   };
 
   return (
-    <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div className="space-y-6 p-6 bg-white rounded-xl border border-gray-100">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Filtrar Médicos</h3>
+        <h3 className="text-xl font-bold">Filtrar Médicos</h3>
         <button 
           onClick={resetFilters}
-          className="text-sm text-hopecann-teal hover:text-hopecann-teal/80"
+          className="text-[#00BCD4] hover:text-[#00BCD4]/80 text-sm"
         >
           Limpar filtros
         </button>
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Search by name */}
         <div>
-          <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="search" className="block text-sm font-medium mb-2">
             Buscar por nome
           </label>
           <div className="relative">
@@ -88,7 +41,7 @@ const DoctorFilters = () => {
               id="search"
               type="text"
               placeholder="Digite o nome do médico..."
-              className="pl-10"
+              className="pl-10 py-5"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -97,7 +50,7 @@ const DoctorFilters = () => {
         
         {/* Filter by specialty */}
         <div>
-          <label htmlFor="specialty" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="specialty" className="block text-sm font-medium mb-2">
             Especialidade
           </label>
           <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
@@ -106,18 +59,17 @@ const DoctorFilters = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas especialidades</SelectItem>
-              {specialties.map((specialty) => (
-                <SelectItem key={specialty} value={specialty}>
-                  {specialty}
-                </SelectItem>
-              ))}
+              <SelectItem value="Neurologista">Neurologista</SelectItem>
+              <SelectItem value="Psiquiatra">Psiquiatra</SelectItem>
+              <SelectItem value="Clínica Geral">Clínica Geral</SelectItem>
+              <SelectItem value="Reumatologista">Reumatologista</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
         {/* Filter by state */}
         <div>
-          <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="state" className="block text-sm font-medium mb-2">
             Estado
           </label>
           <Select value={selectedState} onValueChange={setSelectedState}>
@@ -125,18 +77,18 @@ const DoctorFilters = () => {
               <SelectValue placeholder="Todos os estados" />
             </SelectTrigger>
             <SelectContent>
-              {brazilianStates.map((state) => (
-                <SelectItem key={state.value} value={state.value}>
-                  {state.label}
-                </SelectItem>
-              ))}
+              <SelectItem value="all">Todos os estados</SelectItem>
+              <SelectItem value="SP">São Paulo</SelectItem>
+              <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+              <SelectItem value="MG">Minas Gerais</SelectItem>
+              <SelectItem value="RS">Rio Grande do Sul</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
         {/* Filter by availability */}
         <div>
-          <label htmlFor="availability" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="availability" className="block text-sm font-medium mb-2">
             Disponibilidade
           </label>
           <Select value={selectedAvailability} onValueChange={setSelectedAvailability}>
@@ -144,11 +96,10 @@ const DoctorFilters = () => {
               <SelectValue placeholder="Qualquer disponibilidade" />
             </SelectTrigger>
             <SelectContent>
-              {availabilityOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
+              <SelectItem value="any">Qualquer disponibilidade</SelectItem>
+              <SelectItem value="today">Hoje</SelectItem>
+              <SelectItem value="this-week">Esta semana</SelectItem>
+              <SelectItem value="next-week">Próxima semana</SelectItem>
             </SelectContent>
           </Select>
         </div>

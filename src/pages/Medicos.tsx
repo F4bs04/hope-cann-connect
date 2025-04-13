@@ -2,19 +2,11 @@
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Calendar, MapPin } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DoctorFilters from '../components/DoctorFilters';
 import DoctorSearch from '../components/DoctorSearch';
 import { useNavigate } from 'react-router-dom';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 const Medicos = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,7 +16,7 @@ const Medicos = () => {
     navigate(`/medico/${id}`);
   };
   
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo(0, 0);
   };
