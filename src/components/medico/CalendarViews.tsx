@@ -4,7 +4,6 @@ import { addDays, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarDays, CalendarIcon, Calendar as CalendarIcon2 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DayCard from './DayCard';
 import WeeklyCalendarView from './WeeklyCalendarView';
 import MonthCalendarView from './MonthCalendarView';
@@ -79,6 +78,10 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
           getAvailableSlotsForDay={getAvailableSlotsForDay}
           setSelectedViewDay={setSelectedViewDay}
           setViewMode={setViewMode}
+          horariosDisponiveis={horariosDisponiveis}
+          setSelectedDay={setSelectedDay}
+          setHorarioDialogOpen={setHorarioDialogOpen}
+          horariosConfig={horariosConfig}
         />
       );
     }

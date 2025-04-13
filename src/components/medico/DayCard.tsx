@@ -8,35 +8,41 @@ import { Switch } from '@/components/ui/switch';
 interface DayCardProps {
   day: Date;
   formatWeekday: (date: Date) => string;
-  horariosConfig: Record<string, string[]>;
-  horariosDisponiveis: {
+  handleToggleDayAvailability: (day: Date, isAvailable: boolean) => void;
+  handleQuickSetAvailability: (day: Date, mode: 'morning' | 'afternoon' | 'all' | 'none') => void;
+  setSelectedViewDay: (day: Date) => void;
+  setViewMode: (mode: 'week' | 'day' | 'calendar') => void;
+  getAvailableSlotsForDay: (date: Date) => string[];
+  horariosDisponiveis?: {
     manha: string[];
     tarde: string[];
   };
-  handleToggleDayAvailability: (day: Date, isAvailable: boolean) => void;
-  handleQuickSetAvailability: (day: Date, mode: 'morning' | 'afternoon' | 'all' | 'none') => void;
-  setSelectedDay: (day: Date | null) => void;
-  setHorarioDialogOpen: (open: boolean) => void;
-  setSelectedViewDay: (day: Date) => void;
-  setViewMode: (mode: 'week' | 'day' | 'calendar') => void;
+  setSelectedDay?: (day: Date | null) => void;
+  setHorarioDialogOpen?: (open: boolean) => void;
+  horariosConfig?: Record<string, string[]>;
 }
 
 const DayCard: React.FC<DayCardProps> = ({
   day,
   formatWeekday,
-  horariosConfig,
-  horariosDisponiveis,
   handleToggleDayAvailability,
   handleQuickSetAvailability,
+  setSelectedViewDay,
+  setViewMode,
+  getAvailableSlotsForDay,
+  horariosDisponiveis = {
+    manha: ['05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00'],
+    tarde: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00']
+  },
   setSelectedDay,
   setHorarioDialogOpen,
-  setSelectedViewDay,
-  setViewMode
+  horariosConfig
 }) => {
-  const diaSemana = formatWeekday(day).toLowerCase() as keyof typeof horariosConfig;
-  const timeSlotsCount = horariosConfig[diaSemana]?.length || 0;
-  const hasMorningSlots = horariosConfig[diaSemana]?.some(slot => horariosDisponiveis.manha.includes(slot)) || false;
-  const hasAfternoonSlots = horariosConfig[diaSemana]?.some(slot => horariosDisponiveis.tarde.includes(slot)) || false;
+  const diaSemana = formatWeekday(day).toLowerCase();
+  const availableSlots = getAvailableSlotsForDay(day);
+  const timeSlotsCount = availableSlots.length || 0;
+  const hasMorningSlots = availableSlots.some(slot => horariosDisponiveis.manha.includes(slot)) || false;
+  const hasAfternoonSlots = availableSlots.some(slot => horariosDisponiveis.tarde.includes(slot)) || false;
   
   return (
     <div className="border rounded-md overflow-hidden bg-white">
@@ -95,15 +101,17 @@ const DayCard: React.FC<DayCardProps> = ({
             </div>
             
             <div className="text-xs text-center text-gray-500">
-              {timeSlotsCount} horários • <button 
-                className="text-blue-500 hover:underline" 
-                onClick={() => {
-                  setSelectedDay(day);
-                  setHorarioDialogOpen(true);
-                }}
-              >
-                Detalhes
-              </button>
+              {timeSlotsCount} horários • {setSelectedDay && setHorarioDialogOpen && (
+                <button 
+                  className="text-blue-500 hover:underline" 
+                  onClick={() => {
+                    setSelectedDay(day);
+                    setHorarioDialogOpen(true);
+                  }}
+                >
+                  Detalhes
+                </button>
+              )}
             </div>
           </div>
         ) : (
