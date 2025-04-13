@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -15,6 +16,7 @@ interface Doctor {
   image: string;
   availability: string[];
 }
+
 const DoctorCard = ({
   id,
   name,
@@ -47,53 +49,61 @@ const DoctorCard = ({
       </CardFooter>
     </Card>;
 };
+
 const DoctorsSection = () => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setIsLoading(true);
-        const {
-          data,
-          error
-        } = await supabase.from('medicos').select('*').eq('status_disponibilidade', true).limit(3);
+        const { data, error } = await supabase
+          .from('medicos')
+          .select('*')
+          .eq('status_disponibilidade', true)
+          .limit(3);
+          
         if (error) {
           throw error;
         }
+        
         if (data && data.length > 0) {
           // Process doctor data
           const doctorsWithAvailability = await Promise.all(data.map(async doctor => {
             // Check for the nearest available appointment
-            const {
-              data: appointmentData,
-              error: appointmentError
-            } = await supabase.from('consultas').select('data_hora').eq('id_medico', doctor.id).eq('status', 'agendada').gte('data_hora', new Date().toISOString()).order('data_hora', {
-              ascending: true
-            }).limit(1);
+            const { data: appointmentData, error: appointmentError } = await supabase
+              .from('consultas')
+              .select('data_hora')
+              .eq('id_medico', doctor.id)
+              .eq('status', 'agendada')
+              .gte('data_hora', new Date().toISOString())
+              .order('data_hora', { ascending: true })
+              .limit(1);
+              
             if (appointmentError) {
               console.error('Error fetching appointments:', appointmentError);
             }
+            
             let availability = ['next-week']; // Default to next week
-
+            
             if (appointmentData && appointmentData.length > 0) {
               const appointmentDate = new Date(appointmentData[0].data_hora);
               const today = new Date();
               const thisWeekEnd = new Date(today);
               thisWeekEnd.setDate(today.getDate() + 7);
-
+              
               // Check if appointment is today
               if (appointmentDate.toDateString() === today.toDateString()) {
                 availability = ['today', 'this-week'];
-              }
+              } 
               // Check if appointment is this week
               else if (appointmentDate <= thisWeekEnd) {
                 availability = ['this-week'];
               }
             }
+            
             return {
               id: doctor.id,
               name: doctor.nome,
@@ -103,6 +113,7 @@ const DoctorsSection = () => {
               availability
             };
           }));
+          
           setDoctors(doctorsWithAvailability);
         } else {
           // Use fallback data if no doctors are found
@@ -164,8 +175,51 @@ const DoctorsSection = () => {
         setIsLoading(false);
       }
     };
+    
     fetchDoctors();
   }, [toast]);
-  return;
+  
+  return (
+    <section className="py-16 bg-gray-50">
+      <div className="hopecann-container">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Nossa Equipe Médica</h2>
+          <p className="text-lg text-gray-700 max-w-3xl mx-auto">
+            Conheça os profissionais especializados que transformam vidas através do tratamento canábico personalizado
+          </p>
+        </div>
+        
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-hopecann-teal"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {doctors.map((doctor) => (
+              <DoctorCard 
+                key={doctor.id} 
+                id={doctor.id}
+                name={doctor.name}
+                specialty={doctor.specialty}
+                bio={doctor.bio}
+                image={doctor.image}
+                availability={doctor.availability}
+              />
+            ))}
+          </div>
+        )}
+        
+        <div className="text-center mt-12">
+          <Link 
+            to="/medicos" 
+            className="inline-flex items-center justify-center gap-2 bg-white text-hopecann-teal hover:bg-gray-100 border border-hopecann-teal px-6 py-3 rounded-md transition-colors"
+          >
+            Ver Todos os Médicos
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
 };
+
 export default DoctorsSection;
