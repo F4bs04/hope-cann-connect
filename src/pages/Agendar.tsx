@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -36,18 +37,14 @@ const generateAvailableDays = () => {
   return days;
 };
 
-const consultTypes = [
-  { id: "primeira", name: "Primeira Consulta", price: "R$ 350,00", duration: "60 min" },
-  { id: "retorno", name: "Consulta de Retorno", price: "R$ 250,00", duration: "30 min" },
-  { id: "acompanhamento", name: "Acompanhamento", price: "R$ 200,00", duration: "30 min" }
-];
-
 const Agendar = () => {
+  // Removed consultation type step - now we have only 3 steps instead of 4
   const [step, setStep] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
-  const [selectedConsultType, setSelectedConsultType] = useState(null);
+  // Auto-select the first consultation type
+  const [selectedConsultType, setSelectedConsultType] = useState("primeira");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -65,7 +62,12 @@ const Agendar = () => {
   };
   
   const handleNext = () => {
-    setStep(prev => prev + 1);
+    // If we're on step 2 (Date selection), go directly to user data (step 3)
+    if (step === 2) {
+      setStep(3);
+    } else {
+      setStep(prev => prev + 1);
+    }
   };
   
   const handleBack = () => {
@@ -74,7 +76,8 @@ const Agendar = () => {
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    navigate('/login');
+    // After form submission, redirect to the Cadastro page
+    navigate('/cadastro');
   };
   
   return (
@@ -91,7 +94,8 @@ const Agendar = () => {
             <div className="flex justify-between items-center w-full max-w-3xl mx-auto relative">
               <div className="absolute top-1/2 w-full h-0.5 bg-gray-200 -z-10"></div>
               
-              {[1, 2, 3, 4, 5].map((stepNumber) => (
+              {/* Updated step indicator: removed consultation type step */}
+              {[1, 2, 3, 4].map((stepNumber) => (
                 <div key={stepNumber} className="flex flex-col items-center">
                   <div 
                     className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -104,8 +108,7 @@ const Agendar = () => {
                     {
                       stepNumber === 1 ? 'Especialista' :
                       stepNumber === 2 ? 'Data e Hora' :
-                      stepNumber === 3 ? 'Tipo' :
-                      stepNumber === 4 ? 'Dados' : 'Confirmação'
+                      stepNumber === 3 ? 'Dados' : 'Confirmação'
                     }
                   </span>
                 </div>
@@ -204,66 +207,6 @@ const Agendar = () => {
             )}
             
             {step === 3 && (
-              <div>
-                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                  <FileText className="text-hopecann-teal" />
-                  Tipo de Consulta
-                </h2>
-                
-                <div className="space-y-4 mb-8">
-                  {consultTypes.map((type) => (
-                    <div 
-                      key={type.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedConsultType === type.id 
-                          ? 'border-hopecann-teal bg-hopecann-teal/5' 
-                          : 'border-gray-200 hover:border-hopecann-teal/50'
-                      }`}
-                      onClick={() => setSelectedConsultType(type.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div 
-                          className={`w-5 h-5 rounded-full border flex-shrink-0 mt-1 ${
-                            selectedConsultType === type.id 
-                              ? 'border-hopecann-teal bg-hopecann-teal' 
-                              : 'border-gray-300'
-                          }`}
-                        >
-                          {selectedConsultType === type.id && (
-                            <CheckCircle className="text-white w-5 h-5" />
-                          )}
-                        </div>
-                        <div className="flex-grow">
-                          <div className="flex justify-between">
-                            <h3 className="font-medium">{type.name}</h3>
-                            <span className="font-semibold text-hopecann-teal">{type.price}</span>
-                          </div>
-                          <p className="text-sm text-gray-600">Duração: {type.duration}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="flex justify-between">
-                  <button
-                    className="border border-gray-300 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-50"
-                    onClick={handleBack}
-                  >
-                    Voltar
-                  </button>
-                  <button
-                    className="bg-hopecann-teal text-white px-6 py-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handleNext}
-                    disabled={!selectedConsultType}
-                  >
-                    Próximo
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {step === 4 && (
               <form onSubmit={handleSubmit}>
                 <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                   <User className="text-hopecann-teal" />
@@ -356,7 +299,7 @@ const Agendar = () => {
               </form>
             )}
             
-            {step === 5 && (
+            {step === 4 && (
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-hopecann-teal/10 rounded-full flex items-center justify-center mx-auto mb-6">
                   <CalendarCheck className="h-8 w-8 text-hopecann-teal" />
@@ -392,7 +335,7 @@ const Agendar = () => {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Tipo de Consulta:</span>
                       <span className="font-medium">
-                        {consultTypes.find(t => t.id === selectedConsultType)?.name}
+                        Primeira Consulta
                       </span>
                     </div>
                   </div>
