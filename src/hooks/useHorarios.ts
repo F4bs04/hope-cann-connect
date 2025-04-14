@@ -37,9 +37,9 @@ export function useHorarios() {
     setHorariosConfig
   });
 
-  const { handleDateSelect: baseHandleDateSelect } = useHorariosSelection();
+  const { dateSelected, handleDateSelect: baseHandleDateSelect } = useHorariosSelection();
 
-  // Wrapper to maintain the original API
+  // Wrapper para manter a API original
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDay(date);

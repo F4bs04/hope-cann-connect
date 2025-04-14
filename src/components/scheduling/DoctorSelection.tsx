@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, ChevronRight } from 'lucide-react';
 import DoctorSearch from '../DoctorSearch';
 
@@ -10,6 +10,23 @@ interface DoctorSelectionProps {
 }
 
 const DoctorSelection = ({ selectedDoctor, onSelectDoctor, onNext }: DoctorSelectionProps) => {
+  // Uma variável de estado para controlar se o componente já foi inicializado
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Use o useCallback para evitar recriações desnecessárias da função
+  const handleSelectDoctor = useCallback((id: number) => {
+    if (id !== selectedDoctor) {
+      onSelectDoctor(id);
+    }
+  }, [selectedDoctor, onSelectDoctor]);
+  
+  // Inicialize apenas uma vez quando o componente montar
+  useEffect(() => {
+    if (!isInitialized) {
+      setIsInitialized(true);
+    }
+  }, []);
+  
   return (
     <div>
       <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
@@ -17,7 +34,14 @@ const DoctorSelection = ({ selectedDoctor, onSelectDoctor, onNext }: DoctorSelec
         Escolha um Especialista
       </h2>
       
-      <DoctorSearch onSelectDoctor={onSelectDoctor} />
+      {/* Só renderizar após inicialização e passar doctores iniciais vazios para evitar fetches desnecessários */}
+      {isInitialized && (
+        <DoctorSearch 
+          onSelectDoctor={handleSelectDoctor}
+          initialDoctors={[]}
+          isInitialLoading={true}
+        />
+      )}
       
       <div className="flex justify-end mt-6">
         <button
