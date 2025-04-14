@@ -18,12 +18,11 @@ export const useAvailableDoctors = () => {
   useEffect(() => {
     const fetchAvailableDoctors = async () => {
       try {
-        // Buscando médicos disponíveis
+        // Buscando médicos disponíveis - removendo o filtro de status_disponibilidade
         const { data, error } = await supabase
           .from('medicos')
           .select('*')
-          .eq('status_disponibilidade', true)
-          .limit(3);
+          .limit(10);
           
         if (error) {
           console.error('Error fetching available doctors:', error);
@@ -34,29 +33,30 @@ export const useAvailableDoctors = () => {
           throw error;
         }
         
-        console.log(`Médicos disponíveis: ${data?.length || 0}`);
+        console.log(`Médicos encontrados: ${data?.length || 0}`);
         
         if (data && data.length > 0) {
-          console.log("Médicos disponíveis encontrados:", data);
+          console.log("Médicos encontrados:", data);
           // Process doctor data
           const doctorsWithAvailability = await Promise.all(data.map(processDoctorData));
           
           setDoctors(doctorsWithAvailability);
           setStatus({
             success: true,
-            message: `${doctorsWithAvailability.length} médicos disponíveis encontrados`
+            message: `${doctorsWithAvailability.length} médicos encontrados`
           });
         } else {
+          console.log("Nenhum médico encontrado no banco de dados");
           setStatus({
             success: false,
-            message: 'Nenhum médico disponível encontrado (status_disponibilidade = true)'
+            message: 'Nenhum médico encontrado no banco de dados'
           });
         }
       } catch (error) {
         console.error('Error in useAvailableDoctors:', error);
         setStatus({
           success: false,
-          message: `Erro ao buscar médicos disponíveis: ${error}`
+          message: `Erro ao buscar médicos: ${error}`
         });
       } finally {
         setIsLoading(false);

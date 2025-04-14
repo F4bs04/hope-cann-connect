@@ -48,14 +48,14 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
       
       const { data, error } = await supabase
         .from('medicos')
-        .select('*')
-        .eq('status_disponibilidade', true);
+        .select('*');
         
       if (error) {
         throw error;
       }
       
       if (data && data.length > 0) {
+        console.log("Médicos encontrados em DoctorSearch:", data);
         // Process doctor data
         const doctorsWithAvailability = await Promise.all(data.map(async (doctor) => {
           // Check for the nearest available appointment
@@ -92,8 +92,8 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
           
           return {
             id: doctor.id,
-            name: doctor.nome,
-            specialty: doctor.especialidade,
+            name: doctor.nome || "Médico",
+            specialty: doctor.especialidade || "Medicina Canábica",
             bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
             image: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
             availability
@@ -104,7 +104,7 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
         setFilteredDoctors(doctorsWithAvailability);
         
         // Extract unique specialties for filtering
-        const uniqueSpecialties = [...new Set(data.map(doctor => doctor.especialidade))];
+        const uniqueSpecialties = [...new Set(data.map(doctor => doctor.especialidade).filter(Boolean))];
         setSpecialties(uniqueSpecialties);
       } else {
         console.log("No doctors found in database");

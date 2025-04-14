@@ -40,8 +40,8 @@ export const processDoctorData = async (doctor: any): Promise<Doctor> => {
   
   return {
     id: doctor.id,
-    name: doctor.nome,
-    specialty: doctor.especialidade,
+    name: doctor.nome || "Médico",
+    specialty: doctor.especialidade || "Medicina Canábica",
     bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
     image: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
     availability
