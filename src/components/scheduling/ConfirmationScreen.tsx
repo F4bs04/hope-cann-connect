@@ -2,7 +2,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarCheck, Clock, User } from 'lucide-react';
+import { CalendarCheck, Clock, User, Calendar } from 'lucide-react';
 
 interface ConfirmationScreenProps {
   selectedDoctor: any;
