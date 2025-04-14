@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { User } from 'lucide-react';
+import { User, ChevronRight } from 'lucide-react';
 import DoctorSearch from '../DoctorSearch';
 
 interface DoctorSelectionProps {
@@ -19,13 +19,14 @@ const DoctorSelection = ({ selectedDoctor, onSelectDoctor, onNext }: DoctorSelec
       
       <DoctorSearch onSelectDoctor={onSelectDoctor} />
       
-      <div className="flex justify-end">
+      <div className="flex justify-end mt-6">
         <button
-          className="bg-hopecann-teal text-white px-6 py-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-hopecann-teal text-white px-6 py-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           onClick={onNext}
           disabled={!selectedDoctor}
         >
           Próximo
+          <ChevronRight size={16} />
         </button>
       </div>
     </div>

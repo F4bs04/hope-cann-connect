@@ -2,7 +2,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarCheck } from 'lucide-react';
+import { CalendarCheck, Clock, User } from 'lucide-react';
 
 interface ConfirmationScreenProps {
   selectedDoctor: any;
@@ -24,31 +24,36 @@ const ConfirmationScreen = ({ selectedDoctor, selectedDate, selectedTime }: Conf
       <div className="bg-gray-50 rounded-lg p-6 max-w-md mx-auto">
         <h3 className="font-semibold mb-4">Resumo do Agendamento</h3>
         
-        <div className="space-y-3 text-left">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Médico:</span>
-            <span className="font-medium">
-              {selectedDoctor?.name}
-            </span>
+        <div className="space-y-4 text-left">
+          <div className="flex items-center gap-3">
+            <User className="text-hopecann-teal h-5 w-5" />
+            <div>
+              <p className="text-sm text-gray-500">Médico</p>
+              <p className="font-medium">{selectedDoctor?.name}</p>
+            </div>
           </div>
           
-          <div className="flex justify-between">
-            <span className="text-gray-600">Data:</span>
-            <span className="font-medium">
-              {selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : ""}
-            </span>
+          <div className="flex items-center gap-3">
+            <Calendar className="text-hopecann-teal h-5 w-5" />
+            <div>
+              <p className="text-sm text-gray-500">Data</p>
+              <p className="font-medium">
+                {selectedDate ? format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ""}
+              </p>
+            </div>
           </div>
           
-          <div className="flex justify-between">
-            <span className="text-gray-600">Horário:</span>
-            <span className="font-medium">{selectedTime}</span>
+          <div className="flex items-center gap-3">
+            <Clock className="text-hopecann-teal h-5 w-5" />
+            <div>
+              <p className="text-sm text-gray-500">Horário</p>
+              <p className="font-medium">{selectedTime}</p>
+            </div>
           </div>
           
-          <div className="flex justify-between">
-            <span className="text-gray-600">Tipo de Consulta:</span>
-            <span className="font-medium">
-              Primeira Consulta
-            </span>
+          <div className="pt-3 border-t mt-3">
+            <p className="text-sm text-gray-500">Tipo de Consulta</p>
+            <p className="font-medium">Primeira Consulta</p>
           </div>
         </div>
       </div>

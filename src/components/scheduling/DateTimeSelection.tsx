@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar } from "@/components/ui/calendar";
 
 interface DateTimeSelectionProps {
   selectedDate: Date | null;
@@ -21,77 +22,66 @@ const DateTimeSelection = ({
   onNext,
   onBack
 }: DateTimeSelectionProps) => {
-  const generateAvailableDays = () => {
-    const days = [];
-    const today = new Date();
-    
-    for (let i = 1; i <= 14; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      
-      if (date.getDay() !== 0 && date.getDay() !== 6) {
-        days.push(date);
-      }
-    }
-    
-    return days;
-  };
-
   const timeSlots = [
     "08:00", "09:00", "10:00", "11:00", 
     "13:00", "14:00", "15:00", "16:00", "17:00"
   ];
-
-  const availableDays = generateAvailableDays();
   
   return (
     <div>
       <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-        <Calendar className="text-hopecann-teal" />
+        <CalendarIcon className="text-hopecann-teal" />
         Escolha a Data e Horário
       </h2>
       
-      <div className="mb-8">
-        <h3 className="font-medium mb-3">Data da Consulta</h3>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mb-8">
-          {availableDays.map((date, index) => (
-            <div 
-              key={index}
-              className={`p-3 border rounded-lg cursor-pointer transition-colors text-center ${
-                selectedDate && selectedDate.getTime() === date.getTime() 
-                  ? 'border-hopecann-teal bg-hopecann-teal/5' 
-                  : 'border-gray-200 hover:border-hopecann-teal/50'
-              }`}
-              onClick={() => setSelectedDate(date)}
-            >
-              <p className="text-sm text-gray-500">{format(date, 'E', { locale: ptBR })}</p>
-              <p className="font-medium">{format(date, 'dd')}</p>
-              <p className="text-sm">{format(date, 'MMM', { locale: ptBR })}</p>
-            </div>
-          ))}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Left column: Calendar */}
+        <div className="md:col-span-2">
+          <div className="border rounded-lg p-3 bg-white">
+            <Calendar
+              mode="single"
+              selected={selectedDate || undefined}
+              onSelect={(date) => date && setSelectedDate(date)}
+              disabled={{ before: addDays(new Date(), 1) }}
+              className="w-full"
+              locale={ptBR}
+              fromMonth={new Date()}
+              toMonth={addDays(new Date(), 60)}
+            />
+          </div>
         </div>
         
-        {selectedDate && (
-          <>
-            <h3 className="font-medium mb-3">Horário Disponível</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-              {timeSlots.map((time, index) => (
-                <div 
-                  key={index}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors text-center flex items-center justify-center gap-2 ${
-                    selectedTime === time 
-                      ? 'border-hopecann-teal bg-hopecann-teal/5' 
-                      : 'border-gray-200 hover:border-hopecann-teal/50'
-                  }`}
-                  onClick={() => setSelectedTime(time)}
-                >
-                  <Clock size={16} />
-                  <span>{time}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        {/* Right column: Time slots */}
+        <div>
+          <div className="border rounded-lg p-4 bg-white h-full">
+            <h3 className="font-medium mb-3 flex items-center gap-2">
+              <Clock size={16} className="text-hopecann-teal" />
+              Horários Disponíveis
+            </h3>
+            
+            {selectedDate ? (
+              <div className="grid grid-cols-2 gap-2">
+                {timeSlots.map((time, index) => (
+                  <div 
+                    key={index}
+                    className={`p-2 border rounded-lg cursor-pointer transition-colors text-center ${
+                      selectedTime === time 
+                        ? 'border-hopecann-teal bg-hopecann-teal/5 text-hopecann-teal font-medium' 
+                        : 'border-gray-200 hover:border-hopecann-teal/50'
+                    }`}
+                    onClick={() => setSelectedTime(time)}
+                  >
+                    {time}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>Selecione uma data no calendário para ver os horários disponíveis</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       
       <div className="flex justify-between">
@@ -99,14 +89,20 @@ const DateTimeSelection = ({
           className="border border-gray-300 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-50"
           onClick={onBack}
         >
-          Voltar
+          <div className="flex items-center gap-2">
+            <ChevronLeft size={16} />
+            Voltar
+          </div>
         </button>
         <button
           className="bg-hopecann-teal text-white px-6 py-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={onNext}
           disabled={!selectedDate || !selectedTime}
         >
-          Próximo
+          <div className="flex items-center gap-2">
+            Confirmar Horário
+            <ChevronRight size={16} />
+          </div>
         </button>
       </div>
     </div>
