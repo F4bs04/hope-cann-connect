@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { addDays, startOfWeek } from 'date-fns';
+import { addDays, startOfWeek, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarDays, CalendarIcon, Calendar as CalendarIcon2 } from 'lucide-react';
@@ -98,6 +98,7 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
 
   return (
     <div className="bg-white rounded-lg border p-4">
+      {/* View Mode Selector */}
       <div className="flex flex-wrap gap-2 mb-4">
         <Button
           variant={viewMode === 'week' ? 'default' : 'outline'}

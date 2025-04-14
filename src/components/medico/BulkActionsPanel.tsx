@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { SunMedium, Sunset, CalendarCheck, XCircle } from 'lucide-react';
 
 interface BulkActionsPanelProps {
   quickSetMode: 'morning' | 'afternoon' | 'all' | 'custom';
@@ -14,33 +15,34 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
   applyPatternToWeek
 }) => {
   return (
-    <div className="mb-6 p-4 border rounded-md bg-gray-50">
-      <h3 className="text-sm font-medium mb-3">Configuração rápida</h3>
-      <div className="grid grid-cols-2 gap-3">
+    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
+      <h3 className="text-sm font-medium text-blue-700 mb-3">Configuração Rápida</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <h4 className="text-xs font-medium mb-2">Aplicar a:</h4>
+          <p className="text-xs text-blue-700 mb-2">Aplicar a:</p>
           <div className="flex flex-wrap gap-2">
             <Button 
-              size="sm" 
               variant="outline" 
+              size="sm" 
               className="h-8 text-xs"
-              onClick={() => applyPatternToWeek('workdays', quickSetMode as any)}
+              onClick={() => applyPatternToWeek('workdays', quickSetMode === 'custom' ? 'all' : quickSetMode)}
             >
               Dias úteis
             </Button>
             <Button 
-              size="sm" 
               variant="outline" 
+              size="sm" 
               className="h-8 text-xs"
-              onClick={() => applyPatternToWeek('weekend', quickSetMode as any)}
+              onClick={() => applyPatternToWeek('weekend', quickSetMode === 'custom' ? 'all' : quickSetMode)}
             >
               Fim de semana
             </Button>
             <Button 
-              size="sm" 
               variant="outline" 
+              size="sm" 
               className="h-8 text-xs"
-              onClick={() => applyPatternToWeek('all', quickSetMode as any)}
+              onClick={() => applyPatternToWeek('all', quickSetMode === 'custom' ? 'all' : quickSetMode)}
             >
               Semana toda
             </Button>
@@ -48,39 +50,43 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
         </div>
         
         <div>
-          <h4 className="text-xs font-medium mb-2">Definir como:</h4>
+          <p className="text-xs text-blue-700 mb-2">Definir como:</p>
           <div className="flex flex-wrap gap-2">
             <Button 
-              size="sm" 
               variant={quickSetMode === 'morning' ? "default" : "outline"} 
-              className="h-8 text-xs"
+              size="sm" 
+              className={`h-8 text-xs flex items-center gap-1 ${quickSetMode === 'morning' ? 'bg-blue-600' : ''}`}
               onClick={() => setQuickSetMode('morning')}
             >
+              <SunMedium className="h-3 w-3" />
               Manhãs
             </Button>
             <Button 
-              size="sm" 
               variant={quickSetMode === 'afternoon' ? "default" : "outline"} 
-              className="h-8 text-xs"
+              size="sm" 
+              className={`h-8 text-xs flex items-center gap-1 ${quickSetMode === 'afternoon' ? 'bg-orange-500' : ''}`}
               onClick={() => setQuickSetMode('afternoon')}
             >
+              <Sunset className="h-3 w-3" />
               Tardes
             </Button>
             <Button 
-              size="sm" 
               variant={quickSetMode === 'all' ? "default" : "outline"} 
-              className="h-8 text-xs"
+              size="sm" 
+              className={`h-8 text-xs flex items-center gap-1 ${quickSetMode === 'all' ? 'bg-green-600' : ''}`}
               onClick={() => setQuickSetMode('all')}
             >
+              <CalendarCheck className="h-3 w-3" />
               Dia todo
             </Button>
             <Button 
-              size="sm" 
               variant="outline" 
-              className="h-8 text-xs"
+              size="sm" 
+              className="h-8 text-xs flex items-center gap-1 text-red-500 border-red-200 hover:bg-red-50"
               onClick={() => applyPatternToWeek('all', 'none')}
             >
-              Limpar todos
+              <XCircle className="h-3 w-3" />
+              Limpar
             </Button>
           </div>
         </div>

@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, SunMedium, Sunset, CalendarCheck, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -148,30 +147,75 @@ const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
 
   return (
     <div className="space-y-4">
-      {renderBulkActions()}
+      {/* Bulk Configuration Panel */}
+      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
+        <h3 className="text-sm font-medium text-blue-700 mb-3">Configuração Rápida</h3>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-blue-700 mb-2">Aplicar a:</p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" className="h-8 text-xs">
+                Dias úteis
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs">
+                Fim de semana
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs">
+                Semana toda
+              </Button>
+            </div>
+          </div>
+          
+          <div>
+            <p className="text-xs text-blue-700 mb-2">Definir como:</p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" className="h-8 text-xs flex items-center gap-1">
+                <SunMedium className="h-3 w-3" />
+                Manhãs
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs flex items-center gap-1">
+                <Sunset className="h-3 w-3" />
+                Tardes
+              </Button>
+              <Button variant="default" size="sm" className="h-8 text-xs flex items-center gap-1 bg-green-600">
+                <CalendarCheck className="h-3 w-3" />
+                Dia todo
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs flex items-center gap-1 text-red-500 border-red-200 hover:bg-red-50">
+                <XCircle className="h-3 w-3" />
+                Limpar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
       
+      {/* Week Navigation */}
       <div className="flex justify-between items-center mb-4">
-        <Button variant="outline" size="sm" onClick={prevWeek}>
-          <ChevronLeft className="h-4 w-4 mr-1" />
+        <Button variant="outline" size="sm" onClick={prevWeek} className="flex items-center gap-1">
+          <ChevronLeft className="h-4 w-4" />
           Semana anterior
         </Button>
         <span className="text-sm font-medium">
           {format(selectedWeekStart, "dd/MM")} - {format(addDays(selectedWeekStart, 6), "dd/MM/yyyy")}
         </span>
-        <Button variant="outline" size="sm" onClick={nextWeek}>
+        <Button variant="outline" size="sm" onClick={nextWeek} className="flex items-center gap-1">
           Próxima semana
-          <ChevronRight className="h-4 w-4 ml-1" />
+          <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+      {/* Week Days */}
+      <div className="grid grid-cols-7 gap-2">
         {renderDaysOfWeek()}
       </div>
       
+      {/* Save Button */}
       <div className="pt-4 border-t mt-4">
         <Button 
-          variant="outline" 
-          className="w-full flex items-center justify-center"
+          variant="default" 
+          className="w-full flex items-center justify-center bg-hopecann-teal hover:bg-hopecann-teal/90"
           onClick={handleSaveAvailability}
           disabled={isSaving}
         >

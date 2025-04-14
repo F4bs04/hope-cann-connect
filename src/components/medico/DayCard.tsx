@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { SunMedium, Sunset, Clock, CalendarDays } from 'lucide-react';
 
 interface DayCardProps {
   day: Date;
@@ -44,26 +45,27 @@ const DayCard: React.FC<DayCardProps> = ({
   const hasMorningSlots = availableSlots.some(slot => horariosDisponiveis.manha.includes(slot)) || false;
   const hasAfternoonSlots = availableSlots.some(slot => horariosDisponiveis.tarde.includes(slot)) || false;
   
+  const dayOfWeek = format(day, 'EEEE', { locale: ptBR });
+  const dayOfMonth = format(day, 'dd');
+  
   return (
-    <div className="border rounded-md overflow-hidden bg-white">
+    <div className="border rounded-md overflow-hidden bg-white hover:shadow transition-shadow">
       <div 
-        className="text-center p-2 cursor-pointer hover:bg-gray-50 border-b"
+        className={`text-center p-2 cursor-pointer border-b ${
+          (day.getDay() === 0 || day.getDay() === 6) ? 'bg-orange-50' : 'bg-blue-50'
+        }`}
         onClick={() => {
           setSelectedViewDay(day);
           setViewMode('day');
         }}
       >
-        <div className="font-medium">
-          {format(day, 'EEEE', { locale: ptBR })}
-        </div>
-        <div className="text-sm">
-          {format(day, 'dd/MM')}
-        </div>
+        <div className="font-medium capitalize">{dayOfWeek}</div>
+        <div className="text-sm font-bold">{dayOfMonth}/{format(day, 'MM')}</div>
       </div>
       
-      <div className="p-2 flex flex-col gap-2">
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-gray-500">Disponibilidade:</span>
+      <div className="p-3">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs text-gray-500">Disponível:</span>
           <Switch 
             checked={timeSlotsCount > 0}
             onCheckedChange={(checked) => handleToggleDayAvailability(day, checked)}
@@ -73,45 +75,40 @@ const DayCard: React.FC<DayCardProps> = ({
         
         {timeSlotsCount > 0 ? (
           <div className="space-y-2">
-            <div className="flex gap-1">
+            <div className="grid grid-cols-2 gap-1">
               <Button 
-                variant={hasMorningSlots && !hasAfternoonSlots ? "default" : "outline"} 
+                variant={hasMorningSlots ? "default" : "outline"} 
                 size="sm" 
-                className="flex-1 h-7 text-xs"
+                className={`h-7 text-xs flex items-center gap-1 ${hasMorningSlots ? 'bg-blue-600' : ''}`}
                 onClick={() => handleQuickSetAvailability(day, 'morning')}
               >
+                <SunMedium className="h-3 w-3" />
                 Manhã
               </Button>
               <Button 
-                variant={!hasMorningSlots && hasAfternoonSlots ? "default" : "outline"} 
+                variant={hasAfternoonSlots ? "default" : "outline"} 
                 size="sm" 
-                className="flex-1 h-7 text-xs"
+                className={`h-7 text-xs flex items-center gap-1 ${hasAfternoonSlots ? 'bg-orange-500' : ''}`}
                 onClick={() => handleQuickSetAvailability(day, 'afternoon')}
               >
+                <Sunset className="h-3 w-3" />
                 Tarde
-              </Button>
-              <Button 
-                variant={hasMorningSlots && hasAfternoonSlots ? "default" : "outline"} 
-                size="sm" 
-                className="flex-1 h-7 text-xs"
-                onClick={() => handleQuickSetAvailability(day, 'all')}
-              >
-                Todos
               </Button>
             </div>
             
-            <div className="text-xs text-center text-gray-500">
-              {timeSlotsCount} horários • {setSelectedDay && setHorarioDialogOpen && (
-                <button 
-                  className="text-blue-500 hover:underline" 
-                  onClick={() => {
+            <div className="flex justify-center items-center">
+              <button 
+                className="text-xs text-blue-600 hover:underline flex items-center gap-1" 
+                onClick={() => {
+                  if (setSelectedDay && setHorarioDialogOpen) {
                     setSelectedDay(day);
                     setHorarioDialogOpen(true);
-                  }}
-                >
-                  Detalhes
-                </button>
-              )}
+                  }
+                }}
+              >
+                <Clock className="h-3 w-3" />
+                <span>{timeSlotsCount} horários</span>
+              </button>
             </div>
           </div>
         ) : (
