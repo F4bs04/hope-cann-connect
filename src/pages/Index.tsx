@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -10,7 +9,7 @@ import BenefitsSection from '../components/BenefitsSection';
 import TestimonialSection from '../components/TestimonialSection';
 import ProcessSteps from '../components/ProcessSteps';
 import WhyChooseUs from '../components/WhyChooseUs';
-import HomeScheduling from '../components/HomeScheduling';
+import { HomeScheduling } from '@/components/home-scheduling';
 import FAQSection from '../components/FAQSection';
 import DoctorCTA from '../components/DoctorCTA';
 
