@@ -1,7 +1,5 @@
 
 import React, { useState } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { 
   SidebarProvider, 
   Sidebar, 
@@ -212,11 +210,9 @@ const AreaMedico: React.FC = () => {
         </Sidebar>
         
         <SidebarInset className="bg-gray-50 flex-1">
-          <Header />
-          <main className="container mx-auto px-4 py-8">
+          <main className="w-full h-full p-8">
             {renderSection()}
           </main>
-          <Footer />
         </SidebarInset>
       </div>
     </SidebarProvider>

@@ -70,7 +70,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
   });
   
   return (
-    <div>
+    <div className="w-full">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Prontuários</h1>
         <p className="text-gray-600">
