@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { addDays, startOfWeek, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ interface CalendarViewsProps {
   setHorarioDialogOpen: (open: boolean) => void;
   setHorariosConfig: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
   getAvailableSlotsForDay: (date: Date) => string[];
+  saveAvailability: () => Promise<boolean>;
 }
 
 const CalendarViews: React.FC<CalendarViewsProps> = ({
@@ -61,7 +62,8 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
   setSelectedDay,
   setHorarioDialogOpen,
   setHorariosConfig,
-  getAvailableSlotsForDay
+  getAvailableSlotsForDay,
+  saveAvailability
 }) => {
 
   const renderDaysOfWeek = () => {
@@ -87,14 +89,6 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
     }
     return days;
   };
-
-  const renderBulkActions = () => (
-    <BulkActionsPanel
-      quickSetMode={quickSetMode}
-      setQuickSetMode={setQuickSetMode}
-      applyPatternToWeek={applyPatternToWeek}
-    />
-  );
 
   return (
     <div className="bg-white rounded-lg border p-4">
@@ -135,9 +129,18 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
           prevWeek={prevWeek}
           nextWeek={nextWeek}
           renderDaysOfWeek={renderDaysOfWeek}
-          renderBulkActions={renderBulkActions}
+          renderBulkActions={() => (
+            <BulkActionsPanel
+              quickSetMode={quickSetMode}
+              setQuickSetMode={setQuickSetMode}
+              applyPatternToWeek={applyPatternToWeek}
+            />
+          )}
           horariosConfig={horariosConfig}
           formatWeekday={formatWeekday}
+          handleQuickSetMode={setQuickSetMode}
+          applyPatternToWeek={applyPatternToWeek}
+          saveAvailability={saveAvailability}
         />
       )}
 
@@ -156,6 +159,7 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
           setHorariosConfig={setHorariosConfig}
           setSelectedViewDay={setSelectedViewDay}
           handleQuickSetAvailability={handleQuickSetAvailability}
+          saveAvailability={saveAvailability}
         />
       )}
 
