@@ -1,14 +1,54 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ChevronDown, ChevronUp, Plus, User, Calendar, Check } from 'lucide-react';
+import { Search, Plus, FileText, Calendar, User, Clock, X as XIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface PatientRecord {
+  id: number;
+  nome: string;
+  idade: number;
+  dataConsulta: string;
+  status: 'concluído' | 'pendente' | 'cancelado';
+  sintomas: string;
+  diagnostico: string;
+  tratamento: string;
+}
+
+const mockProntuarios: PatientRecord[] = [
+  {
+    id: 1,
+    nome: 'Maria Silva Santos',
+    idade: 35,
+    dataConsulta: '15/01/2025',
+    status: 'concluído',
+    sintomas: 'Dores nas costas, dificuldade para dormir',
+    diagnostico: 'Lombalgia crônica',
+    tratamento: 'CBD 20mg 2x ao dia'
+  },
+  {
+    id: 2,
+    nome: 'João Oliveira Pereira',
+    idade: 42,
+    dataConsulta: '10/01/2025',
+    status: 'concluído',
+    sintomas: 'Ansiedade, insônia',
+    diagnostico: 'Transtorno de Ansiedade Generalizada',
+    tratamento: 'CBD 30mg à noite'
+  },
+  {
+    id: 3,
+    nome: 'Ana Carolina Souza',
+    idade: 28,
+    dataConsulta: '05/01/2025',
+    status: 'cancelado',
+    sintomas: 'Enxaqueca frequente',
+    diagnostico: 'Enxaqueca crônica',
+    tratamento: 'THC/CBD 1:1 10mg em crises'
+  }
+];
 
 interface ProntuariosProps {
   onSelectPatient: (patientId: number) => void;
@@ -16,178 +56,163 @@ interface ProntuariosProps {
 
 const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('todos');
   
-  const mockPatients = [
-    { id: 1, nome: 'Maria Silva Santos', dataUltimaConsulta: '15/01/2025' },
-    { id: 2, nome: 'João Oliveira Pereira', dataUltimaConsulta: '10/01/2025' },
-    { id: 3, nome: 'Ana Carolina Souza', dataUltimaConsulta: '05/01/2025' }
-  ];
-  
-  const filteredPatients = mockPatients.filter(patient => 
-    patient.nome.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProntuarios = mockProntuarios.filter(prontuario => 
+    prontuario.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    prontuario.diagnostico.toLowerCase().includes(searchQuery.toLowerCase())
+  ).filter(prontuario => {
+    if (activeTab === 'todos') return true;
+    if (activeTab === 'concluido') return prontuario.status === 'concluído';
+    if (activeTab === 'pendente') return prontuario.status === 'pendente';
+    if (activeTab === 'cancelado') return prontuario.status === 'cancelado';
+    return true;
+  });
   
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Prontuário Médico</h1>
+        <h1 className="text-3xl font-bold mb-2">Prontuários</h1>
         <p className="text-gray-600">
-          Visualize e gerencie os prontuários dos seus pacientes
+          Histórico médico e evolução dos pacientes
         </p>
       </div>
       
-      <div className="mb-6">
-        <Input
-          placeholder="Buscar paciente por nome..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-md"
-        />
+      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar prontuário por paciente ou diagnóstico..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <Button className="bg-[#00B3B0] hover:bg-[#009E9B]">
+          <Plus className="h-4 w-4 mr-2" /> Novo Prontuário
+        </Button>
       </div>
       
+      <Tabs defaultValue="todos" value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList>
+          <TabsTrigger value="todos">Todos</TabsTrigger>
+          <TabsTrigger value="concluido">Concluídos</TabsTrigger>
+          <TabsTrigger value="pendente">Pendentes</TabsTrigger>
+          <TabsTrigger value="cancelado">Cancelados</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
       <div className="grid gap-4">
-        {filteredPatients.map(patient => (
-          <Card key={patient.id} 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => onSelectPatient(patient.id)}
+        {filteredProntuarios.map(prontuario => (
+          <Card 
+            key={prontuario.id}
+            className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => onSelectPatient(prontuario.id)}
           >
-            <CardContent className="p-4 flex items-center">
-              <div className="h-10 w-10 bg-teal-100 rounded-full flex items-center justify-center mr-4">
-                <User className="h-5 w-5 text-teal-600" />
+            <CardContent className="p-0">
+              <div className="flex flex-col md:flex-row">
+                <div 
+                  className={`
+                    p-4 text-white flex items-center justify-center md:w-16
+                    ${prontuario.status === 'concluído' ? 'bg-green-500' : 
+                      prontuario.status === 'pendente' ? 'bg-amber-500' : 
+                      'bg-red-500'}
+                  `}
+                >
+                  <FileText className="h-8 w-8" />
+                </div>
+                
+                <div className="p-4 flex-1">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
+                    <div className="flex items-center">
+                      <h3 className="font-medium text-lg">{prontuario.nome}</h3>
+                      <span className="text-sm text-gray-500 ml-4">{prontuario.idade} anos</span>
+                    </div>
+                    <div 
+                      className={`
+                        text-xs px-2 py-1 rounded-full mt-2 md:mt-0 inline-block
+                        ${prontuario.status === 'concluído' ? 'bg-green-100 text-green-700' : 
+                          prontuario.status === 'pendente' ? 'bg-amber-100 text-amber-700' : 
+                          'bg-red-100 text-red-700'}
+                      `}
+                    >
+                      {prontuario.status.charAt(0).toUpperCase() + prontuario.status.slice(1)}
+                    </div>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">Diagnóstico:</span> {prontuario.diagnostico}
+                    </p>
+                    <p className="text-sm text-gray-700 mt-1">
+                      <span className="font-medium">Tratamento:</span> {prontuario.tratamento}
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                    <div className="flex items-center">
+                      <Calendar className="h-3.5 w-3.5 mr-1" />
+                      Consulta: {prontuario.dataConsulta}
+                    </div>
+                    <div className="flex items-center">
+                      <User className="h-3.5 w-3.5 mr-1" />
+                      Paciente #{prontuario.id}
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="h-3.5 w-3.5 mr-1" />
+                      Última atualização: {prontuario.dataConsulta}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 p-4 flex flex-col gap-2 justify-center md:w-48">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle edit here
+                    }}
+                  >
+                    Editar
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectPatient(prontuario.id);
+                    }}
+                  >
+                    Ver detalhes
+                  </Button>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-medium">{patient.nome}</h3>
-                <p className="text-sm text-gray-500">Última consulta: {patient.dataUltimaConsulta}</p>
-              </div>
-              <Button variant="ghost" size="sm">
-                Ver prontuário
-              </Button>
             </CardContent>
           </Card>
         ))}
         
-        {filteredPatients.length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-gray-500">Nenhum paciente encontrado</p>
+        {filteredProntuarios.length === 0 && (
+          <div className="text-center py-10 bg-gray-50 rounded-lg border">
+            <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+            <h3 className="text-lg font-medium text-gray-600 mb-1">Nenhum prontuário encontrado</h3>
+            <p className="text-gray-500 mb-4">Não encontramos prontuários com esses critérios de busca</p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                setSearchQuery('');
+                setActiveTab('todos');
+              }}
+              className="mx-auto"
+            >
+              <XIcon className="h-4 w-4 mr-2" /> Limpar filtros
+            </Button>
           </div>
         )}
-      </div>
-      
-      <div className="mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Prontuário Médico Completo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="identificacao">
-                <AccordionTrigger>Identificação do Paciente</AccordionTrigger>
-                <AccordionContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Nome Completo</Label>
-                      <Input placeholder="Nome do paciente" className="mt-1" />
-                    </div>
-                    <div>
-                      <Label>Idade</Label>
-                      <Input type="number" placeholder="Idade" className="mt-1" />
-                    </div>
-                    <div>
-                      <Label>Sexo</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="m">Masculino</SelectItem>
-                          <SelectItem value="f">Feminino</SelectItem>
-                          <SelectItem value="o">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>CID</Label>
-                      <Input placeholder="Buscar CID..." className="mt-1" />
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="anamnese">
-                <AccordionTrigger>Anamnese</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Queixa Principal</Label>
-                      <Textarea placeholder="Descreva a queixa principal" className="mt-1" />
-                    </div>
-                    <div>
-                      <Label>História da Doença Atual</Label>
-                      <Textarea placeholder="Descreva a história da doença atual" className="mt-1" />
-                    </div>
-                    <div>
-                      <Label>Antecedentes</Label>
-                      <Textarea placeholder="Descreva os antecedentes" className="mt-1" />
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="diagnostico">
-                <AccordionTrigger>Hipóteses Diagnósticas</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <Input placeholder="Buscar CID..." className="pr-10" />
-                      <Button className="absolute right-1 top-1 h-8 w-8 p-0 flex items-center justify-center" size="sm">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 bg-blue-50 p-2 rounded-md">
-                      <span className="text-sm">CID J11 - Influenza</span>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-auto">
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="conduta">
-                <AccordionTrigger>Conduta Médica</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Plano Terapêutico</Label>
-                      <Textarea placeholder="Descreva o plano terapêutico" className="mt-1" />
-                    </div>
-                    <div>
-                      <Label>Orientações</Label>
-                      <Textarea placeholder="Descreva as orientações ao paciente" className="mt-1" />
-                    </div>
-                    <div>
-                      <Label>Encaminhamentos</Label>
-                      <Textarea placeholder="Descreva os encaminhamentos" className="mt-1" />
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="observacoes">
-                <AccordionTrigger>Observações</AccordionTrigger>
-                <AccordionContent>
-                  <Textarea placeholder="Observações adicionais" className="min-h-[100px]" />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            
-            <div className="mt-6 flex justify-end gap-3">
-              <Button variant="outline">Salvar Rascunho</Button>
-              <Button>Gerar Resumo para Paciente</Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
