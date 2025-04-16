@@ -8,6 +8,7 @@ import { DateTimeStep } from './DateTimeStep';
 import { UserDataStep } from './UserDataStep';
 import { ConfirmationStep } from './ConfirmationStep';
 import { fetchDoctors } from './utils/doctorUtils';
+import { formatTelefone } from '@/utils/formatters'; // Import the formatter at the top
 
 const HomeScheduling = () => {
   // State management
@@ -45,8 +46,7 @@ const HomeScheduling = () => {
     let formattedValue = value;
     
     if (name === 'phone') {
-      // Import and use the formatter
-      const { formatTelefone } = require('@/utils/formatters');
+      // Use the imported formatter directly
       formattedValue = formatTelefone(value);
     }
     
@@ -93,27 +93,37 @@ const HomeScheduling = () => {
   // Fetch doctor info when selectedDoctor changes
   useEffect(() => {
     if (selectedDoctor) {
-      const { supabase } = require("@/integrations/supabase/client");
-      
+      // Import supabase client using ES6 import
       const fetchDoctorInfo = async () => {
-        const { data, error } = await supabase
-          .from('medicos')
-          .select('*')
-          .eq('id', selectedDoctor)
-          .single();
+        try {
+          const { supabase } = await import("@/integrations/supabase/client");
           
-        if (error) {
-          console.error("Error fetching doctor info:", error);
+          const { data, error } = await supabase
+            .from('medicos')
+            .select('*')
+            .eq('id', selectedDoctor)
+            .single();
+            
+          if (error) {
+            console.error("Error fetching doctor info:", error);
+            toast({
+              title: "Erro",
+              description: "Não foi possível carregar informações do médico selecionado.",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          if (data) {
+            setSelectedDoctorInfo(data);
+          }
+        } catch (err) {
+          console.error("Error importing supabase or fetching doctor:", err);
           toast({
-            title: "Erro",
-            description: "Não foi possível carregar informações do médico selecionado.",
+            title: "Erro de sistema",
+            description: "Ocorreu um erro ao carregar dados. Por favor tente novamente.",
             variant: "destructive"
           });
-          return;
-        }
-        
-        if (data) {
-          setSelectedDoctorInfo(data);
         }
       };
       
