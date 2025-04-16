@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, FileText, Calendar, User, Clock, X as XIcon } from 'lucide-react';
+import { Search, Plus, FileText, Calendar, User, Clock, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface PatientRecord {
@@ -209,7 +209,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
               }}
               className="mx-auto"
             >
-              <XIcon className="h-4 w-4 mr-2" /> Limpar filtros
+              <X className="h-4 w-4 mr-2" /> Limpar filtros
             </Button>
           </div>
         )}

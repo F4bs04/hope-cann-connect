@@ -102,7 +102,7 @@ const AreaMedico: React.FC = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex">
+      <div className="min-h-screen flex w-full">
         <Sidebar className="bg-[#00B3B0] text-white">
           <SidebarHeader className="p-4">
             <h2 className="text-xl font-bold">HopeCann</h2>
