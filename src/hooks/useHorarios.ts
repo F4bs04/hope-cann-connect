@@ -1,4 +1,3 @@
-
 import { useHorariosState } from './useHorariosState';
 import { useHorariosAvailability } from './useHorariosAvailability';
 import { useHorariosSlots } from './useHorariosSlots';
@@ -43,7 +42,6 @@ export function useHorarios() {
 
   const { dateSelected, handleDateSelect: baseHandleDateSelect } = useHorariosSelection();
 
-  // Wrapper para manter a API original
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDay(date);
@@ -51,11 +49,9 @@ export function useHorarios() {
     }
     return date;
   };
-  
-  // Nova função para salvar a disponibilidade do médico no Supabase
+
   const saveAvailability = async () => {
     try {
-      // Get the current user session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -66,7 +62,6 @@ export function useHorarios() {
         return false;
       }
 
-      // Get the doctor's ID from the medicos table
       const { data: userData, error: userError } = await supabase
         .from('usuarios')
         .select('id')
@@ -89,32 +84,26 @@ export function useHorarios() {
 
       const doctorId = doctorData.id;
 
-      // Delete existing schedule entries for the doctor
       await supabase
         .from('horarios_disponiveis')
         .delete()
         .eq('id_medico', doctorId);
 
-      // Insert new schedule entries based on horariosConfig
       const scheduleEntries = [];
       for (const [diaSemana, horarios] of Object.entries(horariosConfig)) {
         if (horarios.length > 0) {
-          // Group consecutive hours
           let startHour = horarios[0];
           let endHour = '';
           
           for (let i = 0; i < horarios.length; i++) {
             const currentHour = horarios[i];
             
-            // If this is the last hour or there's a gap to the next hour
             if (i === horarios.length - 1 || 
                 parseInt(horarios[i+1].split(':')[0]) - parseInt(currentHour.split(':')[0]) > 1) {
               
-              // Calculate end hour (current hour + 1)
               const currentHourNum = parseInt(currentHour.split(':')[0]);
               endHour = `${(currentHourNum + 1).toString().padStart(2, '0')}:00`;
               
-              // Add entry for this time block
               scheduleEntries.push({
                 id_medico: doctorId,
                 dia_semana: diaSemana,
@@ -122,7 +111,6 @@ export function useHorarios() {
                 hora_fim: endHour
               });
               
-              // If not the last hour, start a new block with the next hour
               if (i < horarios.length - 1) {
                 startHour = horarios[i+1];
               }
@@ -141,7 +129,6 @@ export function useHorarios() {
         }
       }
 
-      // Update doctor's availability status
       const { error: statusError } = await supabase
         .from('medicos')
         .update({ status_disponibilidade: true })
@@ -169,7 +156,6 @@ export function useHorarios() {
   };
 
   return {
-    // State
     quickSetMode,
     selectedSlot,
     selectedDay,
@@ -177,13 +163,11 @@ export function useHorarios() {
     horariosDisponiveis,
     todosHorariosDisponiveis,
     
-    // Setters
     setQuickSetMode,
     setSelectedSlot,
     setSelectedDay,
     setHorariosConfig,
     
-    // Functions
     getAvailableSlotsForDay,
     handleQuickSetAvailability,
     applyPatternToWeek,

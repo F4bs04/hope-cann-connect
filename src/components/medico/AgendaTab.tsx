@@ -35,7 +35,8 @@ const AgendaTab: React.FC = () => {
     getAvailableSlotsForDay,
     handleCancelarConsulta,
     setSelectedMensagem,
-    setMensagemDialogOpen
+    setMensagemDialogOpen,
+    saveAvailability
   } = useDoctorSchedule();
 
   return (
@@ -79,6 +80,7 @@ const AgendaTab: React.FC = () => {
           setHorarioDialogOpen={setHorarioDialogOpen}
           setHorariosConfig={setHorariosConfig}
           getAvailableSlotsForDay={getAvailableSlotsForDay}
+          saveAvailability={saveAvailability}
         />
       </div>
     </div>

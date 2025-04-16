@@ -128,4 +128,5 @@ export interface DoctorScheduleContextType {
   handleDateSelect: (date: Date | undefined) => void;
   handleAddSlot: (day: Date, time: string) => void;
   handleSaveProntuario: (historico: HistoricoPaciente, acompanhamento: AcompanhamentoPaciente) => void;
+  saveAvailability: () => Promise<boolean>;
 }
