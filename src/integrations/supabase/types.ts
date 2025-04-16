@@ -105,6 +105,47 @@ export type Database = {
           },
         ]
       }
+      atestados: {
+        Row: {
+          assinado: boolean | null
+          cid: string | null
+          data_emissao: string | null
+          id: number
+          id_paciente: number | null
+          justificativa: string | null
+          tempo_afastamento: number
+          unidade_tempo: string | null
+        }
+        Insert: {
+          assinado?: boolean | null
+          cid?: string | null
+          data_emissao?: string | null
+          id?: number
+          id_paciente?: number | null
+          justificativa?: string | null
+          tempo_afastamento: number
+          unidade_tempo?: string | null
+        }
+        Update: {
+          assinado?: boolean | null
+          cid?: string | null
+          data_emissao?: string | null
+          id?: number
+          id_paciente?: number | null
+          justificativa?: string | null
+          tempo_afastamento?: number
+          unidade_tempo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atestados_id_paciente_fkey"
+            columns: ["id_paciente"]
+            isOneToOne: false
+            referencedRelation: "pacientes_app"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinicas: {
         Row: {
           cnpj: string
@@ -314,6 +355,53 @@ export type Database = {
           },
         ]
       }
+      laudos: {
+        Row: {
+          assinado: boolean | null
+          cid: string | null
+          conclusao: string
+          data_emissao: string | null
+          descricao: string
+          id: number
+          id_paciente: number | null
+          objetivo: string
+          observacoes: string | null
+          tipo_laudo: string
+        }
+        Insert: {
+          assinado?: boolean | null
+          cid?: string | null
+          conclusao: string
+          data_emissao?: string | null
+          descricao: string
+          id?: number
+          id_paciente?: number | null
+          objetivo: string
+          observacoes?: string | null
+          tipo_laudo: string
+        }
+        Update: {
+          assinado?: boolean | null
+          cid?: string | null
+          conclusao?: string
+          data_emissao?: string | null
+          descricao?: string
+          id?: number
+          id_paciente?: number | null
+          objetivo?: string
+          observacoes?: string | null
+          tipo_laudo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_id_paciente_fkey"
+            columns: ["id_paciente"]
+            isOneToOne: false
+            referencedRelation: "pacientes_app"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       log_atividades: {
         Row: {
           data_hora: string | null
@@ -494,6 +582,92 @@ export type Database = {
           },
         ]
       }
+      pacientes_app: {
+        Row: {
+          condicao: string | null
+          data_cadastro: string | null
+          data_nascimento: string | null
+          email: string | null
+          endereco: string | null
+          genero: string | null
+          id: number
+          idade: number
+          nome: string
+          telefone: string | null
+          ultima_consulta: string | null
+        }
+        Insert: {
+          condicao?: string | null
+          data_cadastro?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          genero?: string | null
+          id?: number
+          idade: number
+          nome: string
+          telefone?: string | null
+          ultima_consulta?: string | null
+        }
+        Update: {
+          condicao?: string | null
+          data_cadastro?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          genero?: string | null
+          id?: number
+          idade?: number
+          nome?: string
+          telefone?: string | null
+          ultima_consulta?: string | null
+        }
+        Relationships: []
+      }
+      pedidos_exame: {
+        Row: {
+          assinado: boolean | null
+          data_solicitacao: string | null
+          id: number
+          id_paciente: number | null
+          instrucoes: string | null
+          justificativa: string
+          nome_exame: string
+          prioridade: string | null
+          status: string | null
+        }
+        Insert: {
+          assinado?: boolean | null
+          data_solicitacao?: string | null
+          id?: number
+          id_paciente?: number | null
+          instrucoes?: string | null
+          justificativa: string
+          nome_exame: string
+          prioridade?: string | null
+          status?: string | null
+        }
+        Update: {
+          assinado?: boolean | null
+          data_solicitacao?: string | null
+          id?: number
+          id_paciente?: number | null
+          instrucoes?: string | null
+          justificativa?: string
+          nome_exame?: string
+          prioridade?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_exame_id_paciente_fkey"
+            columns: ["id_paciente"]
+            isOneToOne: false
+            referencedRelation: "pacientes_app"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissoes: {
         Row: {
           descricao: string | null
@@ -630,6 +804,88 @@ export type Database = {
           tipo?: string
         }
         Relationships: []
+      }
+      prontuarios: {
+        Row: {
+          data_consulta: string | null
+          diagnostico: string | null
+          id: number
+          id_paciente: number | null
+          observacoes: string | null
+          sintomas: string | null
+          status: string | null
+          tratamento: string | null
+        }
+        Insert: {
+          data_consulta?: string | null
+          diagnostico?: string | null
+          id?: number
+          id_paciente?: number | null
+          observacoes?: string | null
+          sintomas?: string | null
+          status?: string | null
+          tratamento?: string | null
+        }
+        Update: {
+          data_consulta?: string | null
+          diagnostico?: string | null
+          id?: number
+          id_paciente?: number | null
+          observacoes?: string | null
+          sintomas?: string | null
+          status?: string | null
+          tratamento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prontuarios_id_paciente_fkey"
+            columns: ["id_paciente"]
+            isOneToOne: false
+            referencedRelation: "pacientes_app"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receitas_app: {
+        Row: {
+          data: string | null
+          data_validade: string | null
+          id: number
+          id_paciente: number | null
+          medicamento: string
+          observacoes: string | null
+          posologia: string
+          status: string | null
+        }
+        Insert: {
+          data?: string | null
+          data_validade?: string | null
+          id?: number
+          id_paciente?: number | null
+          medicamento: string
+          observacoes?: string | null
+          posologia: string
+          status?: string | null
+        }
+        Update: {
+          data?: string | null
+          data_validade?: string | null
+          id?: number
+          id_paciente?: number | null
+          medicamento?: string
+          observacoes?: string | null
+          posologia?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receitas_app_id_paciente_fkey"
+            columns: ["id_paciente"]
+            isOneToOne: false
+            referencedRelation: "pacientes_app"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       renovacoes_prescricao: {
         Row: {

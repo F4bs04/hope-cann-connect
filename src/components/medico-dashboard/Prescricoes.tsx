@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,9 +7,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Printer } from 'lucide-react';
+import { Printer, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { getPacientes, createReceita } from '@/services/supabaseService';
 
 const Prescricoes: React.FC = () => {
+  const { toast } = useToast();
+  const [pacientes, setPacientes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [success, setSuccess] = useState(false);
+
+  // Form state
+  const [pacienteId, setPacienteId] = useState('');
   const [medicamento, setMedicamento] = useState('');
   const [posologia, setPosologia] = useState('');
   const [tempoUso, setTempoUso] = useState('');
@@ -17,20 +26,124 @@ const Prescricoes: React.FC = () => {
   const [permiteSubstituicao, setPermiteSubstituicao] = useState('não');
   const [cid, setCid] = useState('');
   const [tipoReceita, setTipoReceita] = useState('simples');
+  const [observacoes, setObservacoes] = useState('');
+  const [assinado, setAssinado] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const loadPacientes = async () => {
+      setLoading(true);
+      const data = await getPacientes();
+      setPacientes(data);
+      setLoading(false);
+    };
+    
+    loadPacientes();
+  }, []);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would handle the prescription submission
-    console.log({
+    
+    // Validations
+    if (!pacienteId) {
+      toast({
+        variant: "destructive",
+        title: "Paciente obrigatório",
+        description: "Por favor, selecione um paciente",
+      });
+      return;
+    }
+    
+    if (!medicamento) {
+      toast({
+        variant: "destructive",
+        title: "Medicamento obrigatório",
+        description: "Por favor, insira um medicamento",
+      });
+      return;
+    }
+    
+    if (!posologia) {
+      toast({
+        variant: "destructive",
+        title: "Posologia obrigatória",
+        description: "Por favor, insira a posologia",
+      });
+      return;
+    }
+    
+    if (!assinado) {
+      toast({
+        variant: "destructive",
+        title: "Assinatura obrigatória",
+        description: "Por favor, assine digitalmente a prescrição",
+      });
+      return;
+    }
+    
+    // Calculate validity date (30 days)
+    const dataValidade = new Date();
+    dataValidade.setDate(dataValidade.getDate() + 30);
+    
+    const receitaData = {
+      id_paciente: parseInt(pacienteId),
       medicamento,
       posologia,
-      tempoUso,
-      periodo,
-      permiteSubstituicao,
-      cid,
-      tipoReceita
-    });
+      observacoes: `Tempo de uso: ${tempoUso} ${periodo}. ${permiteSubstituicao === 'sim' ? 'Permite substituição. ' : 'Não permite substituição. '}${observacoes ? observacoes : ''}`,
+      data_validade: dataValidade.toISOString(),
+      status: 'ativa'
+    };
+    
+    const newReceita = await createReceita(receitaData);
+    
+    if (newReceita) {
+      setSuccess(true);
+      resetForm();
+    }
   };
+  
+  const resetForm = () => {
+    setPacienteId('');
+    setMedicamento('');
+    setPosologia('');
+    setTempoUso('');
+    setPeriodo('dias');
+    setPermiteSubstituicao('não');
+    setCid('');
+    setTipoReceita('simples');
+    setObservacoes('');
+    setAssinado(false);
+  };
+  
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="bg-green-100 rounded-full p-4 mb-4">
+          <Check className="h-12 w-12 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Receita Gerada com Sucesso</h2>
+        <p className="text-gray-600 mb-6 text-center max-w-md">
+          A receita foi gerada e está disponível para impressão ou download.
+        </p>
+        <div className="flex gap-4">
+          <Button 
+            variant="outline" 
+            size="lg"
+            className="flex items-center"
+            onClick={() => window.print()}
+          >
+            <Printer className="mr-2 h-5 w-5" />
+            Imprimir Receita
+          </Button>
+          <Button 
+            size="lg"
+            onClick={() => setSuccess(false)}
+          >
+            Criar Nova Receita
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div>
@@ -44,6 +157,24 @@ const Prescricoes: React.FC = () => {
       <Card className="max-w-2xl mx-auto">
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <Label htmlFor="paciente" className="font-medium">
+                Paciente*
+              </Label>
+              <Select value={pacienteId} onValueChange={setPacienteId} required>
+                <SelectTrigger id="paciente" className="mt-1">
+                  <SelectValue placeholder="Selecione um paciente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pacientes.map(paciente => (
+                    <SelectItem key={paciente.id} value={paciente.id.toString()}>
+                      {paciente.nome} ({paciente.idade} anos)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div>
               <Label htmlFor="medicamento" className="font-medium">
                 Nome do Medicamento*
@@ -164,19 +295,46 @@ const Prescricoes: React.FC = () => {
             </div>
             
             <div>
+              <Label htmlFor="observacoes" className="font-medium">
+                Observações
+              </Label>
+              <Textarea
+                id="observacoes"
+                placeholder="Observações adicionais"
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
               <Label className="font-medium">
                 Assinatura Digital*
               </Label>
-              <div className="border-2 border-dashed rounded-md p-8 mt-1 flex flex-col items-center justify-center text-center text-gray-500 cursor-pointer hover:bg-gray-50">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-2 text-gray-400">
-                  <path d="M15.5 8.5C15.5 8.5 15 11 12 11M12 11C9 11 8.5 8.5 8.5 8.5M12 11V15.5M7 16.5H17M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>Clique para assinar digitalmente</span>
+              <div 
+                className={`border-2 ${assinado ? 'border' : 'border-dashed'} rounded-md p-8 mt-1 flex flex-col items-center justify-center text-center ${assinado ? 'bg-green-50 border-green-200' : 'text-gray-500 hover:bg-gray-50'} cursor-pointer`}
+                onClick={() => setAssinado(!assinado)}
+              >
+                {assinado ? (
+                  <>
+                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
+                      <Check className="h-6 w-6 text-green-600" />
+                    </div>
+                    <span className="text-green-800 font-medium">Documento assinado digitalmente</span>
+                  </>
+                ) : (
+                  <>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-2 text-gray-400">
+                      <path d="M15.5 8.5C15.5 8.5 15 11 12 11M12 11C9 11 8.5 8.5 8.5 8.5M12 11V15.5M7 16.5H17M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Clique para assinar digitalmente</span>
+                  </>
+                )}
               </div>
             </div>
             
             <div className="flex justify-between pt-4">
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto">
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto" disabled={!assinado}>
                 Gerar Receita
               </Button>
               

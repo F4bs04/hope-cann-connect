@@ -1,35 +1,180 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check } from 'lucide-react';
+import { Check, Download, FileText } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { getPacientes, createLaudo } from '@/services/supabaseService';
 
 const Laudos: React.FC = () => {
+  const { toast } = useToast();
+  const [pacientes, setPacientes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [assinado, setAssinado] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  // Form state
+  const [pacienteId, setPacienteId] = useState('');
   const [tipoLaudo, setTipoLaudo] = useState('');
   const [objetivo, setObjetivo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [conclusao, setConclusao] = useState('');
   const [cid, setCid] = useState('');
   const [observacoes, setObservacoes] = useState('');
-  const [assinado, setAssinado] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const loadPacientes = async () => {
+      setLoading(true);
+      const data = await getPacientes();
+      setPacientes(data);
+      setLoading(false);
+    };
+    
+    loadPacientes();
+  }, []);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would handle the laudo submission
-    console.log({
-      tipoLaudo,
+    
+    // Validations
+    if (!pacienteId) {
+      toast({
+        variant: "destructive",
+        title: "Paciente obrigatório",
+        description: "Por favor, selecione um paciente",
+      });
+      return;
+    }
+    
+    if (!tipoLaudo) {
+      toast({
+        variant: "destructive",
+        title: "Tipo de laudo obrigatório",
+        description: "Por favor, selecione o tipo de laudo",
+      });
+      return;
+    }
+    
+    if (!objetivo) {
+      toast({
+        variant: "destructive",
+        title: "Objetivo obrigatório",
+        description: "Por favor, insira o objetivo do laudo",
+      });
+      return;
+    }
+    
+    if (!descricao) {
+      toast({
+        variant: "destructive",
+        title: "Descrição clínica obrigatória",
+        description: "Por favor, insira a descrição clínica detalhada",
+      });
+      return;
+    }
+    
+    if (!conclusao) {
+      toast({
+        variant: "destructive",
+        title: "Conclusão obrigatória",
+        description: "Por favor, insira a conclusão médica",
+      });
+      return;
+    }
+    
+    if (!assinado) {
+      toast({
+        variant: "destructive",
+        title: "Assinatura obrigatória",
+        description: "Por favor, assine digitalmente o laudo",
+      });
+      return;
+    }
+    
+    const laudoData = {
+      id_paciente: parseInt(pacienteId),
+      tipo_laudo: tipoLaudo,
       objetivo,
       descricao,
       conclusao,
       cid,
       observacoes,
-      assinado
-    });
+      assinado: true
+    };
+    
+    const newLaudo = await createLaudo(laudoData);
+    
+    if (newLaudo) {
+      setSuccess(true);
+    }
   };
+  
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="bg-green-100 rounded-full p-4 mb-4">
+          <Check className="h-12 w-12 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Laudo Gerado com Sucesso</h2>
+        <p className="text-gray-600 mb-6 text-center max-w-md">
+          O laudo médico foi gerado e está disponível para impressão ou download.
+        </p>
+        <div className="flex gap-4">
+          <Button 
+            variant="outline" 
+            size="lg"
+            className="flex items-center"
+            onClick={() => window.print()}
+          >
+            <FileText className="mr-2 h-5 w-5" />
+            Imprimir Laudo
+          </Button>
+          <Button 
+            size="lg"
+            className="flex items-center"
+            onClick={() => {
+              toast({
+                title: "Download iniciado",
+                description: "O laudo está sendo baixado",
+              });
+              
+              // Simulate download
+              setTimeout(() => {
+                toast({
+                  title: "Download concluído",
+                  description: "O laudo foi baixado com sucesso",
+                });
+              }, 1500);
+            }}
+          >
+            <Download className="mr-2 h-5 w-5" />
+            Baixar PDF
+          </Button>
+        </div>
+        <Button 
+          variant="link" 
+          className="mt-4"
+          onClick={() => {
+            setSuccess(false);
+            setAssinado(false);
+            setTipoLaudo('');
+            setObjetivo('');
+            setDescricao('');
+            setConclusao('');
+            setCid('');
+            setObservacoes('');
+            setPacienteId('');
+          }}
+        >
+          Emitir novo laudo
+        </Button>
+      </div>
+    );
+  }
   
   return (
     <div>
@@ -43,6 +188,24 @@ const Laudos: React.FC = () => {
       <Card>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <Label htmlFor="paciente" className="font-medium">
+                Paciente*
+              </Label>
+              <Select value={pacienteId} onValueChange={setPacienteId} required>
+                <SelectTrigger id="paciente" className="mt-1">
+                  <SelectValue placeholder="Selecione um paciente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pacientes.map(paciente => (
+                    <SelectItem key={paciente.id} value={paciente.id.toString()}>
+                      {paciente.nome} ({paciente.idade} anos)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div>
               <Label htmlFor="tipo-laudo" className="font-medium">
                 Tipo de Laudo*
@@ -176,8 +339,9 @@ const Laudos: React.FC = () => {
                 type="button" 
                 variant="outline" 
                 className="flex-1 ml-2"
+                onClick={() => window.location.reload()}
               >
-                Exportar PDF
+                Cancelar
               </Button>
             </div>
           </form>
