@@ -1,33 +1,69 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Calendar, FileText, User, Bell, Clock, FileCheck, Activity } from 'lucide-react';
+import { Calendar, FileText, User, Bell, Clock, FileCheck, Activity, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getPacientes, getReceitas, getProntuarios } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DashboardHomeProps {
   onOpenConsulta: (consultaId: number) => void;
 }
 
 const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
-  const mockConsultas = [
-    { id: 1, paciente: 'Maria Silva Santos', data: new Date(2025, 0, 18), horario: '14:30', especialidade: 'Cardiologia' },
-    { id: 2, paciente: 'João Oliveira Pereira', data: new Date(2025, 0, 19), horario: '10:00', especialidade: 'Clínica Geral' }
-  ];
+  const [loading, setLoading] = useState(true);
+  const [consultas, setConsultas] = useState<any[]>([]);
+  const [receitas, setReceitas] = useState<any[]>([]);
+  const [pacientes, setPacientes] = useState<any[]>([]);
+  const [consultasCount, setConsultasCount] = useState(0);
+  const [proximaConsulta, setProximaConsulta] = useState<any>(null);
   
-  const mockReceitas = [
-    { id: 1, medico: 'Dr. Salomão', data: new Date(2025, 3, 9), paciente: 'Maria Silva Santos' },
-    { id: 2, medico: 'Dr. Silva', data: new Date(2025, 3, 2), paciente: 'João Oliveira Pereira' }
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      
+      // Carregar pacientes
+      const pacientesData = await getPacientes();
+      setPacientes(pacientesData || []);
+      
+      // Carregar receitas
+      const receitasData = await getReceitas();
+      setReceitas(receitasData || []);
+      
+      // Carregar prontuários para contar consultas realizadas
+      const prontuariosData = await getProntuarios();
+      setConsultasCount(prontuariosData?.length || 0);
+      
+      // Buscar próximas consultas agendadas
+      const hoje = new Date();
+      const { data: consultasData, error } = await supabase
+        .from('consultas')
+        .select('*')
+        .gt('data_hora', hoje.toISOString())
+        .order('data_hora', { ascending: true });
+      
+      if (error) {
+        console.error('Erro ao buscar consultas:', error);
+      } else {
+        setConsultas(consultasData || []);
+        setProximaConsulta(consultasData?.[0] || null);
+      }
+      
+      setLoading(false);
+    };
+    
+    fetchData();
+  }, []);
   
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Bem-vindo, Dr. João</h1>
-          <p className="text-gray-600">Última visita: {format(new Date(2025, 0, 15), 'dd MMM yyyy', { locale: ptBR })}</p>
+          <p className="text-gray-600">Última visita: {format(new Date(), 'dd MMM yyyy', { locale: ptBR })}</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
@@ -53,8 +89,19 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">18 Jan 2025</p>
-            <p className="text-gray-600">Dr. Silva - Cardiologia</p>
+            {proximaConsulta ? (
+              <>
+                <p className="text-2xl font-bold">{format(new Date(proximaConsulta.data_hora), 'dd MMM yyyy', { locale: ptBR })}</p>
+                <p className="text-gray-600">{format(new Date(proximaConsulta.data_hora), 'HH:mm')} - {proximaConsulta.tipo_consulta || 'Consulta padrão'}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500">Nenhuma consulta agendada</p>
+                <Button variant="link" className="p-0 h-auto text-teal-500" onClick={() => window.location.href = '/area-medico?tab=agenda'}>
+                  Agendar consulta
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
         
@@ -66,8 +113,12 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">3</p>
-            <p className="text-gray-600">Última atualização: 10 Jan</p>
+            <p className="text-2xl font-bold">{receitas.length}</p>
+            <p className="text-gray-600">
+              {receitas.length > 0 
+                ? `Última: ${format(new Date(receitas[0].data), 'dd MMM', { locale: ptBR })}` 
+                : 'Nenhuma receita emitida'}
+            </p>
           </CardContent>
         </Card>
         
@@ -79,8 +130,8 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">8</p>
-            <p className="text-gray-600">Em 2025</p>
+            <p className="text-2xl font-bold">{consultasCount}</p>
+            <p className="text-gray-600">Em {new Date().getFullYear()}</p>
           </CardContent>
         </Card>
       </div>
@@ -95,108 +146,165 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
         
         <TabsContent value="agenda" className="mt-4">
           <h3 className="text-xl font-bold mb-4">Próximas Consultas</h3>
-          <div className="space-y-4">
-            {mockConsultas.map(consulta => (
-              <Card key={consulta.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onOpenConsulta(consulta.id)}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center mr-4">
-                      <Clock className="h-5 w-5 text-teal-600" />
+          {loading ? (
+            <p className="text-center py-4">Carregando consultas...</p>
+          ) : consultas.length > 0 ? (
+            <div className="space-y-4">
+              {consultas.slice(0, 2).map(consulta => (
+                <Card key={consulta.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onOpenConsulta(consulta.id)}>
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center mr-4">
+                        <Clock className="h-5 w-5 text-teal-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Paciente #{consulta.id_paciente}</p>
+                        <p className="text-sm text-gray-500">
+                          {format(new Date(consulta.data_hora), "dd 'de' MMMM', ' yyyy 'às' HH:mm", { locale: ptBR })} - {consulta.tipo_consulta || 'Consulta padrão'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{consulta.paciente}</p>
-                      <p className="text-sm text-gray-500">
-                        {format(consulta.data, "dd 'de' MMMM', ' yyyy", { locale: ptBR })} - {consulta.horario} - {consulta.especialidade}
-                      </p>
-                    </div>
+                    <Button variant="outline" size="sm" onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenConsulta(consulta.id);
+                    }}>
+                      Ver detalhes
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <AlertCircle className="h-8 w-8 text-gray-400" />
                   </div>
-                  <Button variant="outline" size="sm" onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenConsulta(consulta.id);
-                  }}>
-                    Ver detalhes
+                  <h3 className="text-lg font-medium mb-2">Nenhuma consulta agendada</h3>
+                  <p className="text-gray-500 max-w-md mx-auto mb-4">
+                    Você não possui consultas agendadas para os próximos dias.
+                  </p>
+                  <Button onClick={() => window.location.href = '/area-medico?tab=agenda'}>
+                    Agendar consulta
                   </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         
         <TabsContent value="receitas" className="mt-4">
           <h3 className="text-xl font-bold mb-4">Últimas Receitas</h3>
-          <div className="space-y-4">
-            {mockReceitas.map(receita => (
-              <Card key={receita.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                      <FileText className="h-5 w-5 text-blue-600" />
+          {loading ? (
+            <p className="text-center py-4">Carregando receitas...</p>
+          ) : receitas.length > 0 ? (
+            <div className="space-y-4">
+              {receitas.slice(0, 2).map(receita => (
+                <Card key={receita.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                        <FileText className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          Receita para {receita.pacientes_app?.nome || `Paciente #${receita.id_paciente}`}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Emitida em {format(new Date(receita.data), "dd/MM/yyyy")} - {receita.medicamento}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">Receita para {receita.paciente}</p>
-                      <p className="text-sm text-gray-500">Emitida dia {format(receita.data, "dd/MM/yyyy")}</p>
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.location.href = '/area-medico?tab=receitas'}
+                    >
+                      Ver Receita
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <FileText className="h-8 w-8 text-gray-400" />
                   </div>
-                  <Button variant="outline" size="sm">Ver Receita</Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <h3 className="text-lg font-medium mb-2">Nenhuma receita emitida</h3>
+                  <p className="text-gray-500 max-w-md mx-auto mb-4">
+                    Você ainda não emitiu nenhuma receita.
+                  </p>
+                  <Button onClick={() => window.location.href = '/area-medico?tab=prescricoes'}>
+                    Emitir nova receita
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         
         <TabsContent value="pacientes">
           <h3 className="text-xl font-bold mb-4">Meus Pacientes</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {loading ? (
+            <p className="text-center py-4">Carregando pacientes...</p>
+          ) : pacientes.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pacientes.slice(0, 3).map(paciente => (
+                <Card key={paciente.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center mb-3">
+                      <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+                        <User className="h-5 w-5 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{paciente.nome}</p>
+                        <p className="text-sm text-gray-500">{paciente.idade} anos</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Última consulta:</span>
+                        <span>{format(new Date(paciente.ultima_consulta), 'dd/MM/yyyy')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Condição:</span>
+                        <span>{paciente.condicao || 'Não especificada'}</span>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-3"
+                      onClick={() => window.location.href = `/area-medico?tab=prontuarios&paciente=${paciente.id}`}
+                    >
+                      Ver prontuário
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center mb-3">
-                  <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
-                    <User className="h-5 w-5 text-indigo-600" />
+              <CardContent className="p-6 text-center">
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <User className="h-8 w-8 text-gray-400" />
                   </div>
-                  <div>
-                    <p className="font-medium">Maria Silva Santos</p>
-                    <p className="text-sm text-gray-500">35 anos</p>
-                  </div>
+                  <h3 className="text-lg font-medium mb-2">Nenhum paciente cadastrado</h3>
+                  <p className="text-gray-500 max-w-md mx-auto mb-4">
+                    Você ainda não possui pacientes cadastrados.
+                  </p>
+                  <Button onClick={() => window.location.href = '/area-medico?tab=pacientes'}>
+                    Cadastrar paciente
+                  </Button>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Última consulta:</span>
-                    <span>15/01/2025</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Condição:</span>
-                    <span>Dores nas costas</span>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" className="w-full mt-3">Ver prontuário</Button>
               </CardContent>
             </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center mb-3">
-                  <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
-                    <User className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">João Oliveira Pereira</p>
-                    <p className="text-sm text-gray-500">42 anos</p>
-                  </div>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Última consulta:</span>
-                    <span>10/01/2025</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Condição:</span>
-                    <span>Ansiedade</span>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" className="w-full mt-3">Ver prontuário</Button>
-              </CardContent>
-            </Card>
-          </div>
+          )}
         </TabsContent>
         
         <TabsContent value="mensagens">
@@ -226,20 +334,27 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <div className="flex items-center">
-                  <FileCheck className="h-5 w-5 mr-3 text-gray-400" />
-                  <div>
-                    <p className="font-medium">Maria Silva Santos</p>
-                    <p className="text-sm text-gray-500">15/01/2025 - 3 dias</p>
+            {loading ? (
+              <p className="text-center py-4">Carregando atestados...</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                  <div className="flex items-center">
+                    <FileCheck className="h-5 w-5 mr-3 text-gray-400" />
+                    <div>
+                      <p className="text-gray-500">Nenhum atestado emitido recentemente</p>
+                    </div>
                   </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => window.location.href = '/area-medico?tab=atestados'}
+                  >
+                    Emitir
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm">
-                  Ver
-                </Button>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
         
@@ -251,33 +366,27 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <div className="flex items-center">
-                  <Activity className="h-5 w-5 mr-3 text-gray-400" />
-                  <div>
-                    <p className="font-medium">Raio-X da coluna lombar</p>
-                    <p className="text-sm text-gray-500">Maria Silva Santos - 15/01/2025</p>
+            {loading ? (
+              <p className="text-center py-4">Carregando exames...</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                  <div className="flex items-center">
+                    <Activity className="h-5 w-5 mr-3 text-gray-400" />
+                    <div>
+                      <p className="text-gray-500">Nenhum exame pendente</p>
+                    </div>
                   </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => window.location.href = '/area-medico?tab=pedidos-exame'}
+                  >
+                    Solicitar
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm">
-                  Ver
-                </Button>
               </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <div className="flex items-center">
-                  <Activity className="h-5 w-5 mr-3 text-gray-400" />
-                  <div>
-                    <p className="font-medium">Hemograma completo</p>
-                    <p className="text-sm text-gray-500">João Oliveira Pereira - 10/01/2025</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm">
-                  Ver
-                </Button>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
