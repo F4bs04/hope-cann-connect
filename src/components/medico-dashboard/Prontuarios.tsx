@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -226,7 +225,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
                       className="w-full"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Handle edit here
+                        // No modal/pop-up: implementação futura de edição pode ser aqui.
                       }}
                     >
                       Editar
