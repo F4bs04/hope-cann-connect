@@ -1,15 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search, Plus, FileText, Calendar, User, Clock, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { getProntuarios, getPacientes, createProntuario } from '@/services/supabaseService';
+import { getProntuarios, getPacientes } from '@/services/supabaseService';
+import NovoProntuario from './NovoProntuario';
 
 interface ProntuariosProps {
   onSelectPatient: (patientId: number) => void;
@@ -21,32 +19,23 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
   const [activeTab, setActiveTab] = useState('todos');
   const [prontuarios, setProntuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [pacientes, setPacientes] = useState<any[]>([]);
-  
-  // Form state
-  const [pacienteId, setPacienteId] = useState('');
-  const [dataConsulta, setDataConsulta] = useState('');
-  const [sintomas, setSintomas] = useState('');
-  const [diagnostico, setDiagnostico] = useState('');
-  const [tratamento, setTratamento] = useState('');
-  const [observacoes, setObservacoes] = useState('');
-  const [status, setStatus] = useState('concluído');
+  const [showNewProntuario, setShowNewProntuario] = useState(false);
   
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       const prontuariosData = await getProntuarios();
       setProntuarios(prontuariosData);
-      
-      const pacientesData = await getPacientes();
-      setPacientes(pacientesData);
-      
       setLoading(false);
     };
     
     loadData();
   }, []);
+  
+  const refreshProntuarios = async () => {
+    const prontuariosData = await getProntuarios();
+    setProntuarios(prontuariosData);
+  };
   
   const filteredProntuarios = prontuarios.filter(prontuario => 
     (prontuario.pacientes_app?.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -59,59 +48,16 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
     return true;
   });
   
-  const handleCreateProntuario = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validations
-    if (!pacienteId) {
-      toast({
-        variant: "destructive",
-        title: "Paciente obrigatório",
-        description: "Por favor, selecione um paciente",
-      });
-      return;
-    }
-    
-    if (!diagnostico) {
-      toast({
-        variant: "destructive",
-        title: "Diagnóstico obrigatório",
-        description: "Por favor, insira um diagnóstico",
-      });
-      return;
-    }
-    
-    const prontuarioData = {
-      id_paciente: parseInt(pacienteId),
-      data_consulta: dataConsulta ? new Date(dataConsulta).toISOString() : new Date().toISOString(),
-      sintomas,
-      diagnostico,
-      tratamento,
-      observacoes,
-      status
-    };
-    
-    const newProntuario = await createProntuario(prontuarioData);
-    
-    if (newProntuario) {
-      // Reload prontuarios to get the joined data
-      const updatedProntuarios = await getProntuarios();
-      setProntuarios(updatedProntuarios);
-      
-      resetForm();
-      setOpenDialog(false);
-    }
-  };
-  
-  const resetForm = () => {
-    setPacienteId('');
-    setDataConsulta('');
-    setSintomas('');
-    setDiagnostico('');
-    setTratamento('');
-    setObservacoes('');
-    setStatus('concluído');
-  };
+  if (showNewProntuario) {
+    return (
+      <NovoProntuario 
+        onBack={() => {
+          setShowNewProntuario(false);
+          refreshProntuarios();
+        }} 
+      />
+    );
+  }
   
   return (
     <div className="w-full">
@@ -135,7 +81,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
         
         <Button 
           className="bg-[#00B3B0] hover:bg-[#009E9B]"
-          onClick={() => setOpenDialog(true)}
+          onClick={() => setShowNewProntuario(true)}
         >
           <Plus className="h-4 w-4 mr-2" /> Novo Prontuário
         </Button>
@@ -265,122 +211,6 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
           </Button>
         </div>
       )}
-      
-      {/* Novo Prontuário Dialog */}
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Criar Novo Prontuário</DialogTitle>
-          </DialogHeader>
-          
-          <form onSubmit={handleCreateProntuario}>
-            <div className="grid gap-4 py-4">
-              <div>
-                <Label htmlFor="paciente" className="text-right">
-                  Paciente*
-                </Label>
-                <Select value={pacienteId} onValueChange={setPacienteId} required>
-                  <SelectTrigger id="paciente" className="mt-1">
-                    <SelectValue placeholder="Selecione um paciente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pacientes.map(paciente => (
-                      <SelectItem key={paciente.id} value={paciente.id.toString()}>
-                        {paciente.nome} ({paciente.idade} anos)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="dataConsulta" className="text-right">
-                  Data da Consulta
-                </Label>
-                <Input
-                  id="dataConsulta"
-                  type="datetime-local"
-                  value={dataConsulta}
-                  onChange={(e) => setDataConsulta(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="sintomas" className="text-right">
-                  Sintomas
-                </Label>
-                <Textarea
-                  id="sintomas"
-                  value={sintomas}
-                  onChange={(e) => setSintomas(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="diagnostico" className="text-right">
-                  Diagnóstico*
-                </Label>
-                <Textarea
-                  id="diagnostico"
-                  value={diagnostico}
-                  onChange={(e) => setDiagnostico(e.target.value)}
-                  className="mt-1"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="tratamento" className="text-right">
-                  Tratamento
-                </Label>
-                <Textarea
-                  id="tratamento"
-                  value={tratamento}
-                  onChange={(e) => setTratamento(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="observacoes" className="text-right">
-                  Observações
-                </Label>
-                <Textarea
-                  id="observacoes"
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="status" className="text-right">
-                  Status
-                </Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger id="status" className="mt-1">
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="concluído">Concluído</SelectItem>
-                    <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="cancelado">Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpenDialog(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">Criar Prontuário</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   SidebarProvider, 
@@ -74,7 +73,6 @@ const AreaMedico: React.FC = () => {
     setSelectedPatientId(null);
   };
 
-  // Add the missing handleBackToSection function
   const handleBackToSection = (section: string) => {
     setCurrentSection(section);
     setSelectedConsultaId(null);
