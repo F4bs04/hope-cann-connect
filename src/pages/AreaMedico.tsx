@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   SidebarProvider, 
@@ -41,12 +40,15 @@ import Laudos from '@/components/medico-dashboard/Laudos';
 import PedidosExame from '@/components/medico-dashboard/PedidosExame';
 import ConsultaView from '@/components/medico-dashboard/ConsultaView';
 
+import ProntuarioAba from '@/components/medico/ProntuarioAba';
+
 const AreaMedico: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentSection, setCurrentSection] = useState<string>('dashboard');
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [selectedConsultaId, setSelectedConsultaId] = useState<number | null>(null);
+  const [showProntuarioAba, setShowProntuarioAba] = useState(false);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -60,15 +62,20 @@ const AreaMedico: React.FC = () => {
 
   const handleOpenPatient = (patientId: number) => {
     setSelectedPatientId(patientId);
+    setShowProntuarioAba(true);
     setCurrentSection('prontuario');
   };
 
-  const handleBackToSection = (section: string) => {
-    setCurrentSection(section);
-    setSelectedConsultaId(null);
+  const handleBackFromProntuario = () => {
+    setShowProntuarioAba(false);
+    setCurrentSection('prontuarios');
+    setSelectedPatientId(null);
   };
 
   const renderSection = () => {
+    if (showProntuarioAba) {
+      return <ProntuarioAba onBack={handleBackFromProntuario} />;
+    }
     switch (currentSection) {
       case 'dashboard':
         return <DashboardHome onOpenConsulta={handleOpenConsulta} />;
