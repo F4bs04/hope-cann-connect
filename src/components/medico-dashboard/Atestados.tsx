@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -310,10 +309,30 @@ const Atestados: React.FC = () => {
                 </Button>
               </div>
               
-              <div ref={atestadoRef} className="p-4">
+              <div
+                ref={atestadoRef}
+                className="p-4"
+                style={{
+                  width: '210mm',
+                  minHeight: '297mm',
+                  boxSizing: 'border-box',
+                  background: 'white',
+                  overflow: 'hidden',
+                  margin: '0 auto',
+                  boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+                  '@media print': {
+                    width: '210mm',
+                    minHeight: '297mm',
+                    boxShadow: 'none',
+                    margin: 0,
+                  },
+                }}
+              >
                 <div className="text-center mb-8">
                   <h2 className="text-xl font-bold">Atestado Médico</h2>
-                  <p className="text-sm text-gray-500">Data: {dataConsulta ? format(dataConsulta, "dd/MM/yyyy") : format(new Date(), "dd/MM/yyyy")}</p>
+                  <p className="text-sm text-gray-500">
+                    Data: {dataConsulta ? format(dataConsulta, "dd/MM/yyyy") : format(new Date(), "dd/MM/yyyy")}
+                  </p>
                 </div>
                 
                 <div className="space-y-6 text-gray-900">
