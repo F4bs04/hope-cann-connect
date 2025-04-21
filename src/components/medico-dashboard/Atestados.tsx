@@ -15,6 +15,12 @@ import { useToast } from '@/hooks/use-toast';
 import { getPacientes, createAtestado } from '@/services/supabaseService';
 import html2canvas from 'html2canvas';
 
+const ATESTADO_WIDTH_MM = 210; // A4: 210mm, A5: 148mm
+const ATESTADO_HEIGHT_MM = 297; // A4: 297mm, A5: 210mm
+const PIXELS_PER_MM = 3.779528; // 96 dpi
+
+const PREVIEW_SCALE = 0.4; // Preview visivelmente menor
+
 const Atestados: React.FC = () => {
   const { toast } = useToast();
   const [pacientes, setPacientes] = useState<any[]>([]);
@@ -108,13 +114,17 @@ const Atestados: React.FC = () => {
   const handleDownloadImage = async () => {
     if (atestadoRef.current) {
       try {
-        const canvas = await html2canvas(atestadoRef.current);
+        const canvas = await html2canvas(atestadoRef.current, {
+          scale: 1 / PREVIEW_SCALE,
+          width: ATESTADO_WIDTH_MM * PIXELS_PER_MM,
+          height: ATESTADO_HEIGHT_MM * PIXELS_PER_MM,
+          backgroundColor: "#fff"
+        });
         const image = canvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.href = image;
         link.download = `atestado-${new Date().getTime()}.png`;
         link.click();
-        
         toast({
           title: "Download concluído",
           description: "O atestado foi baixado como imagem",
@@ -131,7 +141,42 @@ const Atestados: React.FC = () => {
   };
   
   const handlePrint = () => {
-    window.print();
+    if (atestadoRef.current) {
+      const printWindow = window.open('', '_blank', 'width=1100,height=1600');
+      if (printWindow) {
+        const content = atestadoRef.current.outerHTML;
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Imprimir atestado</title>
+              <style>
+                @media print {
+                  body {
+                    margin: 0;
+                    padding: 0;
+                  }
+                  .atestado-print{
+                    width: ${ATESTADO_WIDTH_MM}mm;
+                    height: ${ATESTADO_HEIGHT_MM}mm;
+                    margin: 0 auto;
+                    page-break-after: always;
+                  }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="atestado-print">${content}</div>
+              <script>
+                window.onload = function() { 
+                  window.print();
+                }
+              </script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+      }
+    }
   };
   
   return (
@@ -297,8 +342,8 @@ const Atestados: React.FC = () => {
         
         <div className="flex-1">
           <div className="sticky top-4">
-            <h3 className="text-xl font-medium mb-4">Prévia do Atestado</h3>
-            <Card className="bg-white p-8 border shadow relative flex items-center justify-center">
+            <h3 className="text-xl font-medium mb-4 text-center">Prévia do Atestado</h3>
+            <Card className="bg-white px-4 py-6 border shadow relative flex items-center justify-center">
               <div className="absolute top-4 right-4 flex gap-2 z-10">
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrint}>
                   <Printer className="h-4 w-4" />
@@ -309,25 +354,32 @@ const Atestados: React.FC = () => {
               </div>
               <div
                 ref={atestadoRef}
-                className="origin-top mx-auto bg-white shadow-md border flex flex-col items-center justify-center"
+                className="bg-white shadow-md border flex flex-col items-center justify-center"
                 style={{
-                  width: "210mm",
-                  minHeight: "297mm",
-                  transform: "scale(0.5)",
+                  width: `${ATESTADO_WIDTH_MM * PIXELS_PER_MM}px`,
+                  minHeight: `${ATESTADO_HEIGHT_MM * PIXELS_PER_MM}px`,
+                  transform: `scale(${PREVIEW_SCALE})`,
                   transformOrigin: "top center",
                   boxSizing: "border-box",
                   overflow: "hidden",
                   margin: "0 auto",
                 }}
               >
-                <div className="flex flex-col items-center justify-center text-center w-full h-full px-12" style={{height: "100%"}}>
+                <div
+                  className="flex flex-col items-center justify-center text-center w-full h-full px-12"
+                  style={{
+                    height: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
                   <div className="mb-8 w-full flex flex-col items-center">
-                    <h2 className="text-2xl font-bold">Atestado Médico</h2>
-                    <p className="text-base text-gray-500 mt-2">
+                    <h2 className="text-2xl font-bold text-center w-full">Atestado Médico</h2>
+                    <p className="text-base text-gray-500 mt-2 text-center w-full">
                       Data: {dataConsulta ? format(dataConsulta, "dd/MM/yyyy") : format(new Date(), "dd/MM/yyyy")}
                     </p>
                   </div>
-                  
                   <div className="space-y-6 text-gray-900 w-full flex flex-col items-center justify-center">
                     <p className="text-lg w-full text-center">
                       Atesto para os devidos fins que o(a) paciente <span className="font-semibold">{nomePaciente || "_____________"}</span>, 
@@ -343,8 +395,8 @@ const Atestados: React.FC = () => {
                     )}
                     <div className="mt-20 text-center w-full flex flex-col items-center">
                       <div className="border-t border-gray-300 w-48 mx-auto pt-2">
-                        <p>Dr. Ricardo Silva</p>
-                        <p className="text-sm">CRM 123456</p>
+                        <p className="text-center">Dr. Ricardo Silva</p>
+                        <p className="text-sm text-center">CRM 123456</p>
                       </div>
                       <div className="mt-2">
                         {assinado && (
