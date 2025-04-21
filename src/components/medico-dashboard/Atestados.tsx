@@ -298,9 +298,8 @@ const Atestados: React.FC = () => {
         <div className="flex-1">
           <div className="sticky top-4">
             <h3 className="text-xl font-medium mb-4">Prévia do Atestado</h3>
-            
-            <Card className="bg-white p-8 border shadow relative">
-              <div className="absolute top-4 right-4 flex gap-2">
+            <Card className="bg-white p-8 border shadow relative flex items-center justify-center">
+              <div className="absolute top-4 right-4 flex gap-2 z-10">
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrint}>
                   <Printer className="h-4 w-4" />
                 </Button>
@@ -308,62 +307,54 @@ const Atestados: React.FC = () => {
                   <Download className="h-4 w-4" />
                 </Button>
               </div>
-              
               <div
                 ref={atestadoRef}
-                className="p-4"
+                className="origin-top mx-auto bg-white shadow-md border flex flex-col items-center justify-center"
                 style={{
-                  width: '210mm',
-                  minHeight: '297mm',
-                  boxSizing: 'border-box',
-                  background: 'white',
-                  overflow: 'hidden',
-                  margin: '0 auto',
-                  boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-                  '@media print': {
-                    width: '210mm',
-                    minHeight: '297mm',
-                    boxShadow: 'none',
-                    margin: 0,
-                  },
+                  width: "210mm",
+                  minHeight: "297mm",
+                  transform: "scale(0.5)",
+                  transformOrigin: "top center",
+                  boxSizing: "border-box",
+                  overflow: "hidden",
+                  margin: "0 auto",
                 }}
               >
-                <div className="text-center mb-8">
-                  <h2 className="text-xl font-bold">Atestado Médico</h2>
-                  <p className="text-sm text-gray-500">
-                    Data: {dataConsulta ? format(dataConsulta, "dd/MM/yyyy") : format(new Date(), "dd/MM/yyyy")}
-                  </p>
-                </div>
-                
-                <div className="space-y-6 text-gray-900">
-                  <p>
-                    Atesto para os devidos fins que o(a) paciente {nomePaciente || "_____________"}, 
-                    necessita de afastamento de suas atividades por um período de {tempoAfastamento || "__"} {unidade || "dias"}.
-                  </p>
-                  
-                  {justificativa && (
-                    <p>
-                      <strong>Justificativa:</strong> {justificativa}
+                <div className="flex flex-col items-center justify-center text-center w-full h-full px-12" style={{height: "100%"}}>
+                  <div className="mb-8 w-full flex flex-col items-center">
+                    <h2 className="text-2xl font-bold">Atestado Médico</h2>
+                    <p className="text-base text-gray-500 mt-2">
+                      Data: {dataConsulta ? format(dataConsulta, "dd/MM/yyyy") : format(new Date(), "dd/MM/yyyy")}
                     </p>
-                  )}
+                  </div>
                   
-                  {cid && (
-                    <p>CID: {cid}</p>
-                  )}
-                  
-                  <div className="mt-20 text-center">
-                    <div className="border-t border-gray-300 w-48 mx-auto pt-2">
-                      <p>Dr. Ricardo Silva</p>
-                      <p className="text-sm">CRM 123456</p>
-                    </div>
-                    <div className="mt-2">
-                      {assinado && (
-                        <img 
-                          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAGASURBVHgB7ZThUcJAEIW/JaGAowMowXSgHWgH2gF2IFagdqAdYAViB9qBdOA40vHYzYXhsrkQ/MPM8M3cJHe3u2/f7iUQufDtdVsZQRuiNhE1OJGQrWAuGEsyeRGENhJYHJA73ASA77DIi8B8BLYGOm73L6Yw+Ys457wCRl8KAJOQpZmDFDT53WNE1Dvrq7TnYiFnFJnVWfCg61Lq+ZLl9htIGtXj1j0YqzY57E9hfgOvnuxTn8M3+vdCe3F5g7YNs0FDkUCaOcyvYSLvzj0VacG9DgA39h9zKoECDxrSJk04qVONYXHAY/x4oT0/R/Y3pA2Jd3FHOe51TYvLMRvxVD8VVYI5OA/ZYYFHKfzwz3hxkXsZ96V9qCCtxqHMraDvZBpwHIFbKVJ9G4RWlVyNFfxewLJHQRZiUKSk+cGyEGftTuLsFa1cVf2kw7/aqP0Qy3tZO3fVZYA1dCW7kIcfapBL1Xwo+Cn3i0VUleSRPBbLkl2ICeX9MlvJM/kBJkhNe2WbVqsAAAAASUVORK5CYII=" 
-                          alt="Assinatura digital" 
-                          className="h-10 mx-auto"
-                        />
-                      )}
+                  <div className="space-y-6 text-gray-900 w-full flex flex-col items-center justify-center">
+                    <p className="text-lg w-full text-center">
+                      Atesto para os devidos fins que o(a) paciente <span className="font-semibold">{nomePaciente || "_____________"}</span>, 
+                      necessita de afastamento de suas atividades por um período de <span className="font-semibold">{tempoAfastamento || "__"} {unidade || "dias"}</span>.
+                    </p>
+                    {justificativa && (
+                      <p className="w-full text-center">
+                        <strong>Justificativa:</strong> {justificativa}
+                      </p>
+                    )}
+                    {cid && (
+                      <p className="w-full text-center">CID: {cid}</p>
+                    )}
+                    <div className="mt-20 text-center w-full flex flex-col items-center">
+                      <div className="border-t border-gray-300 w-48 mx-auto pt-2">
+                        <p>Dr. Ricardo Silva</p>
+                        <p className="text-sm">CRM 123456</p>
+                      </div>
+                      <div className="mt-2">
+                        {assinado && (
+                          <img 
+                            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAGASURBVHgB7ZThUcJAEIW/JaGAowMowXSgHWgH2gF2IFagdqAdYAViB9qBdOA40vHYzYXhsrkQ/MPM8M3cJHe3u2/f7iUQufDtdVsZQRuiNhE1OJGQrWAuGEsyeRGENhJYHJA73ASA77DIi8B8BLYGOm73L6Yw+Ys457wCRl8KAJOQpZmDFDT53WNE1Dvrq7TnYiFnFJnVWfCg61Lq+ZLl9htIGtXj1j0YqzY57E9hfgOvnuxTn8M3+vdCe3F5g7YNs0FDkUCaOcyvYSLvzj0VacG9DgA39h9zKoECDxrSJk04qVONYXHAY/x4oT0/R/Y3pA2Jd3FHOe51TYvLMRvxVD8VVYI5OA/ZYYFHKfzwz3hxkXsZ96V9qCCtxqHMraDvZBpwHIFbKVJ9G4RWlVyNFfxewLJHQRZiUKSk+cGyEGftTuLsFa1cVf2kw7/aqP0Qy3tZO3fVZYA1dCW7kIcfapBL1Xwo+Cn3i0VUleSRPBbLkl2ICeX9MlvJM/kBJkhNe2WbVqsAAAAASUVORK5CYII=" 
+                            alt="Assinatura digital" 
+                            className="h-10 mx-auto"
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
