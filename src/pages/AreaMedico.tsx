@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   SidebarProvider, 
@@ -41,6 +42,7 @@ import PedidosExame from '@/components/medico-dashboard/PedidosExame';
 import ConsultaView from '@/components/medico-dashboard/ConsultaView';
 
 import ProntuarioAba from '@/components/medico/ProntuarioAba';
+import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
 
 const AreaMedico: React.FC = () => {
   const { toast } = useToast();
@@ -70,6 +72,12 @@ const AreaMedico: React.FC = () => {
     setShowProntuarioAba(false);
     setCurrentSection('prontuarios');
     setSelectedPatientId(null);
+  };
+
+  // Add the missing handleBackToSection function
+  const handleBackToSection = (section: string) => {
+    setCurrentSection(section);
+    setSelectedConsultaId(null);
   };
 
   const renderSection = () => {
@@ -108,121 +116,123 @@ const AreaMedico: React.FC = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <Sidebar className="bg-[#00B3B0] text-white">
-          <SidebarHeader className="p-4">
-            <h2 className="text-xl font-bold">HopeCann</h2>
-          </SidebarHeader>
+    <DoctorScheduleProvider>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <Sidebar className="bg-[#00B3B0] text-white">
+            <SidebarHeader className="p-4">
+              <h2 className="text-xl font-bold">HopeCann</h2>
+            </SidebarHeader>
+            
+            <SidebarContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('dashboard')}
+                    isActive={currentSection === 'dashboard'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <Home className="w-5 h-5 mr-2" /> Área Médica
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('agenda')}
+                    isActive={currentSection === 'agenda'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <Calendar className="w-5 h-5 mr-2" /> Agenda
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('pacientes')}
+                    isActive={currentSection === 'pacientes'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <Users className="w-5 h-5 mr-2" /> Pacientes
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('prontuarios')}
+                    isActive={currentSection === 'prontuarios'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <ClipboardList className="w-5 h-5 mr-2" /> Prontuários
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('prescricoes')}
+                    isActive={currentSection === 'prescricoes'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <FileText className="w-5 h-5 mr-2" /> Prescrições
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('receitas')}
+                    isActive={currentSection === 'receitas'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <FilePenLine className="w-5 h-5 mr-2" /> Receitas
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('atestados')}
+                    isActive={currentSection === 'atestados'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <FileCheck className="w-5 h-5 mr-2" /> Atestados
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('laudos')}
+                    isActive={currentSection === 'laudos'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <FileSignature className="w-5 h-5 mr-2" /> Laudos
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('pedidos-exame')}
+                    isActive={currentSection === 'pedidos-exame'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <Activity className="w-5 h-5 mr-2" /> Pedidos de Exame
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarContent>
+            
+            <SidebarFooter className="p-4 mt-auto">
+              <SidebarMenuButton className="text-white hover:bg-[#009E9B]">
+                <User className="w-5 h-5 mr-2" /> Meu Perfil
+              </SidebarMenuButton>
+            </SidebarFooter>
+          </Sidebar>
           
-          <SidebarContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setCurrentSection('dashboard')}
-                  isActive={currentSection === 'dashboard'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <Home className="w-5 h-5 mr-2" /> Área Médica
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setCurrentSection('agenda')}
-                  isActive={currentSection === 'agenda'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <Calendar className="w-5 h-5 mr-2" /> Agenda
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setCurrentSection('pacientes')}
-                  isActive={currentSection === 'pacientes'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <Users className="w-5 h-5 mr-2" /> Pacientes
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setCurrentSection('prontuarios')}
-                  isActive={currentSection === 'prontuarios'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <ClipboardList className="w-5 h-5 mr-2" /> Prontuários
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setCurrentSection('prescricoes')}
-                  isActive={currentSection === 'prescricoes'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <FileText className="w-5 h-5 mr-2" /> Prescrições
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setCurrentSection('receitas')}
-                  isActive={currentSection === 'receitas'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <FilePenLine className="w-5 h-5 mr-2" /> Receitas
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setCurrentSection('atestados')}
-                  isActive={currentSection === 'atestados'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <FileCheck className="w-5 h-5 mr-2" /> Atestados
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setCurrentSection('laudos')}
-                  isActive={currentSection === 'laudos'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <FileSignature className="w-5 h-5 mr-2" /> Laudos
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setCurrentSection('pedidos-exame')}
-                  isActive={currentSection === 'pedidos-exame'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <Activity className="w-5 h-5 mr-2" /> Pedidos de Exame
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarContent>
-          
-          <SidebarFooter className="p-4 mt-auto">
-            <SidebarMenuButton className="text-white hover:bg-[#009E9B]">
-              <User className="w-5 h-5 mr-2" /> Meu Perfil
-            </SidebarMenuButton>
-          </SidebarFooter>
-        </Sidebar>
-        
-        <SidebarInset className="bg-gray-50 flex-1">
-          <main className="w-full h-full p-8">
-            {renderSection()}
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+          <SidebarInset className="bg-gray-50 flex-1">
+            <main className="w-full h-full p-8">
+              {renderSection()}
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+    </DoctorScheduleProvider>
   );
 };
 

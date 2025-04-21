@@ -6,19 +6,21 @@ import { Label } from '@/components/ui/label';
 import { Save, ArrowLeft } from 'lucide-react';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 import { format } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ProntuarioAbaProps {
   onBack: () => void;
 }
 
 const ProntuarioAba: React.FC<ProntuarioAbaProps> = ({ onBack }) => {
+  const { toast } = useToast();
   const { selectedPaciente, handleSaveProntuario, historicoPaciente } = useDoctorSchedule();
 
   const [prontuarioData, setProntuarioData] = useState({
-    condicoes_medicas: historicoPaciente?.condicoes_medicas || '',
-    alergias: historicoPaciente?.alergias || '',
-    medicamentos_atuais: historicoPaciente?.medicamentos_atuais || '',
-    historico_familiar: historicoPaciente?.historico_familiar || '',
+    condicoes_medicas: '',
+    alergias: '',
+    medicamentos_atuais: '',
+    historico_familiar: '',
   });
 
   const [acompanhamentoData, setAcompanhamentoData] = useState({
@@ -29,12 +31,14 @@ const ProntuarioAba: React.FC<ProntuarioAbaProps> = ({ onBack }) => {
   });
 
   useEffect(() => {
-    setProntuarioData({
-      condicoes_medicas: historicoPaciente?.condicoes_medicas || '',
-      alergias: historicoPaciente?.alergias || '',
-      medicamentos_atuais: historicoPaciente?.medicamentos_atuais || '',
-      historico_familiar: historicoPaciente?.historico_familiar || '',
-    });
+    if (historicoPaciente) {
+      setProntuarioData({
+        condicoes_medicas: historicoPaciente.condicoes_medicas || '',
+        alergias: historicoPaciente.alergias || '',
+        medicamentos_atuais: historicoPaciente.medicamentos_atuais || '',
+        historico_familiar: historicoPaciente.historico_familiar || '',
+      });
+    }
   }, [historicoPaciente]);
 
   const handleSave = () => {
@@ -47,6 +51,11 @@ const ProntuarioAba: React.FC<ProntuarioAbaProps> = ({ onBack }) => {
         ...acompanhamentoData,
         id_paciente: selectedPaciente.id,
         data_registro: new Date().toISOString(),
+      });
+      
+      toast({
+        title: "Prontuário atualizado",
+        description: "Informações salvas com sucesso.",
       });
     }
   };
