@@ -19,7 +19,7 @@ const ATESTADO_WIDTH_MM = 210; // A4: 210mm, A5: 148mm
 const ATESTADO_HEIGHT_MM = 297; // A4: 297mm, A5: 210mm
 const PIXELS_PER_MM = 3.779528; // 96 dpi
 
-const PREVIEW_SCALE = 0.4; // Preview visivelmente menor
+const PREVIEW_SCALE = 0.25; // Diminuir tamanho na prévia para ocupar menos espaço, mas mantendo o mesmo para download/impressão
 
 const Atestados: React.FC = () => {
   const { toast } = useToast();
@@ -363,50 +363,45 @@ const Atestados: React.FC = () => {
                   boxSizing: "border-box",
                   overflow: "hidden",
                   margin: "0 auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  padding: "0 1.5rem"
                 }}
               >
                 <div
-                  className="flex flex-col items-center justify-center text-center w-full h-full px-12"
-                  style={{
-                    height: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
+                  className="mb-8 w-full flex flex-col items-center"
                 >
-                  <div className="mb-8 w-full flex flex-col items-center">
-                    <h2 className="text-2xl font-bold text-center w-full">Atestado Médico</h2>
-                    <p className="text-base text-gray-500 mt-2 text-center w-full">
-                      Data: {dataConsulta ? format(dataConsulta, "dd/MM/yyyy") : format(new Date(), "dd/MM/yyyy")}
-                    </p>
-                  </div>
-                  <div className="space-y-6 text-gray-900 w-full flex flex-col items-center justify-center">
-                    <p className="text-lg w-full text-center">
-                      Atesto para os devidos fins que o(a) paciente <span className="font-semibold">{nomePaciente || "_____________"}</span>, 
-                      necessita de afastamento de suas atividades por um período de <span className="font-semibold">{tempoAfastamento || "__"} {unidade || "dias"}</span>.
-                    </p>
-                    {justificativa && (
-                      <p className="w-full text-center">
-                        <strong>Justificativa:</strong> {justificativa}
-                      </p>
-                    )}
-                    {cid && (
-                      <p className="w-full text-center">CID: {cid}</p>
-                    )}
-                    <div className="mt-20 text-center w-full flex flex-col items-center">
-                      <div className="border-t border-gray-300 w-48 mx-auto pt-2">
-                        <p className="text-center">Dr. Ricardo Silva</p>
-                        <p className="text-sm text-center">CRM 123456</p>
-                      </div>
-                      <div className="mt-2">
-                        {assinado && (
-                          <img 
-                            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAGASURBVHgB7ZThUcJAEIW/JaGAowMowXSgHWgH2gF2IFagdqAdYAViB9qBdOA40vHYzYXhsrkQ/MPM8M3cJHe3u2/f7iUQufDtdVsZQRuiNhE1OJGQrWAuGEsyeRGENhJYHJA73ASA77DIi8B8BLYGOm73L6Yw+Ys457wCRl8KAJOQpZmDFDT53WNE1Dvrq7TnYiFnFJnVWfCg61Lq+ZLl9htIGtXj1j0YqzY57E9hfgOvnuxTn8M3+vdCe3F5g7YNs0FDkUCaOcyvYSLvzj0VacG9DgA39h9zKoECDxrSJk04qVONYXHAY/x4oT0/R/Y3pA2Jd3FHOe51TYvLMRvxVD8VVYI5OA/ZYYFHKfzwz3hxkXsZ96V9qCCtxqHMraDvZBpwHIFbKVJ9G4RWlVyNFfxewLJHQRZiUKSk+cGyEGftTuLsFa1cVf2kw7/aqP0Qy3tZO3fVZYA1dCW7kIcfapBL1Xwo+Cn3i0VUleSRPBbLkl2ICeX9MlvJM/kBJkhNe2WbVqsAAAAASUVORK5CYII=" 
-                            alt="Assinatura digital" 
-                            className="h-10 mx-auto"
-                          />
-                        )}
-                      </div>
+                  <h2 className="text-2xl font-bold w-full">Atestado Médico</h2>
+                  <p className="text-base text-gray-500 mt-2 w-full">
+                    Data: {dataConsulta ? format(dataConsulta, "dd/MM/yyyy") : format(new Date(), "dd/MM/yyyy")}
+                  </p>
+                </div>
+                <div className="space-y-6 text-gray-900 w-full">
+                  <p className="text-lg w-full">
+                    Atesto para os devidos fins que o(a) paciente <span className="font-semibold">{nomePaciente || "_____________"}</span>, 
+                    necessita de afastamento de suas atividades por um período de <span className="font-semibold">{tempoAfastamento || "__"} {unidade || "dias"}</span>.
+                  </p>
+                  {justificativa && (
+                    <p className="w-full"><strong>Justificativa:</strong> {justificativa}</p>
+                  )}
+                  {cid && (
+                    <p className="w-full">CID: {cid}</p>
+                  )}
+                  <div className="mt-20 w-full">
+                    <div className="border-t border-gray-300 w-48 mx-auto pt-2 text-center">
+                      <p>Dr. Ricardo Silva</p>
+                      <p className="text-sm">CRM 123456</p>
+                    </div>
+                    <div className="mt-2">
+                      {assinado && (
+                        <img 
+                          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAGASURBVHgB7ZThUcJAEIW/JaGAowMowXSgHWgH2gF2IFagdqAdYAViB9qBdOA40vHYzYXhsrkQ/MPM8M3cJHe3u2/f7iUQufDtdVsZQRuiNhE1OJGQrWAuGEsyeRGENhJYHJA73ASA77DIi8B8BLYGOm73L6Yw+Ys457wCRl8KAJOQpZmDFDT53WNE1Dvrq7TnYiFnFJnVWfCg61Lq+ZLl9htIGtXj1j0YqzY57E9hfgOvnuxTn8M3+vdCe3F5g7YNs0FDkUCaOcyvYSLvzj0VacG9DgA39h9zKoECDxrSJk04qVONYXHAY/x4oT0/R/Y3pA2Jd3FHOe51TYvLMRvxVD8VVYI5OA/ZYYFHKfzwz3hxkXsZ96V9qCCtxqHMraDvZBpwHIFbKVJ9G4RWlVyNFfxewLJHQRZiUKSk+cGyEGftTuLsFa1cVf2kw7/aqP0Qy3tZO3fVZYA1dCW7kIcfapBL1Xwo+Cn3i0VUleSRPBbLkl2ICeX9MlvJM/kBJkhNe2WbVqsAAAAASUVORK5CYII=" 
+                          alt="Assinatura digital" 
+                          className="h-10 mx-auto"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
