@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -7,14 +8,15 @@ import ReceitasPaciente from '@/components/paciente/ReceitasPaciente';
 import HistoricoPaciente from '@/components/paciente/HistoricoPaciente';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, ClipboardList, FileText } from 'lucide-react';
+import { Calendar, ClipboardList, FileText, MessageSquare } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import PacienteForm from '@/components/forms/PacienteForm';
 import { getPacienteById } from '@/services/supabaseService';
 
 import ChatsPacienteList from "@/components/paciente/ChatsList";
 import ChatPaciente from "@/components/paciente/ChatPaciente";
+import PacienteSaldoCard from '@/components/paciente/PacienteSaldoCard';
 
 interface Paciente {
   id: number;
@@ -96,9 +98,16 @@ const AreaPaciente = () => {
             <div className="lg:w-1/3">
               <div className="sticky top-8">
                 <PacienteProfileCard 
-                  paciente={paciente} 
-                  onEditar={handleEditarPaciente} 
+                  nome={paciente?.nome || "Carregando..."}
+                  email={paciente?.email || ""}
+                  genero={paciente?.genero}
+                  dataNascimento={paciente?.data_nascimento}
+                  fotoUrl={paciente?.foto_url}
                 />
+                
+                <div className="mt-4 px-4 py-3 bg-white rounded-lg shadow border border-gray-100">
+                  <PacienteSaldoCard pacienteId={pacienteId} />
+                </div>
                 
                 <div className="mt-6">
                   <Card>
@@ -212,7 +221,5 @@ const AreaPaciente = () => {
     </div>
   );
 };
-
-import { MessageSquare } from 'lucide-react';
 
 export default AreaPaciente;

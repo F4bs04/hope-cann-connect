@@ -42,8 +42,21 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
       setLoading(true);
       try {
         const data = await getChatsAtivos(medicoId);
-        setChats(data);
-        setFilteredChats(data);
+        // Processe os dados recebidos para garantir que correspondam ao formato esperado
+        const processedChats = data.map(chat => ({
+          ...chat,
+          consultas: {
+            id: chat.consultas?.id || 0,
+            motivo: chat.consultas?.motivo || 'Consulta'
+          },
+          pacientes_app: {
+            id: chat.pacientes_app?.id || 0,
+            nome: chat.pacientes_app?.nome || 'Paciente'
+          }
+        })) as Chat[];
+        
+        setChats(processedChats);
+        setFilteredChats(processedChats);
       } catch (error) {
         console.error('Error loading chats:', error);
       } finally {

@@ -18,6 +18,7 @@ interface ChatMessage {
   mensagem: string;
   data_envio: string;
   lida: boolean;
+  id_consulta?: number;
 }
 
 interface ChatMedicoProps {
@@ -48,7 +49,8 @@ const ChatMedico: React.FC<ChatMedicoProps> = ({
     setLoading(true);
     try {
       const chatMessages = await getMensagensChat(medicoId, pacienteId);
-      setMessages(chatMessages);
+      // Type assertion para garantir que os objetos recebidos correspondam ao tipo ChatMessage
+      setMessages(chatMessages as ChatMessage[]);
       
       // Marcar as mensagens do paciente como lidas
       await marcarMensagensComoLidas(medicoId, pacienteId, 'medico');
@@ -96,7 +98,8 @@ const ChatMedico: React.FC<ChatMedicoProps> = ({
     try {
       const sentMessage = await enviarMensagem(messageData);
       if (sentMessage) {
-        setMessages([...messages, sentMessage]);
+        // Type assertion para garantir que o objeto recebido corresponda ao tipo ChatMessage
+        setMessages([...messages, sentMessage as ChatMessage]);
         setNewMessage('');
       }
     } catch (error) {

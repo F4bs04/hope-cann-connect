@@ -11,7 +11,6 @@ const AgendaTab: React.FC = () => {
     viewMode,
     setViewMode,
     selectedWeekStart,
-    setSelectedWeekStart,
     currentDate,
     setCurrentDate,
     selectedViewDay,
@@ -85,7 +84,6 @@ const AgendaTab: React.FC = () => {
         viewMode={viewMode}
         setViewMode={setViewMode}
         selectedWeekStart={selectedWeekStart}
-        setSelectedWeekStart={setSelectedWeekStart}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
         selectedViewDay={selectedViewDay}
