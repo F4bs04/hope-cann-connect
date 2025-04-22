@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-// Patients
+// Pacientes
 export const getPacientes = async () => {
   try {
     const { data, error } = await supabase
@@ -348,5 +348,22 @@ export const getTransacoesMedicos = async (limit = 5) => {
   } catch (error: any) {
     console.error('Error fetching doctor transactions:', error);
     return [];
+  }
+};
+
+// Pacientes - buscar saldo do paciente (NOVA FUNÇÃO)
+export const getSaldoPacienteById = async (pacienteId: number) => {
+  try {
+    const { data, error } = await supabase
+      .from("saldo_pacientes")
+      .select("*")
+      .eq("id_paciente", pacienteId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error(`Erro ao buscar saldo do paciente ${pacienteId}:`, error);
+    return { saldo_total: 0 };
   }
 };

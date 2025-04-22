@@ -999,6 +999,27 @@ export type Database = {
           },
         ]
       }
+      saldo_pacientes: {
+        Row: {
+          id: number
+          id_paciente: number
+          saldo_total: number
+          ultima_atualizacao: string
+        }
+        Insert: {
+          id?: number
+          id_paciente: number
+          saldo_total?: number
+          ultima_atualizacao?: string
+        }
+        Update: {
+          id?: number
+          id_paciente?: number
+          saldo_total?: number
+          ultima_atualizacao?: string
+        }
+        Relationships: []
+      }
       transacoes_medicos: {
         Row: {
           data_transacao: string

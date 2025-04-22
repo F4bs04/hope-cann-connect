@@ -22,6 +22,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import PacienteProfileCard from "@/components/paciente/PacienteProfileCard";
+import PacienteSaldoCard from "@/components/paciente/PacienteSaldoCard";
 
 const CARD_DATA = [
   {
@@ -45,22 +46,28 @@ const CARD_DATA = [
 ];
 
 const perfilPaciente = {
+  id: 1, // ID de exemplo, ajuste conforme necessário para dados reais
   nome: "Gabriel Almeida",
   email: "gabriel@email.com",
   genero: "Masculino",
   dataNascimento: "1992-05-20",
-  fotoUrl: "", // ou um link para a imagem se houver
+  fotoUrl: "",
 };
 
 const DashboardPaciente = () => (
   <div>
-    <PacienteProfileCard
-      nome={perfilPaciente.nome}
-      email={perfilPaciente.email}
-      genero={perfilPaciente.genero}
-      dataNascimento={perfilPaciente.dataNascimento}
-      fotoUrl={perfilPaciente.fotoUrl}
-    />
+    <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-3 mb-2">
+      <PacienteProfileCard
+        nome={perfilPaciente.nome}
+        email={perfilPaciente.email}
+        genero={perfilPaciente.genero}
+        dataNascimento={perfilPaciente.dataNascimento}
+        fotoUrl={perfilPaciente.fotoUrl}
+      />
+      <div className="sm:ml-6 sm:mb-3 mt-2 w-full sm:w-auto flex-shrink-0">
+        <PacienteSaldoCard pacienteId={perfilPaciente.id} />
+      </div>
+    </div>
     <section className="mb-8">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {CARD_DATA.map((card) => (
