@@ -15,7 +15,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// Define the login form schema
 const loginSchema = z.object({
   email: z.string().email("Insira um email válido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
@@ -38,7 +37,6 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Setup form with react-hook-form
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -49,33 +47,21 @@ const Login = () => {
     },
   });
 
-  // Check if user is already logged in and redirect appropriately
   useEffect(() => {
     const checkAuthStatus = async () => {
-      // Clear any previous authentication errors
       setAuthError(null);
       
       try {
-        // Check localStorage for authentication info
         const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        const userEmail = localStorage.getItem('userEmail');
         const userType = localStorage.getItem('userType');
-        const authTimestamp = localStorage.getItem('authTimestamp');
         
-        // If we have auth data and it's recent (less than 1 day old)
-        if (isAuthenticated && userType && authTimestamp) {
-          const now = Date.now();
-          const authTime = parseInt(authTimestamp, 10);
-          const oneDayMs = 24 * 60 * 60 * 1000;
-          
-          // Check if auth is still valid (less than a day old)
-          if (!isNaN(authTime) && now - authTime < oneDayMs) {
-            console.log("User already authenticated, redirecting to", userType);
+        if (isAuthenticated && userEmail && userType) {
+          console.log("User already authenticated, redirecting to", userType);
+          setTimeout(() => {
             redirectBasedOnUserType(userType);
-            return;
-          } else {
-            // Auth data is too old, clear it
-            localStorage.clear();
-          }
+          }, 100);
+          return;
         }
         
         setIsAuthChecking(false);
@@ -109,12 +95,11 @@ const Login = () => {
     }
 
     setIsLoading(true);
-    setAuthError(null); // Clear previous errors
+    setAuthError(null);
 
     try {
       console.log("Attempting login with:", values.email);
       
-      // Step 1: Authenticate with Supabase
       const { data, error } = await supabase
         .from('usuarios')
         .select('*')
@@ -132,26 +117,12 @@ const Login = () => {
 
       console.log("User found:", data);
 
-      // Verify password (in a real app, use proper password hashing)
       if (data.senha !== values.password) {
         throw new Error("Senha incorreta");
       }
 
-      // Update last access time
-      const { error: updateError } = await supabase
-        .from('usuarios')
-        .update({ ultimo_acesso: new Date().toISOString() })
-        .eq('id', data.id);
-        
-      if (updateError) {
-        console.error("Failed to update last access time:", updateError);
-        // Don't throw here, continue with login
-      }
-
-      // Clear any previous authentication data
       localStorage.clear();
       
-      // Store user info in localStorage with clear expiration
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', values.email);
       localStorage.setItem('userId', data.id.toString());
@@ -159,7 +130,6 @@ const Login = () => {
       localStorage.setItem('authTimestamp', Date.now().toString());
       
       if (values.rememberMe) {
-        // Set a longer expiration if "remember me" is checked
         localStorage.setItem('rememberMe', 'true');
       }
 
@@ -168,14 +138,9 @@ const Login = () => {
         description: "Bem-vindo ao sistema!",
       });
 
-      // Make sure we have the updated user type before redirecting
-      const userType = data.tipo_usuario;
-      console.log("User authenticated, redirecting as:", userType);
-      
-      // Redirect based on user type with a slight delay to ensure state updates
       setTimeout(() => {
-        redirectBasedOnUserType(userType);
-      }, 500);
+        redirectBasedOnUserType(data.tipo_usuario);
+      }, 100);
       
     } catch (error: any) {
       console.error("Login error:", error);
@@ -185,7 +150,6 @@ const Login = () => {
         description: error.message || "Ocorreu um erro ao fazer login. Tente novamente.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -236,19 +200,16 @@ const Login = () => {
     }
   };
 
-  // Check if this is a redirect from Google OAuth
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.provider_token) {
-        // User authenticated with Google
         const user = session.user;
         
         if (user) {
           setUserAvatar(user.user_metadata.avatar_url);
           
-          // Check if user exists in our database
           const { data: userData, error: userError } = await supabase
             .from('usuarios')
             .select('*')
@@ -256,14 +217,13 @@ const Login = () => {
             .single();
           
           if (userError) {
-            // User doesn't exist, create a new user
             const { data: newUser, error: createError } = await supabase
               .from('usuarios')
               .insert([
                 {
                   email: user.email,
-                  senha: '', // No password for Google users
-                  tipo_usuario: 'paciente', // Default to patient
+                  senha: '',
+                  tipo_usuario: 'paciente',
                   ultimo_acesso: new Date().toISOString()
                 }
               ])
@@ -274,14 +234,13 @@ const Login = () => {
               throw createError;
             }
 
-            // Create a patient record
             if (newUser) {
               await supabase.from('pacientes').insert([
                 {
                   id_usuario: newUser.id,
                   nome: user.user_metadata.full_name || user.email?.split('@')[0] || '',
-                  cpf: '', // Require user to fill this later
-                  data_nascimento: new Date('2000-01-01').toISOString(), // Default
+                  cpf: '',
+                  data_nascimento: new Date('2000-01-01').toISOString(),
                   endereco: '',
                   telefone: '',
                   email: user.email || ''
@@ -303,7 +262,6 @@ const Login = () => {
               navigate('/area-paciente');
             }
           } else {
-            // User exists, update last access and log them in
             await supabase
               .from('usuarios')
               .update({ ultimo_acesso: new Date().toISOString() })
@@ -331,7 +289,6 @@ const Login = () => {
     checkSession();
   }, []);
 
-  // If we're still checking auth, show a loading spinner
   if (isAuthChecking) {
     return (
       <div className="min-h-screen flex flex-col">

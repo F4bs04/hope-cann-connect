@@ -35,7 +35,6 @@ const AreaPaciente = () => {
   const [paciente, setPaciente] = useState<any | null>(null);
   const [pacienteId, setPacienteId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
   
   const [activeTab, setActiveTab] = useState<string>('consultas');
   const [selectedChat, setSelectedChat] = useState<any>(null);
@@ -43,34 +42,12 @@ const AreaPaciente = () => {
   // Verificar dados do usuário logado
   useEffect(() => {
     const checkAuth = async () => {
-      // First check localStorage for a quicker initial check
-      const isAuthenticated = localStorage.getItem('isAuthenticated');
-      const userType = localStorage.getItem('userType');
-      
-      if (!isAuthenticated || isAuthenticated !== 'true') {
-        console.log("Not authenticated based on localStorage");
-        toast({
-          title: "Acesso não autorizado",
-          description: "Por favor, faça login para acessar esta página.",
-          variant: "destructive"
-        });
-        navigate('/login');
-        return;
-      }
-      
-      // Continue with Supabase authentication check only if localStorage check passes
       try {
         // Get user email from localStorage
         const userEmail = localStorage.getItem('userEmail');
         
         if (!userEmail) {
-          console.log("No user email in localStorage");
-          toast({
-            title: "Acesso não autorizado",
-            description: "Informações de usuário incompletas. Por favor, faça login novamente.",
-            variant: "destructive"
-          });
-          localStorage.clear();
+          console.log("Redirecionando para login - email não encontrado");
           navigate('/login');
           return;
         }
@@ -82,25 +59,30 @@ const AreaPaciente = () => {
           .eq('email', userEmail)
           .maybeSingle();
         
-        if (error || !pacienteData) {
+        if (error) {
           console.error("Erro ao buscar paciente:", error);
-          toast({
-            title: "Usuário não encontrado",
-            description: "Não foi possível encontrar suas informações de paciente.",
-            variant: "destructive"
+          // Não redirecionamos aqui, apenas mostramos dados vazios
+          setLoading(false);
+          return;
+        }
+        
+        if (!pacienteData) {
+          console.log("Dados do paciente não encontrados, tentando criar perfil padrão");
+          // Aqui, podemos definir um perfil padrão para novos usuários
+          setPaciente({
+            nome: "Novo Paciente",
+            email: userEmail,
+            // outros campos padrão
           });
-          setAuthChecked(true);
           setLoading(false);
           return;
         }
         
         setPacienteId(pacienteData.id);
         setPaciente(pacienteData);
-        setAuthChecked(true);
         setLoading(false);
       } catch (error) {
         console.error("Erro ao buscar dados do paciente:", error);
-        setAuthChecked(true);
         setLoading(false);
       }
     };
@@ -169,25 +151,6 @@ const AreaPaciente = () => {
     );
   }
 
-  // Show unauthorized message if auth check is complete but no paciente found
-  if (authChecked && !paciente) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow py-8 bg-gray-50 flex items-center justify-center">
-          <div className="text-center p-8 bg-white rounded-lg shadow-sm max-w-md">
-            <h2 className="text-xl font-bold text-red-600 mb-2">Acesso não autorizado</h2>
-            <p className="mb-4 text-gray-600">Suas informações de paciente não foram encontradas.</p>
-            <Button onClick={() => navigate('/login')}>
-              Voltar para o login
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -197,7 +160,7 @@ const AreaPaciente = () => {
             <div className="lg:w-1/3">
               <div className="sticky top-8">
                 <PacienteProfileCard 
-                  nome={paciente?.nome || "Carregando..."}
+                  nome={paciente?.nome || "Paciente"}
                   email={paciente?.email || ""}
                   genero={paciente?.genero}
                   dataNascimento={paciente?.data_nascimento}
