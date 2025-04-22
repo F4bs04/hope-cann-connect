@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, AlertCircle, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -33,6 +33,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -73,6 +74,7 @@ const Login = () => {
     }
 
     setIsLoading(true);
+    setAuthError(null); // Clear previous errors
 
     try {
       console.log("Attempting login with:", values.email);
@@ -111,11 +113,17 @@ const Login = () => {
         // Don't throw here, continue with login
       }
 
-      // Store user info in localStorage
+      // Store user info in localStorage with clear expiration
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', values.email);
       localStorage.setItem('userId', data.id.toString());
       localStorage.setItem('userType', data.tipo_usuario);
+      localStorage.setItem('authTimestamp', Date.now().toString());
+      
+      if (values.rememberMe) {
+        // Set a longer expiration if "remember me" is checked
+        localStorage.setItem('rememberMe', 'true');
+      }
 
       toast({
         title: "Login bem-sucedido",
@@ -127,6 +135,7 @@ const Login = () => {
       
     } catch (error: any) {
       console.error("Login error:", error);
+      setAuthError(error.message || "Ocorreu um erro ao fazer login. Tente novamente.");
       toast({
         title: "Erro ao fazer login",
         description: error.message || "Ocorreu um erro ao fazer login. Tente novamente.",
@@ -138,19 +147,24 @@ const Login = () => {
   };
 
   const redirectBasedOnUserType = (userType: string) => {
-    switch (userType) {
-      case 'paciente':
-        navigate('/area-paciente');
-        break;
-      case 'medico':
-        navigate('/area-medico');
-        break;
-      case 'admin_clinica':
-        navigate('/admin');
-        break;
-      default:
-        navigate('/area-paciente');
-    }
+    console.log("Redirecting user with type:", userType);
+    
+    // Add a short delay to ensure everything is saved properly
+    setTimeout(() => {
+      switch (userType) {
+        case 'paciente':
+          navigate('/area-paciente');
+          break;
+        case 'medico':
+          navigate('/area-medico');
+          break;
+        case 'admin_clinica':
+          navigate('/admin');
+          break;
+        default:
+          navigate('/area-paciente');
+      }
+    }, 100);
   };
 
   const handleGoogleLogin = async () => {
@@ -238,6 +252,7 @@ const Login = () => {
               localStorage.setItem('userId', newUser.id.toString());
               localStorage.setItem('userType', 'paciente');
               localStorage.setItem('userAvatar', user.user_metadata.avatar_url || '');
+              localStorage.setItem('authTimestamp', Date.now().toString());
               
               toast({
                 title: "Conta criada com sucesso",
@@ -258,6 +273,7 @@ const Login = () => {
             localStorage.setItem('userId', userData.id.toString());
             localStorage.setItem('userType', userData.tipo_usuario);
             localStorage.setItem('userAvatar', user.user_metadata.avatar_url || '');
+            localStorage.setItem('authTimestamp', Date.now().toString());
             
             toast({
               title: "Login bem-sucedido",
@@ -287,6 +303,13 @@ const Login = () => {
                 <AvatarImage src={userAvatar} alt="User avatar" />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
+            </div>
+          )}
+          
+          {authError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-600">{authError}</p>
             </div>
           )}
           
@@ -391,10 +414,20 @@ const Login = () => {
               
               <Button 
                 type="submit" 
-                className="w-full bg-hopecann-teal hover:bg-hopecann-teal/90" 
+                className="w-full bg-hopecann-teal hover:bg-hopecann-teal/90 flex items-center justify-center gap-2" 
                 disabled={isLoading}
               >
-                {isLoading ? "Processando..." : "Entrar"}
+                {isLoading ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4 mr-1" />
+                    Entrar
+                  </>
+                )}
               </Button>
             </form>
           </Form>
@@ -418,7 +451,12 @@ const Login = () => {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M15.5453 6.5H8.5V9.5H12.6039C12.0442 11.3 10.4228 12.5 8.5 12.5C6.01614 12.5 4 10.4839 4 8C4 5.51614 6.01614 3.5 8.5 3.5C9.56267 3.5 10.5392 3.88194 11.3193 4.5H14.3283C12.9325 2.38305 10.8553 1 8.5 1C4.63396 1 1.5 4.13396 1.5 8C1.5 11.866 4.63396 15 8.5 15C12.3667 15 15 12.3667 15 8.5C15 7.83193 14.7726 7.15722 14.5453 6.5H15.5453Z" fill="#4285F4"/>
             </svg>
-            {googleLoading ? "Processando..." : "Google"}
+            {googleLoading ? (
+              <>
+                <div className="h-4 w-4 border-2 border-hopecann-teal border-t-transparent rounded-full animate-spin mr-2"></div>
+                Processando...
+              </>
+            ) : "Google"}
           </Button>
           
           <div className="text-center mt-6">
