@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   SidebarProvider, 
@@ -54,8 +53,8 @@ const AreaMedico: React.FC = () => {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [selectedConsultaId, setSelectedConsultaId] = useState<number | null>(null);
   const [showProntuarioAba, setShowProntuarioAba] = useState(false);
+  const [userType, setUserType] = useState<string | null>(null);
 
-  // Parse URL query parameters when the component mounts or the URL changes
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
@@ -65,7 +64,6 @@ const AreaMedico: React.FC = () => {
       setCurrentSection(tabParam);
       setActiveTab(tabParam);
       
-      // If there's also a patient ID, set it
       if (pacienteParam && tabParam === 'prontuarios') {
         const patientId = parseInt(pacienteParam);
         if (!isNaN(patientId)) {
@@ -75,6 +73,11 @@ const AreaMedico: React.FC = () => {
       }
     }
   }, [location]);
+
+  useEffect(() => {
+    const storedType = localStorage.getItem('userType');
+    setUserType(storedType);
+  }, []);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -144,7 +147,6 @@ const AreaMedico: React.FC = () => {
     }
   };
 
-  // Update sidebar navigation to use the navigate function
   const navigateToSection = (section: string) => {
     setCurrentSection(section);
     navigate(`/area-medico?tab=${section}`);
@@ -170,22 +172,24 @@ const AreaMedico: React.FC = () => {
                     <Home className="w-5 h-5 mr-2" /> Área Médica
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    onClick={() => navigateToSection('dashboard-clinica')}
-                    isActive={currentSection === 'dashboard-clinica'}
-                    className="text-white hover:bg-[#009E9B]"
-                  >
-                    <span className="mr-2 inline-flex items-center">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor">
-                        <use href="#lucide-layout-dashboard" />
-                      </svg>
-                    </span>
-                    Dashboard Clínica
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
+
+                {userType === 'clinica' && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      onClick={() => navigateToSection('dashboard-clinica')}
+                      isActive={currentSection === 'dashboard-clinica'}
+                      className="text-white hover:bg-[#009E9B]"
+                    >
+                      <span className="mr-2 inline-flex items-center">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor">
+                          <use href="#lucide-layout-dashboard" />
+                        </svg>
+                      </span>
+                      Dashboard Clínica
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
                 <SidebarMenuItem>
                   <SidebarMenuButton 
                     onClick={() => navigateToSection('agenda')}
