@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getProntuarios, getPacientes } from '@/services/supabaseService';
 import NovoProntuario from './NovoProntuario';
 import ProntuarioDetalhes from '@/components/medico/ProntuarioDetalhes';
+import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 
 interface ProntuariosProps {
   onSelectPatient: (patientId: number) => void;
@@ -15,12 +17,14 @@ interface ProntuariosProps {
 
 const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
   const { toast } = useToast();
+  const { setSelectedPaciente } = useDoctorSchedule();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('todos');
   const [prontuarios, setProntuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewProntuario, setShowNewProntuario] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedProntuarioId, setSelectedProntuarioId] = useState<number | null>(null);
   
   useEffect(() => {
     const loadData = async () => {
@@ -48,6 +52,50 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
     if (activeTab === 'cancelado') return prontuario.status === 'cancelado';
     return true;
   });
+
+  const handleSelectProntuario = (prontuario: any) => {
+    setSelectedProntuarioId(prontuario.id);
+    
+    // Primeiro, precisamos obter o paciente completo pelo ID
+    const getPacienteData = async () => {
+      try {
+        const pacientesData = await getPacientes();
+        const paciente = pacientesData.find((p: any) => p.id === prontuario.id_paciente);
+        
+        if (paciente) {
+          // Atualiza o contexto global com o paciente selecionado
+          setSelectedPaciente({
+            id: paciente.id,
+            nome: paciente.nome,
+            idade: paciente.idade,
+            condicao: paciente.condicao || '',
+            ultimaConsulta: paciente.ultima_consulta || new Date().toISOString()
+          });
+          
+          // Notifica o componente pai
+          onSelectPatient(paciente.id);
+          
+          // Mostrar os detalhes
+          setShowDetails(true);
+        } else {
+          toast({
+            title: "Erro ao carregar paciente",
+            description: "Não foi possível encontrar os dados do paciente.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao obter dados do paciente:", error);
+        toast({
+          title: "Erro ao carregar paciente",
+          description: "Ocorreu um erro ao carregar os dados do paciente.",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    getPacienteData();
+  };
   
   if (showDetails) {
     return <ProntuarioDetalhes onBack={() => setShowDetails(false)} />;
@@ -111,10 +159,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
             <Card 
               key={prontuario.id}
               className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => {
-                onSelectPatient(prontuario.id_paciente);
-                setShowDetails(true);
-              }}
+              onClick={() => handleSelectProntuario(prontuario)}
             >
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
@@ -179,8 +224,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
                       className="w-full"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onSelectPatient(prontuario.id_paciente);
-                        setShowDetails(true);
+                        handleSelectProntuario(prontuario);
                       }}
                     >
                       Ver detalhes

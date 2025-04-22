@@ -78,3 +78,30 @@ export type HorariosConfig = {
   sabado: string[];
   domingo: string[];
 };
+
+export type DoctorScheduleContextType = {
+  pacientes: Paciente[];
+  receitas: Receita[];
+  consultas: Consulta[];
+  mensagens: Mensagem[];
+  selectedPaciente: Paciente | null;
+  selectedMensagem: Mensagem | null;
+  historicoPaciente: HistoricoPaciente | null;
+  acompanhamentosPaciente: AcompanhamentoPaciente[];
+  prontuarioDialogOpen: boolean;
+  receitaDialogOpen: boolean;
+  mensagemDialogOpen: boolean;
+  setConsultas: React.Dispatch<React.SetStateAction<Consulta[]>>;
+  setMensagens: React.Dispatch<React.SetStateAction<Mensagem[]>>;
+  setSelectedPaciente: React.Dispatch<React.SetStateAction<Paciente | null>>;
+  setSelectedMensagem: React.Dispatch<React.SetStateAction<Mensagem | null>>;
+  setProntuarioDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setReceitaDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setMensagemDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleResponderMensagem: () => void;
+  handleCancelarConsulta: (consultaId: number) => void;
+  handleSaveProntuario: (
+    historico: HistoricoPaciente,
+    acompanhamento: AcompanhamentoPaciente
+  ) => void;
+};

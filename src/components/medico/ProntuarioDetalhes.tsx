@@ -41,21 +41,13 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
     plano: ''
   };
 
-  const [anamneseData, setAnamneseData] = useState<Anamnese>({
-    queixa_principal: historicoPaciente?.anamnese?.queixa_principal || '',
-    historia_doenca_atual: historicoPaciente?.anamnese?.historia_doenca_atual || '',
-    historia_medica_pregressa: historicoPaciente?.anamnese?.historia_medica_pregressa || '',
-    historia_familiar: historicoPaciente?.anamnese?.historia_familiar || '',
-    habitos_vida: historicoPaciente?.anamnese?.habitos_vida || '',
-    medicamentos_em_uso: historicoPaciente?.anamnese?.medicamentos_em_uso || '',
-  });
+  const [anamneseData, setAnamneseData] = useState<Anamnese>(
+    historicoPaciente?.anamnese || defaultAnamnese
+  );
 
-  const [soapData, setSoapData] = useState<SOAP>({
-    subjetivo: historicoPaciente?.soap?.subjetivo || '',
-    objetivo: historicoPaciente?.soap?.objetivo || '',
-    avaliacao: historicoPaciente?.soap?.avaliacao || '',
-    plano: historicoPaciente?.soap?.plano || '',
-  });
+  const [soapData, setSoapData] = useState<SOAP>(
+    historicoPaciente?.soap || defaultSoap
+  );
 
   useEffect(() => {
     if (historicoPaciente) {
@@ -65,20 +57,9 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
         medicamentos_atuais: historicoPaciente.medicamentos_atuais || '',
         historico_familiar: historicoPaciente.historico_familiar || '',
       });
-      setAnamneseData({
-        queixa_principal: historicoPaciente.anamnese?.queixa_principal || '',
-        historia_doenca_atual: historicoPaciente.anamnese?.historia_doenca_atual || '',
-        historia_medica_pregressa: historicoPaciente.anamnese?.historia_medica_pregressa || '',
-        historia_familiar: historicoPaciente.anamnese?.historia_familiar || '',
-        habitos_vida: historicoPaciente.anamnese?.habitos_vida || '',
-        medicamentos_em_uso: historicoPaciente.anamnese?.medicamentos_em_uso || '',
-      });
-      setSoapData({
-        subjetivo: historicoPaciente.soap?.subjetivo || '',
-        objetivo: historicoPaciente.soap?.objetivo || '',
-        avaliacao: historicoPaciente.soap?.avaliacao || '',
-        plano: historicoPaciente.soap?.plano || '',
-      });
+      
+      setAnamneseData(historicoPaciente.anamnese || defaultAnamnese);
+      setSoapData(historicoPaciente.soap || defaultSoap);
     }
   }, [historicoPaciente]);
 
