@@ -28,6 +28,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from "@/integrations/supabase/client";
 
 import DashboardHome from '@/components/medico-dashboard/DashboardHome';
 import AgendaMedica from '@/components/medico-dashboard/AgendaMedica';
@@ -86,7 +87,7 @@ const AreaMedico: React.FC = () => {
     const fetchUserId = async () => {
       const email = localStorage.getItem("userEmail");
       if (email) {
-        const { data, error } = await import("@/integrations/supabase/client").then(m => m.supabase)
+        const { data, error } = await supabase
           .from("usuarios")
           .select("id")
           .eq("email", email)
