@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -5,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MessageCircle, User, Calendar } from 'lucide-react';
+import { Search, MessageCircle, User, Calendar, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { getChatsAtivos } from '@/services/supabaseService';
 
 interface ChatsListProps {
@@ -42,12 +44,12 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
       const processedChats = data.map(chat => ({
         ...chat,
         consultas: {
-          id: chat.consultas && typeof chat.consultas === 'object' ? chat.consultas.id : 0,
-          motivo: chat.consultas && typeof chat.consultas === 'object' ? chat.consultas.motivo : 'Consulta'
+          id: chat.consultas?.id || 0,
+          motivo: chat.consultas?.motivo || 'Consulta'
         },
         pacientes_app: {
-          id: chat.pacientes_app && typeof chat.pacientes_app === 'object' ? chat.pacientes_app.id : 0,
-          nome: chat.pacientes_app && typeof chat.pacientes_app === 'object' ? chat.pacientes_app.nome : 'Paciente'
+          id: chat.pacientes_app?.id || 0,
+          nome: chat.pacientes_app?.nome || 'Paciente'
         }
       }));
       

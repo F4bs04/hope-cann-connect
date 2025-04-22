@@ -1,33 +1,58 @@
 
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getSaldoPacienteById } from "@/services/supabaseService";
-import { Badge } from "@/components/ui/badge";
-import { Wallet } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Wallet } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PacienteSaldoCardProps {
   pacienteId: number;
-  className?: string;
 }
 
-const PacienteSaldoCard: React.FC<PacienteSaldoCardProps> = ({ pacienteId, className }) => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["saldo-paciente", pacienteId],
-    queryFn: () => getSaldoPacienteById(pacienteId),
-    enabled: !!pacienteId,
-  });
+const PacienteSaldoCard: React.FC<PacienteSaldoCardProps> = ({ pacienteId }) => {
+  const [saldo, setSaldo] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSaldo = async () => {
+      if (!pacienteId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('saldo_pacientes')
+          .select('saldo_total')
+          .eq('id_paciente', pacienteId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching saldo:', error);
+          setSaldo(0);
+        } else {
+          setSaldo(data?.saldo_total || 0);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setSaldo(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSaldo();
+  }, [pacienteId]);
 
   return (
-    <div className={`flex items-center gap-2 ${className || ""}`}>
-      <Wallet className="w-5 h-5 text-hopecann-teal" />
-      <span className="font-medium text-gray-700">Saldo:</span>
-      <Badge className="bg-hopecann-teal/90 text-white px-3 py-1 text-md">
-        {isLoading && "Carregando..."}
-        {error && "Erro"}
-        {data && (
-          <>R$ {Number(data.saldo_total || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
-        )}
-      </Badge>
+    <div className="flex items-center justify-between">
+      <div className="flex items-center">
+        <Wallet className="h-5 w-5 text-hopecann-teal mr-2" />
+        <span className="text-gray-700 font-medium">Saldo disponível:</span>
+      </div>
+      
+      {loading ? (
+        <div className="h-5 w-16 bg-gray-200 animate-pulse rounded"></div>
+      ) : (
+        <span className="font-bold text-hopecann-teal">
+          R$ {saldo?.toFixed(2).replace('.', ',') || '0,00'}
+        </span>
+      )}
     </div>
   );
 };
