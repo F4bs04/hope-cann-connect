@@ -52,7 +52,7 @@ const PacienteProfileCard: React.FC<PacienteProfileCardProps> = ({
         className="mt-4 w-full bg-hopecann-teal hover:bg-hopecann-teal/90"
       >
         <Layout className="mr-2 h-4 w-4" />
-        Ver Dashboard V2
+        Dashboard do Paciente
       </Button>
     </div>
   );
