@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { addDays, startOfWeek, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,7 +36,8 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
   setHorarioDialogOpen,
   handleFastAgendamento
 }) => {
-  // Hoisting these values from the context, which we'll access through props
+  const [selectedDate, setSelectedDate] = useState<Date>(selectedViewDay);
+
   const horariosConfig = {};
   const horariosDisponiveis = { manha: [], tarde: [] };
   const formatWeekday = (date: Date) => format(date, 'EEEE', { locale: ptBR });
@@ -79,7 +79,6 @@ const CalendarViews: React.FC<CalendarViewsProps> = ({
 
   return (
     <div className="bg-white rounded-lg border p-4">
-      {/* View Mode Selector */}
       <div className="flex flex-wrap gap-2 mb-4">
         <Button
           variant={viewMode === 'week' ? 'default' : 'outline'}

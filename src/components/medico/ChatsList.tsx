@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -42,14 +41,14 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
       setLoading(true);
       try {
         const data = await getChatsAtivos(medicoId);
-        // Processe os dados recebidos para garantir que correspondam ao formato esperado
+        // Safely handle potentially invalid data structures
         const processedChats = data.map(chat => ({
           ...chat,
-          consultas: chat.consultas ? {
+          consultas: chat.consultas && typeof chat.consultas === 'object' ? {
             id: chat.consultas.id || 0,
             motivo: chat.consultas.motivo || 'Consulta'
           } : { id: 0, motivo: 'Consulta' },
-          pacientes_app: chat.pacientes_app ? {
+          pacientes_app: chat.pacientes_app && typeof chat.pacientes_app === 'object' ? {
             id: chat.pacientes_app.id || 0,
             nome: chat.pacientes_app.nome || 'Paciente'
           } : { id: 0, nome: 'Paciente' }
@@ -59,6 +58,8 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
         setFilteredChats(processedChats);
       } catch (error) {
         console.error('Error loading chats:', error);
+        setChats([]);
+        setFilteredChats([]);
       } finally {
         setLoading(false);
       }

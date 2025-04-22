@@ -11,6 +11,7 @@ interface PacienteProfileCardProps {
   genero?: string;
   dataNascimento?: string;
   fotoUrl?: string;
+  onEditar?: () => void; // Add the missing onEditar prop
 }
 
 const PacienteProfileCard: React.FC<PacienteProfileCardProps> = ({
@@ -19,6 +20,7 @@ const PacienteProfileCard: React.FC<PacienteProfileCardProps> = ({
   genero,
   dataNascimento,
   fotoUrl,
+  onEditar
 }) => {
   const navigate = useNavigate();
 
@@ -47,13 +49,26 @@ const PacienteProfileCard: React.FC<PacienteProfileCardProps> = ({
           </span>
         )}
       </div>
-      <Button 
-        onClick={handleDashboardNavigation} 
-        className="mt-4 w-full bg-hopecann-teal hover:bg-hopecann-teal/90"
-      >
-        <Layout className="mr-2 h-4 w-4" />
-        Dashboard do Paciente
-      </Button>
+      
+      <div className="mt-4 w-full flex flex-col gap-2">
+        {onEditar && (
+          <Button 
+            onClick={onEditar} 
+            variant="outline"
+            className="w-full"
+          >
+            Editar Perfil
+          </Button>
+        )}
+        
+        <Button 
+          onClick={handleDashboardNavigation} 
+          className="w-full bg-hopecann-teal hover:bg-hopecann-teal/90"
+        >
+          <Layout className="mr-2 h-4 w-4" />
+          Dashboard do Paciente
+        </Button>
+      </div>
     </div>
   );
 };
