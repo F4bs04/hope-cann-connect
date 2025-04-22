@@ -1,4 +1,3 @@
-
 export type Paciente = {
   id: number;
   nome: string;
@@ -104,4 +103,45 @@ export type DoctorScheduleContextType = {
     historico: HistoricoPaciente,
     acompanhamento: AcompanhamentoPaciente
   ) => void;
+  
+  viewMode: 'week' | 'day' | 'calendar';
+  setViewMode: React.Dispatch<React.SetStateAction<'week' | 'day' | 'calendar'>>;
+  selectedWeekStart: Date;
+  selectedViewDay: Date;
+  selectedDate: Date | undefined;
+  currentDate: Date;
+  setCurrentDate: React.Dispatch<React.SetStateAction<Date>>;
+  setSelectedWeekStart: React.Dispatch<React.SetStateAction<Date>>;
+  setSelectedViewDay: React.Dispatch<React.SetStateAction<Date>>;
+  setSelectedDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
+  prevWeek: () => void;
+  nextWeek: () => void;
+  prevDay: () => void;
+  nextDay: () => void;
+  formatWeekday: (date: Date) => string;
+  
+  quickSetMode: 'morning' | 'afternoon' | 'all' | 'custom';
+  setQuickSetMode: React.Dispatch<React.SetStateAction<'morning' | 'afternoon' | 'all' | 'custom'>>;
+  selectedSlot: { day: Date, time: string } | null;
+  setSelectedSlot: React.Dispatch<React.SetStateAction<{ day: Date, time: string } | null>>;
+  selectedDay: Date | null;
+  setSelectedDay: React.Dispatch<React.SetStateAction<Date | null>>;
+  horariosConfig: HorariosConfig;
+  horariosDisponiveis: { manha: string[], tarde: string[] };
+  todosHorariosDisponiveis: string[];
+  setHorariosConfig: React.Dispatch<React.SetStateAction<HorariosConfig>>;
+  getAvailableSlotsForDay: (date: Date) => string[];
+  handleQuickSetAvailability: (day: Date, mode: 'morning' | 'afternoon' | 'all' | 'none') => void;
+  applyPatternToWeek: (pattern: 'workdays' | 'weekend' | 'all' | 'none', timePattern: 'morning' | 'afternoon' | 'all' | 'none') => void;
+  handleAdicionarHorario: () => void;
+  handleRemoverHorario: (day: Date, time: string) => void;
+  handleToggleDayAvailability: (day: Date, isAvailable: boolean) => void;
+  handleDateSelect: (date: Date | undefined) => Date | undefined;
+  handleAddSlot: (day: Date, time: string) => void;
+  saveAvailability: () => Promise<boolean>;
+  
+  horarioDialogOpen: boolean;
+  setHorarioDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  consultaDialogOpen: boolean;
+  setConsultaDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 };
