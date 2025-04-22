@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   SidebarProvider,
@@ -19,10 +18,10 @@ import {
   Users,
   MessageSquare,
   HeartPulse,
-  FileMedical,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import PacienteProfileCard from "@/components/paciente/PacienteProfileCard";
 
 const CARD_DATA = [
   {
@@ -45,37 +44,54 @@ const CARD_DATA = [
   },
 ];
 
+const perfilPaciente = {
+  nome: "Gabriel Almeida",
+  email: "gabriel@email.com",
+  genero: "Masculino",
+  dataNascimento: "1992-05-20",
+  fotoUrl: "", // ou um link para a imagem se houver
+};
+
 const DashboardPaciente = () => (
   <div>
-    <div className="mb-6 animate-fade-in">
-      <h2 className="text-3xl font-bold text-hopecann-teal mb-1">Olá, bem-vindo!</h2>
-      <p className="text-gray-600">Aqui você acompanha tudo sobre sua saúde, documentos, consultas e médicos.</p>
-    </div>
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-      {CARD_DATA.map((card, idx) => (
-        <div
-          key={card.label}
-          className={`rounded-xl p-5 flex items-center gap-3 shadow-sm ${card.colorClass}`}
-        >
-          <span>{card.icon}</span>
-          <div>
-            <div className="font-semibold text-lg text-gray-800">{card.value}</div>
-            <div className="text-gray-500 text-sm">{card.label}</div>
+    <PacienteProfileCard
+      nome={perfilPaciente.nome}
+      email={perfilPaciente.email}
+      genero={perfilPaciente.genero}
+      dataNascimento={perfilPaciente.dataNascimento}
+      fotoUrl={perfilPaciente.fotoUrl}
+    />
+    <section className="mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {CARD_DATA.map((card) => (
+          <div
+            key={card.label}
+            className={`rounded-xl p-5 flex items-center gap-3 shadow-sm ${card.colorClass}`}
+          >
+            <span>{card.icon}</span>
+            <div>
+              <div className="font-semibold text-lg text-gray-800">
+                {card.value}
+              </div>
+              <div className="text-gray-500 text-sm">{card.label}</div>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
-    <div className="text-xl text-gray-800 font-semibold mb-2">Resumo</div>
-    <ul className="grid gap-2">
-      <li className="flex items-center gap-2 text-gray-700">
-        <CalendarDays className="w-5 h-5 text-hopecann-teal" />
-        Você tem uma consulta marcada para amanhã.
-      </li>
-      <li className="flex items-center gap-2 text-gray-700">
-        <FileText className="w-5 h-5 text-blue-600" />
-        Nova receita médica recebida do Dr. Ana Saúde.
-      </li>
-    </ul>
+        ))}
+      </div>
+    </section>
+    <section>
+      <div className="text-xl text-gray-800 font-semibold mb-2">Resumo</div>
+      <ul className="grid gap-2">
+        <li className="flex items-center gap-2 text-gray-700">
+          <CalendarDays className="w-5 h-5 text-hopecann-teal" />
+          Você tem uma consulta marcada para amanhã.
+        </li>
+        <li className="flex items-center gap-2 text-gray-700">
+          <FileText className="w-5 h-5 text-blue-600" />
+          Nova receita médica recebida do Dr. Ana Saúde.
+        </li>
+      </ul>
+    </section>
   </div>
 );
 
@@ -141,7 +157,7 @@ const MENU_ITEMS = [
   { key: 'prescricoes', label: 'Prescrições', icon: HeartPulse },
   { key: 'receitas', label: 'Receitas', icon: FileText },
   { key: 'atestados', label: 'Atestados', icon: File },
-  { key: 'laudos', label: 'Laudos', icon: FileMedical },
+  { key: 'laudos', label: 'Laudos', icon: File },
   { key: 'pedidos-exame', label: 'Pedidos de Exame', icon: File },
   { key: 'medicos', label: 'Médicos', icon: Users },
 ];
