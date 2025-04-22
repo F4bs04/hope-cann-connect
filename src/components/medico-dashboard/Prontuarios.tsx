@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { getProntuarios, getPacientes } from '@/services/supabaseService';
 import NovoProntuario from './NovoProntuario';
+import ProntuarioDetalhes from '@/components/medico/ProntuarioDetalhes';
 
 interface ProntuariosProps {
   onSelectPatient: (patientId: number) => void;
@@ -20,6 +20,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
   const [prontuarios, setProntuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewProntuario, setShowNewProntuario] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   
   useEffect(() => {
     const loadData = async () => {
@@ -47,6 +48,10 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
     if (activeTab === 'cancelado') return prontuario.status === 'cancelado';
     return true;
   });
+  
+  if (showDetails) {
+    return <ProntuarioDetalhes onBack={() => setShowDetails(false)} />;
+  }
   
   if (showNewProntuario) {
     return (
@@ -106,7 +111,10 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
             <Card 
               key={prontuario.id}
               className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => onSelectPatient(prontuario.id_paciente)}
+              onClick={() => {
+                onSelectPatient(prontuario.id_paciente);
+                setShowDetails(true);
+              }}
             >
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
@@ -171,18 +179,8 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
                       className="w-full"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // No modal/pop-up: implementação futura de edição pode ser aqui.
-                      }}
-                    >
-                      Editar
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
                         onSelectPatient(prontuario.id_paciente);
+                        setShowDetails(true);
                       }}
                     >
                       Ver detalhes
