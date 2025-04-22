@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Calendar, FileText, User, Bell, Clock, FileCheck, Activity, AlertCircle } from 'lucide-react';
+import { Calendar, FileText, User, Bell, Clock, FileCheck, Activity, AlertCircle, Coins, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getPacientes, getReceitas, getProntuarios } from '@/services/supabaseService';
+import { getPacientes, getReceitas, getProntuarios, getSaldoMedico, getTransacoesMedico } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DashboardHomeProps {
@@ -20,6 +20,11 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [consultasCount, setConsultasCount] = useState(0);
   const [proximaConsulta, setProximaConsulta] = useState<any>(null);
+  const [saldoMedico, setSaldoMedico] = useState<any>(null);
+  const [transacoes, setTransacoes] = useState<any[]>([]);
+  
+  // ID do médico para teste (futuro: pegar ID do médico logado)
+  const MEDICO_ID = 1;
   
   useEffect(() => {
     const fetchData = async () => {
@@ -52,11 +57,26 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
         setProximaConsulta(consultasData?.[0] || null);
       }
       
+      // Buscar saldo do médico
+      const saldoData = await getSaldoMedico(MEDICO_ID);
+      setSaldoMedico(saldoData);
+      
+      // Buscar transações do médico
+      const transacoesData = await getTransacoesMedico(MEDICO_ID);
+      setTransacoes(transacoesData);
+      
       setLoading(false);
     };
     
     fetchData();
   }, []);
+  
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value || 0);
+  };
   
   return (
     <div className="space-y-6">
@@ -67,12 +87,14 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <span className="block text-sm text-teal-500 font-medium">Saldo para consultas: 150</span>
+            <span className="block text-sm text-teal-500 font-medium">
+              Saldo para consultas: {formatCurrency(saldoMedico?.saldo_total || 0)}
+            </span>
           </div>
           <Bell className="h-6 w-6 text-gray-400" />
           <div className="h-10 w-10 rounded-full bg-teal-500 overflow-hidden">
             <img 
-              src="/public/lovable-uploads/4187ef44-3d50-43dc-afd3-3632726fbd1f.png" 
+              src="/lovable-uploads/4187ef44-3d50-43dc-afd3-3632726fbd1f.png" 
               alt="Perfil do médico" 
               className="h-full w-full object-cover"
             />
@@ -80,7 +102,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center">
@@ -134,6 +156,23 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
             <p className="text-gray-600">Em {new Date().getFullYear()}</p>
           </CardContent>
         </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <Coins className="h-5 w-5 mr-2 text-teal-500" />
+              Saldo Atual
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{formatCurrency(saldoMedico?.saldo_total || 0)}</p>
+            <p className="text-gray-600">
+              {saldoMedico 
+                ? `Atualizado: ${format(new Date(saldoMedico.ultima_atualizacao), 'dd/MM', { locale: ptBR })}` 
+                : 'Sem movimentações'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
       
       <Tabs defaultValue="agenda" className="mt-6">
@@ -141,6 +180,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
           <TabsTrigger value="agenda">Agenda</TabsTrigger>
           <TabsTrigger value="pacientes">Pacientes</TabsTrigger>
           <TabsTrigger value="receitas">Receitas</TabsTrigger>
+          <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
           <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
         </TabsList>
         
@@ -192,6 +232,69 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+        
+        <TabsContent value="financeiro" className="mt-4">
+          <h3 className="text-xl font-bold mb-4">Suas Finanças</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Saldo Atual</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-center py-4">Carregando dados...</p>
+                ) : (
+                  <div className="text-center p-6">
+                    <p className="text-4xl font-bold text-teal-600">
+                      {formatCurrency(saldoMedico?.saldo_total || 0)}
+                    </p>
+                    <p className="text-gray-500 mt-2">
+                      Última atualização: {saldoMedico ? format(new Date(saldoMedico.ultima_atualizacao), 'dd/MM/yyyy HH:mm') : 'N/A'}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Últimas Transações</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-center py-4">Carregando transações...</p>
+                ) : transacoes.length > 0 ? (
+                  <div className="space-y-3">
+                    {transacoes.map(transacao => (
+                      <div key={transacao.id} className="flex justify-between items-center p-3 border-b">
+                        <div>
+                          <p className="font-medium">{transacao.descricao}</p>
+                          <p className="text-sm text-gray-500">
+                            {format(new Date(transacao.data_transacao), 'dd/MM/yyyy')}
+                          </p>
+                        </div>
+                        <div className={`flex items-center ${
+                          transacao.tipo === 'credito' ? 'text-green-500' : 'text-red-500'
+                        }`}>
+                          {transacao.tipo === 'credito' ? (
+                            <ArrowUpRight className="h-4 w-4 mr-1" />
+                          ) : (
+                            <ArrowDownRight className="h-4 w-4 mr-1" />
+                          )}
+                          <span className="font-bold">{formatCurrency(transacao.valor)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500">Nenhuma transação registrada</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         
         <TabsContent value="receitas" className="mt-4">

@@ -1,12 +1,26 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Users,
   FileText,
   User,
-  Stethoscope
+  Stethoscope,
+  Coins,
+  ArrowUpRight,
+  ArrowDownRight
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Simulação de médicos cadastrados (poderá ser substituído por dados reais depois)
 const MEDICOS_CADASTRADOS = [
@@ -33,35 +47,114 @@ const MEDICOS_CADASTRADOS = [
   },
 ];
 
-// Dados simulados para os cards do dashboard
-const DASH_DATA = [
+// Dados simulados para os cards do dashboard que serão substituídos por dados reais
+const DASH_DATA_INITIAL = [
   {
     title: "Receitas emitidas",
-    value: "182",
+    value: "0",
     icon: <FileText className="w-8 h-8 text-[#9b87f5] bg-[#F1F0FB] rounded-full p-1.5" />,
     sub: "Último mês",
   },
   {
     title: "Pacientes ativos",
-    value: "56",
+    value: "0",
     icon: <Users className="w-8 h-8 text-[#33C3F0] bg-[#D3E4FD] rounded-full p-1.5" />,
     sub: "Hoje",
   },
   {
     title: "Médicos na clínica",
-    value: MEDICOS_CADASTRADOS.length.toString(),
+    value: "0",
     icon: <User className="w-8 h-8 text-[#6E59A5] bg-[#E5DEFF] rounded-full p-1.5" />,
     sub: "Equipe total",
   },
   {
     title: "Consultas marcadas",
-    value: "29",
+    value: "0",
     icon: <Stethoscope className="w-8 h-8 text-[#0FA0CE] bg-[#F1F1F1] rounded-full p-1.5" />,
     sub: "Semana atual",
   },
 ];
 
 const ClinicaDashboard: React.FC = () => {
+  const [dashData, setDashData] = useState(DASH_DATA_INITIAL);
+  const [medicos, setMedicos] = useState(MEDICOS_CADASTRADOS);
+  const [saldoMedicos, setSaldoMedicos] = useState<any[]>([]);
+  const [ultimasTransacoes, setUltimasTransacoes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDados = async () => {
+      setLoading(true);
+      try {
+        // Buscar médicos
+        const { data: medicosData, error: medicosError } = await supabase
+          .from('medicos')
+          .select('*');
+        
+        if (medicosError) throw medicosError;
+        if (medicosData && medicosData.length > 0) {
+          setMedicos(medicosData);
+        }
+
+        // Buscar saldo dos médicos
+        const { data: saldoData, error: saldoError } = await supabase
+          .from('saldo_medicos')
+          .select('*, medicos(nome, especialidade, crm, foto_perfil)')
+          .order('saldo_total', { ascending: false });
+        
+        if (saldoError) throw saldoError;
+        setSaldoMedicos(saldoData || []);
+
+        // Buscar últimas transações
+        const { data: transacoesData, error: transacoesError } = await supabase
+          .from('transacoes_medicos')
+          .select('*, medicos(nome)')
+          .order('data_transacao', { ascending: false })
+          .limit(5);
+        
+        if (transacoesError) throw transacoesError;
+        setUltimasTransacoes(transacoesData || []);
+
+        // Buscar estatísticas para os cards
+        const { data: receitasData } = await supabase
+          .from('receitas_app')
+          .select('count', { count: 'exact' })
+          .gte('data', new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString());
+
+        const { data: pacientesData } = await supabase
+          .from('pacientes_app')
+          .select('count', { count: 'exact' });
+
+        const { data: consultasData } = await supabase
+          .from('consultas')
+          .select('count', { count: 'exact' })
+          .gte('data_hora', new Date(new Date().setDate(new Date().getDate() - 7)).toISOString());
+
+        // Atualizar os cards com dados reais
+        const newDashData = [...dashData];
+        if (receitasData) newDashData[0].value = receitasData.count?.toString() || "0";
+        if (pacientesData) newDashData[1].value = pacientesData.count?.toString() || "0";
+        if (medicosData) newDashData[2].value = medicosData.length.toString();
+        if (consultasData) newDashData[3].value = consultasData.count?.toString() || "0";
+        
+        setDashData(newDashData);
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDados();
+  }, []);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   return (
     <div className="space-y-10 w-full max-w-6xl mx-auto">
       <div className="flex flex-col gap-2 mb-6">
@@ -70,7 +163,7 @@ const ClinicaDashboard: React.FC = () => {
       </div>
       {/* Resumo com cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {DASH_DATA.map((item, idx) => (
+        {dashData.map((item, idx) => (
           <Card key={idx} className="hover:shadow-lg transition-all border-2 border-[#F1F0FB]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
@@ -83,30 +176,142 @@ const ClinicaDashboard: React.FC = () => {
           </Card>
         ))}
       </div>
-      {/* Gráficos futuros e tabelas */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      {/* Saldo dos médicos */}
+      <div>
         <Card>
           <CardHeader>
-            <CardTitle>Consultas por mês</CardTitle>
+            <CardTitle className="flex items-center">
+              <Coins className="w-5 h-5 mr-2 text-[#00B3B0]" />
+              Saldo dos Médicos
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-44 flex items-center justify-center text-gray-400 font-medium text-lg">
-              {/* Gráfico de consultas em breve... */}
-              <span className="italic opacity-70">Gráfico de consultas em breve...</span>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Status dos pacientes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-44 flex items-center justify-center text-gray-400 font-medium text-lg">
-              <span className="italic opacity-70">Gráfico de pacientes em breve...</span>
-            </div>
+            {loading ? (
+              <div className="h-40 flex items-center justify-center">
+                <p className="text-gray-400">Carregando dados...</p>
+              </div>
+            ) : saldoMedicos.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Médico</TableHead>
+                      <TableHead>CRM</TableHead>
+                      <TableHead>Especialidade</TableHead>
+                      <TableHead className="text-right">Saldo Atual</TableHead>
+                      <TableHead className="text-right">Última Atualização</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {saldoMedicos.map((saldo) => (
+                      <TableRow key={saldo.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            {saldo.medicos?.foto_perfil ? (
+                              <img 
+                                src={saldo.medicos.foto_perfil} 
+                                alt={saldo.medicos.nome} 
+                                className="h-8 w-8 rounded-full mr-2 object-cover"
+                              />
+                            ) : (
+                              <User className="h-8 w-8 p-1.5 rounded-full bg-gray-100 mr-2" />
+                            )}
+                            {saldo.medicos?.nome || `Médico #${saldo.id_medico}`}
+                          </div>
+                        </TableCell>
+                        <TableCell>{saldo.medicos?.crm || "N/A"}</TableCell>
+                        <TableCell>{saldo.medicos?.especialidade || "N/A"}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(saldo.saldo_total)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {format(new Date(saldo.ultima_atualizacao), "dd/MM/yyyy HH:mm")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="h-40 flex items-center justify-center flex-col gap-2">
+                <p className="text-gray-400">Nenhum saldo registrado para médicos.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Últimas transações */}
+      <div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Coins className="w-5 h-5 mr-2 text-[#00B3B0]" />
+              Últimas Transações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-40 flex items-center justify-center">
+                <p className="text-gray-400">Carregando dados...</p>
+              </div>
+            ) : ultimasTransacoes.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Médico</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ultimasTransacoes.map((transacao) => (
+                      <TableRow key={transacao.id}>
+                        <TableCell>
+                          {format(new Date(transacao.data_transacao), "dd/MM/yyyy")}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {transacao.medicos?.nome || `Médico #${transacao.id_medico}`}
+                        </TableCell>
+                        <TableCell>{transacao.descricao}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            {transacao.tipo === "credito" ? (
+                              <div className="flex items-center">
+                                <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
+                                <span className="text-green-500">Crédito</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center">
+                                <ArrowDownRight className="h-4 w-4 text-red-500 mr-1" />
+                                <span className="text-red-500">Débito</span>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${
+                          transacao.tipo === "credito" ? "text-green-500" : "text-red-500"
+                        }`}>
+                          {formatCurrency(transacao.valor)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="h-40 flex items-center justify-center flex-col gap-2">
+                <p className="text-gray-400">Nenhuma transação registrada.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
       {/* Lista de Médicos cadastrados */}
       <div className="mt-12">
         <Card>
@@ -118,13 +323,13 @@ const ClinicaDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {MEDICOS_CADASTRADOS.map((medico) => (
+              {medicos.map((medico) => (
                 <div
                   className="flex items-center gap-4 bg-[#F1F0FB] rounded-lg p-3 border border-[#E5DEFF]"
                   key={medico.id}
                 >
                   <img
-                    src={medico.foto}
+                    src={medico.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`}
                     className="h-14 w-14 rounded-full border-2 border-[#E5DEFF] object-cover shadow"
                     alt={medico.nome}
                   />
@@ -139,6 +344,7 @@ const ClinicaDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
       {/* Tabela resumida de receitas */}
       <div className="mt-10">
         <Card>

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -283,5 +282,39 @@ export const createPedidoExame = async (pedido: any) => {
       description: error.message,
     });
     return null;
+  }
+};
+
+// Saldo e Transações
+export const getSaldoMedico = async (medicoId: number) => {
+  try {
+    const { data, error } = await supabase
+      .from('saldo_medicos')
+      .select('*')
+      .eq('id_medico', medicoId)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error('Error fetching doctor balance:', error);
+    return null;
+  }
+};
+
+export const getTransacoesMedico = async (medicoId: number, limit = 5) => {
+  try {
+    const { data, error } = await supabase
+      .from('transacoes_medicos')
+      .select('*')
+      .eq('id_medico', medicoId)
+      .order('data_transacao', { ascending: false })
+      .limit(limit);
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error: any) {
+    console.error('Error fetching doctor transactions:', error);
+    return [];
   }
 };

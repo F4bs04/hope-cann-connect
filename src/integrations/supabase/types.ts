@@ -191,6 +191,7 @@ export type Database = {
           observacoes: string | null
           status: string | null
           tipo_consulta: string
+          valor_consulta: number | null
         }
         Insert: {
           data_criacao?: string | null
@@ -203,6 +204,7 @@ export type Database = {
           observacoes?: string | null
           status?: string | null
           tipo_consulta: string
+          valor_consulta?: number | null
         }
         Update: {
           data_criacao?: string | null
@@ -215,6 +217,7 @@ export type Database = {
           observacoes?: string | null
           status?: string | null
           tipo_consulta?: string
+          valor_consulta?: number | null
         }
         Relationships: [
           {
@@ -450,6 +453,7 @@ export type Database = {
           nome: string
           status_disponibilidade: boolean | null
           telefone: string
+          valor_por_consulta: number | null
         }
         Insert: {
           biografia?: string | null
@@ -463,6 +467,7 @@ export type Database = {
           nome: string
           status_disponibilidade?: boolean | null
           telefone: string
+          valor_por_consulta?: number | null
         }
         Update: {
           biografia?: string | null
@@ -476,6 +481,7 @@ export type Database = {
           nome?: string
           status_disponibilidade?: boolean | null
           telefone?: string
+          valor_por_consulta?: number | null
         }
         Relationships: [
           {
@@ -954,6 +960,83 @@ export type Database = {
             columns: ["id_prescricao_nova"]
             isOneToOne: false
             referencedRelation: "prescricoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saldo_medicos: {
+        Row: {
+          id: number
+          id_medico: number
+          saldo_total: number
+          ultima_atualizacao: string
+        }
+        Insert: {
+          id?: number
+          id_medico: number
+          saldo_total?: number
+          ultima_atualizacao?: string
+        }
+        Update: {
+          id?: number
+          id_medico?: number
+          saldo_total?: number
+          ultima_atualizacao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_medico"
+            columns: ["id_medico"]
+            isOneToOne: true
+            referencedRelation: "medicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transacoes_medicos: {
+        Row: {
+          data_transacao: string
+          descricao: string
+          id: number
+          id_consulta: number | null
+          id_medico: number
+          status: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          data_transacao?: string
+          descricao: string
+          id?: number
+          id_consulta?: number | null
+          id_medico: number
+          status?: string
+          tipo: string
+          valor: number
+        }
+        Update: {
+          data_transacao?: string
+          descricao?: string
+          id?: number
+          id_consulta?: number | null
+          id_medico?: number
+          status?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_consulta"
+            columns: ["id_consulta"]
+            isOneToOne: false
+            referencedRelation: "consultas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_medico"
+            columns: ["id_medico"]
+            isOneToOne: false
+            referencedRelation: "medicos"
             referencedColumns: ["id"]
           },
         ]
