@@ -807,32 +807,38 @@ export type Database = {
       }
       prontuarios: {
         Row: {
+          anamnese: Json | null
           data_consulta: string | null
           diagnostico: string | null
           id: number
           id_paciente: number | null
           observacoes: string | null
           sintomas: string | null
+          soap: Json | null
           status: string | null
           tratamento: string | null
         }
         Insert: {
+          anamnese?: Json | null
           data_consulta?: string | null
           diagnostico?: string | null
           id?: number
           id_paciente?: number | null
           observacoes?: string | null
           sintomas?: string | null
+          soap?: Json | null
           status?: string | null
           tratamento?: string | null
         }
         Update: {
+          anamnese?: Json | null
           data_consulta?: string | null
           diagnostico?: string | null
           id?: number
           id_paciente?: number | null
           observacoes?: string | null
           sintomas?: string | null
+          soap?: Json | null
           status?: string | null
           tratamento?: string | null
         }
