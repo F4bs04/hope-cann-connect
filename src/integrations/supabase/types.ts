@@ -442,9 +442,11 @@ export type Database = {
       }
       medicos: {
         Row: {
+          aprovado: boolean
           biografia: string | null
           cpf: string
           crm: string
+          data_aprovacao: string | null
           especialidade: string
           foto_perfil: string | null
           id: number
@@ -456,9 +458,11 @@ export type Database = {
           valor_por_consulta: number | null
         }
         Insert: {
+          aprovado?: boolean
           biografia?: string | null
           cpf: string
           crm: string
+          data_aprovacao?: string | null
           especialidade: string
           foto_perfil?: string | null
           id?: never
@@ -470,9 +474,11 @@ export type Database = {
           valor_por_consulta?: number | null
         }
         Update: {
+          aprovado?: boolean
           biografia?: string | null
           cpf?: string
           crm?: string
+          data_aprovacao?: string | null
           especialidade?: string
           foto_perfil?: string | null
           id?: never
