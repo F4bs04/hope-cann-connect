@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { 
   SidebarProvider, 
   Sidebar, 
@@ -27,6 +28,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import DashboardHome from '@/components/medico-dashboard/DashboardHome';
 import AgendaMedica from '@/components/medico-dashboard/AgendaMedica';
@@ -45,15 +47,39 @@ import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
 
 const AreaMedico: React.FC = () => {
   const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentSection, setCurrentSection] = useState<string>('dashboard');
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [selectedConsultaId, setSelectedConsultaId] = useState<number | null>(null);
   const [showProntuarioAba, setShowProntuarioAba] = useState(false);
 
+  // Parse URL query parameters when the component mounts or the URL changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    const pacienteParam = params.get('paciente');
+    
+    if (tabParam) {
+      setCurrentSection(tabParam);
+      setActiveTab(tabParam);
+      
+      // If there's also a patient ID, set it
+      if (pacienteParam && tabParam === 'prontuarios') {
+        const patientId = parseInt(pacienteParam);
+        if (!isNaN(patientId)) {
+          setSelectedPatientId(patientId);
+          setShowProntuarioAba(true);
+        }
+      }
+    }
+  }, [location]);
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setCurrentSection(value);
+    navigate(`/area-medico?tab=${value}`);
   };
 
   const handleOpenConsulta = (consultaId: number) => {
@@ -65,17 +91,20 @@ const AreaMedico: React.FC = () => {
     setSelectedPatientId(patientId);
     setShowProntuarioAba(true);
     setCurrentSection('prontuario');
+    navigate(`/area-medico?tab=prontuarios&paciente=${patientId}`);
   };
 
   const handleBackFromProntuario = () => {
     setShowProntuarioAba(false);
     setCurrentSection('prontuarios');
     setSelectedPatientId(null);
+    navigate('/area-medico?tab=prontuarios');
   };
 
   const handleBackToSection = (section: string) => {
     setCurrentSection(section);
     setSelectedConsultaId(null);
+    navigate(`/area-medico?tab=${section}`);
   };
 
   const renderSection = () => {
@@ -115,6 +144,12 @@ const AreaMedico: React.FC = () => {
     }
   };
 
+  // Update sidebar navigation to use the navigate function
+  const navigateToSection = (section: string) => {
+    setCurrentSection(section);
+    navigate(`/area-medico?tab=${section}`);
+  };
+
   return (
     <DoctorScheduleProvider>
       <SidebarProvider>
@@ -128,7 +163,7 @@ const AreaMedico: React.FC = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('dashboard')}
+                    onClick={() => navigateToSection('dashboard')}
                     isActive={currentSection === 'dashboard'}
                     className="text-white hover:bg-[#009E9B]"
                   >
@@ -138,7 +173,7 @@ const AreaMedico: React.FC = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('dashboard-clinica')}
+                    onClick={() => navigateToSection('dashboard-clinica')}
                     isActive={currentSection === 'dashboard-clinica'}
                     className="text-white hover:bg-[#009E9B]"
                   >
@@ -153,7 +188,7 @@ const AreaMedico: React.FC = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('agenda')}
+                    onClick={() => navigateToSection('agenda')}
                     isActive={currentSection === 'agenda'}
                     className="text-white hover:bg-[#009E9B]"
                   >
@@ -163,7 +198,7 @@ const AreaMedico: React.FC = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('pacientes')}
+                    onClick={() => navigateToSection('pacientes')}
                     isActive={currentSection === 'pacientes'}
                     className="text-white hover:bg-[#009E9B]"
                   >
@@ -173,7 +208,7 @@ const AreaMedico: React.FC = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('prontuarios')}
+                    onClick={() => navigateToSection('prontuarios')}
                     isActive={currentSection === 'prontuarios'}
                     className="text-white hover:bg-[#009E9B]"
                   >
@@ -183,7 +218,7 @@ const AreaMedico: React.FC = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('prescricoes')}
+                    onClick={() => navigateToSection('prescricoes')}
                     isActive={currentSection === 'prescricoes'}
                     className="text-white hover:bg-[#009E9B]"
                   >
@@ -193,7 +228,7 @@ const AreaMedico: React.FC = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('receitas')}
+                    onClick={() => navigateToSection('receitas')}
                     isActive={currentSection === 'receitas'}
                     className="text-white hover:bg-[#009E9B]"
                   >
@@ -203,7 +238,7 @@ const AreaMedico: React.FC = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('atestados')}
+                    onClick={() => navigateToSection('atestados')}
                     isActive={currentSection === 'atestados'}
                     className="text-white hover:bg-[#009E9B]"
                   >
@@ -213,7 +248,7 @@ const AreaMedico: React.FC = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('laudos')}
+                    onClick={() => navigateToSection('laudos')}
                     isActive={currentSection === 'laudos'}
                     className="text-white hover:bg-[#009E9B]"
                   >
@@ -223,7 +258,7 @@ const AreaMedico: React.FC = () => {
                 
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => setCurrentSection('pedidos-exame')}
+                    onClick={() => navigateToSection('pedidos-exame')}
                     isActive={currentSection === 'pedidos-exame'}
                     className="text-white hover:bg-[#009E9B]"
                   >

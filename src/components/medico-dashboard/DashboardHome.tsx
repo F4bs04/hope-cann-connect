@@ -8,12 +8,14 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getPacientes, getReceitas, getProntuarios, getSaldoMedico, getTransacoesMedico } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardHomeProps {
   onOpenConsulta: (consultaId: number) => void;
 }
 
 const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [consultas, setConsultas] = useState<any[]>([]);
   const [receitas, setReceitas] = useState<any[]>([]);
@@ -77,6 +79,13 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
       currency: 'BRL'
     }).format(value || 0);
   };
+
+  // Função para navegar para seções específicas
+  const navigateToSection = (section: string, params?: Record<string, string>) => {
+    // Implementação atualizada para usar useNavigate do react-router-dom
+    const queryParams = params ? `?${new URLSearchParams(params).toString()}` : '';
+    navigate(`/area-medico?tab=${section}${queryParams}`);
+  };
   
   return (
     <div className="space-y-6">
@@ -119,7 +128,11 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
             ) : (
               <>
                 <p className="text-gray-500">Nenhuma consulta agendada</p>
-                <Button variant="link" className="p-0 h-auto text-teal-500" onClick={() => window.location.href = '/area-medico?tab=agenda'}>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-teal-500" 
+                  onClick={() => navigateToSection('agenda')}
+                >
                   Agendar consulta
                 </Button>
               </>
@@ -225,7 +238,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
                   <p className="text-gray-500 max-w-md mx-auto mb-4">
                     Você não possui consultas agendadas para os próximos dias.
                   </p>
-                  <Button onClick={() => window.location.href = '/area-medico?tab=agenda'}>
+                  <Button onClick={() => navigateToSection('agenda')}>
                     Agendar consulta
                   </Button>
                 </div>
@@ -322,7 +335,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => window.location.href = '/area-medico?tab=receitas'}
+                      onClick={() => navigateToSection('receitas')}
                     >
                       Ver Receita
                     </Button>
@@ -341,7 +354,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
                   <p className="text-gray-500 max-w-md mx-auto mb-4">
                     Você ainda não emitiu nenhuma receita.
                   </p>
-                  <Button onClick={() => window.location.href = '/area-medico?tab=prescricoes'}>
+                  <Button onClick={() => navigateToSection('prescricoes')}>
                     Emitir nova receita
                   </Button>
                 </div>
@@ -382,7 +395,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
                       variant="outline" 
                       size="sm" 
                       className="w-full mt-3"
-                      onClick={() => window.location.href = `/area-medico?tab=prontuarios&paciente=${paciente.id}`}
+                      onClick={() => navigateToSection('prontuarios', { paciente: paciente.id.toString() })}
                     >
                       Ver prontuário
                     </Button>
@@ -401,7 +414,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
                   <p className="text-gray-500 max-w-md mx-auto mb-4">
                     Você ainda não possui pacientes cadastrados.
                   </p>
-                  <Button onClick={() => window.location.href = '/area-medico?tab=pacientes'}>
+                  <Button onClick={() => navigateToSection('pacientes')}>
                     Cadastrar paciente
                   </Button>
                 </div>
@@ -451,7 +464,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => window.location.href = '/area-medico?tab=atestados'}
+                    onClick={() => navigateToSection('atestados')}
                   >
                     Emitir
                   </Button>
@@ -483,7 +496,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => window.location.href = '/area-medico?tab=pedidos-exame'}
+                    onClick={() => navigateToSection('pedidos-exame')}
                   >
                     Solicitar
                   </Button>
