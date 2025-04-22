@@ -43,6 +43,7 @@ import ConsultaView from '@/components/medico-dashboard/ConsultaView';
 import ProntuarioAba from '@/components/medico/ProntuarioAba';
 import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
 import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
+import EditProfileDialog from '@/components/medico/EditProfileDialog';
 
 const AreaMedico: React.FC = () => {
   const { toast } = useToast();
@@ -54,6 +55,8 @@ const AreaMedico: React.FC = () => {
   const [selectedConsultaId, setSelectedConsultaId] = useState<number | null>(null);
   const [showProntuarioAba, setShowProntuarioAba] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -77,6 +80,21 @@ const AreaMedico: React.FC = () => {
   useEffect(() => {
     const storedType = localStorage.getItem('userType');
     setUserType(storedType);
+  }, []);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const email = localStorage.getItem("userEmail");
+      if (email) {
+        const { data, error } = await import("@/integrations/supabase/client").then(m => m.supabase)
+          .from("usuarios")
+          .select("id")
+          .eq("email", email)
+          .maybeSingle();
+        if (data?.id) setMedicoUserId(data.id);
+      }
+    };
+    fetchUserId();
   }, []);
 
   const handleTabChange = (value: string) => {
@@ -273,7 +291,7 @@ const AreaMedico: React.FC = () => {
             </SidebarContent>
             
             <SidebarFooter className="p-4 mt-auto">
-              <SidebarMenuButton className="text-white hover:bg-[#009E9B]">
+              <SidebarMenuButton className="text-white hover:bg-[#009E9B]" onClick={() => setShowProfileDialog(true)}>
                 <User className="w-5 h-5 mr-2" /> Meu Perfil
               </SidebarMenuButton>
             </SidebarFooter>
@@ -282,6 +300,11 @@ const AreaMedico: React.FC = () => {
           <SidebarInset className="bg-gray-50 flex-1">
             <main className="w-full h-full p-8">
               {renderSection()}
+              <EditProfileDialog 
+                open={showProfileDialog}
+                onOpenChange={setShowProfileDialog}
+                userId={medicoUserId || 0}
+              />
             </main>
           </SidebarInset>
         </div>
