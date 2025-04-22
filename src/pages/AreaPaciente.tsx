@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PacienteProfileCard from '@/components/paciente/PacienteProfileCard';
@@ -18,16 +19,16 @@ import ChatsPacienteList from "@/components/paciente/ChatsList";
 import ChatPaciente from "@/components/paciente/ChatPaciente";
 import PacienteSaldoCard from '@/components/paciente/PacienteSaldoCard';
 
-interface Paciente {
-  id: number;
-  nome: string;
-  idade: number;
-  condicao: string;
-  ultimaConsulta: string;
+interface LocationState {
+  activeTab?: string;
+  medicoId?: number;
 }
 
 const AreaPaciente = () => {
   const { toast } = useToast();
+  const location = useLocation();
+  const locationState = location.state as LocationState | null;
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [paciente, setPaciente] = useState<any | null>(null);
   const pacienteId = 1; // Em um aplicativo real, seria obtido da autenticação
@@ -61,14 +62,13 @@ const AreaPaciente = () => {
     fetchPaciente();
     
     // Verificar se há um medicoId no state para abrir o chat diretamente
-    const location = window.location;
-    if (location.state && location.state.activeTab) {
-      setActiveTab(location.state.activeTab);
+    if (locationState && locationState.activeTab) {
+      setActiveTab(locationState.activeTab);
       
-      if (location.state.activeTab === 'chat' && location.state.medicoId) {
+      if (locationState.activeTab === 'chat' && locationState.medicoId) {
         // Aqui você poderia carregar o chat com esse médico
         // Ou redirecionar para a página de chat
-        console.log('Abrir chat com médico:', location.state.medicoId);
+        console.log('Abrir chat com médico:', locationState.medicoId);
       }
     }
   }, []);
@@ -103,6 +103,7 @@ const AreaPaciente = () => {
                   genero={paciente?.genero}
                   dataNascimento={paciente?.data_nascimento}
                   fotoUrl={paciente?.foto_url}
+                  onEditar={handleEditarPaciente}
                 />
                 
                 <div className="mt-4 px-4 py-3 bg-white rounded-lg shadow border border-gray-100">

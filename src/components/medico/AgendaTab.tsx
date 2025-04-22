@@ -6,7 +6,11 @@ import AppointmentsList from './AppointmentsList';
 import ConsultaView from '@/components/medico-dashboard/ConsultaView';
 import ChatMedico from './ChatMedico';
 
-const AgendaTab: React.FC = () => {
+interface AgendaTabProps {
+  isQuickMode?: boolean;
+}
+
+const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
   const {
     viewMode,
     setViewMode,
@@ -80,21 +84,21 @@ const AgendaTab: React.FC = () => {
 
   return (
     <div>
-      <CalendarViews
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        selectedWeekStart={selectedWeekStart}
-        currentDate={currentDate}
-        setCurrentDate={setCurrentDate}
-        selectedViewDay={selectedViewDay}
-        setSelectedViewDay={setSelectedViewDay}
-        prevWeek={prevWeek}
-        nextWeek={nextWeek}
-        prevDay={prevDay}
-        nextDay={nextDay}
-        setHorarioDialogOpen={setHorarioDialogOpen}
-        handleFastAgendamento={handleFastAgendamento}
-      />
+      {!isQuickMode && (
+        <CalendarViews
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          selectedWeekStart={selectedWeekStart}
+          selectedViewDay={selectedViewDay}
+          setSelectedViewDay={setSelectedViewDay}
+          prevWeek={prevWeek}
+          nextWeek={nextWeek}
+          prevDay={prevDay}
+          nextDay={nextDay}
+          setHorarioDialogOpen={setHorarioDialogOpen}
+          handleFastAgendamento={handleFastAgendamento}
+        />
+      )}
       
       <div className="mt-8">
         <AppointmentsList 

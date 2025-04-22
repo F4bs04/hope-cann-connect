@@ -16,14 +16,14 @@ interface Chat {
   data_inicio: string;
   data_fim: string;
   ativo: boolean;
-  consultas: {
+  consultas?: {
     id: number;
     motivo: string;
-  };
-  pacientes_app: {
+  } | null;
+  pacientes_app?: {
     id: number;
     nome: string;
-  };
+  } | null;
 }
 
 interface ChatsListProps {
@@ -45,14 +45,14 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
         // Processe os dados recebidos para garantir que correspondam ao formato esperado
         const processedChats = data.map(chat => ({
           ...chat,
-          consultas: {
-            id: chat.consultas?.id || 0,
-            motivo: chat.consultas?.motivo || 'Consulta'
-          },
-          pacientes_app: {
-            id: chat.pacientes_app?.id || 0,
-            nome: chat.pacientes_app?.nome || 'Paciente'
-          }
+          consultas: chat.consultas ? {
+            id: chat.consultas.id || 0,
+            motivo: chat.consultas.motivo || 'Consulta'
+          } : { id: 0, motivo: 'Consulta' },
+          pacientes_app: chat.pacientes_app ? {
+            id: chat.pacientes_app.id || 0,
+            nome: chat.pacientes_app.nome || 'Paciente'
+          } : { id: 0, nome: 'Paciente' }
         })) as Chat[];
         
         setChats(processedChats);
@@ -81,8 +81,8 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
       const lowercaseSearch = searchTerm.toLowerCase();
       setFilteredChats(
         chats.filter(chat => 
-          chat.pacientes_app.nome.toLowerCase().includes(lowercaseSearch) ||
-          chat.consultas.motivo.toLowerCase().includes(lowercaseSearch)
+          chat.pacientes_app?.nome.toLowerCase().includes(lowercaseSearch) ||
+          chat.consultas?.motivo.toLowerCase().includes(lowercaseSearch)
         )
       );
     }
@@ -142,14 +142,14 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
                   <div className="bg-hopecann-teal w-full md:w-2 p-0 md:p-0"></div>
                   <div className="p-4 flex-1">
                     <div className="flex justify-between">
-                      <h3 className="font-semibold">{chat.pacientes_app.nome}</h3>
+                      <h3 className="font-semibold">{chat.pacientes_app?.nome || 'Paciente'}</h3>
                       <Badge variant="outline" className="bg-blue-50 text-blue-700">
                         Chat ativo
                       </Badge>
                     </div>
                     
                     <p className="text-sm text-gray-600 mt-1 line-clamp-1">
-                      {chat.consultas.motivo}
+                      {chat.consultas?.motivo || 'Consulta'}
                     </p>
                     
                     <div className="flex items-center justify-between mt-3">
