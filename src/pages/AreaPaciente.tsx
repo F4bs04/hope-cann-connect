@@ -20,8 +20,8 @@ import {
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Link } from 'react-router-dom';
 import PacienteProfileCard from "@/components/paciente/PacienteProfileCard";
+import PacienteSaldoCard from "@/components/paciente/PacienteSaldoCard";
 
-// Tipo para as consultas
 interface Consulta {
   id: number;
   medico: string;
@@ -33,7 +33,6 @@ interface Consulta {
   status: "agendada" | "concluida" | "cancelada";
 }
 
-// Tipo para as receitas
 interface Receita {
   id: number;
   medico: string;
@@ -56,7 +55,6 @@ const AreaPaciente = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Verificar se o usuário está autenticado
     const auth = localStorage.getItem('isAuthenticated');
     if (!auth) {
       navigate('/login');
@@ -65,14 +63,13 @@ const AreaPaciente = () => {
     
     setIsAuthenticated(true);
     
-    // Dados fictícios de consultas (em um app real, viriam do backend)
     const mockConsultas: Consulta[] = [
       {
         id: 1,
         medico: "Dra. Ana Santos",
         medicoId: 2,
         especialidade: "Psiquiatra",
-        data: new Date(2025, 3, 15), // 15/04/2025
+        data: new Date(2025, 3, 15),
         horario: "14:00",
         tipo: "Primeira Consulta",
         status: "agendada"
@@ -82,7 +79,7 @@ const AreaPaciente = () => {
         medico: "Dr. Carlos Mendes",
         medicoId: 3,
         especialidade: "Neurologista",
-        data: new Date(2025, 3, 22), // 22/04/2025
+        data: new Date(2025, 3, 22),
         horario: "10:00",
         tipo: "Primeira Consulta",
         status: "agendada"
@@ -92,14 +89,13 @@ const AreaPaciente = () => {
         medico: "Dra. Ana Santos",
         medicoId: 2,
         especialidade: "Psiquiatra",
-        data: new Date(2025, 2, 10), // 10/03/2025 (já passou)
+        data: new Date(2025, 2, 10),
         horario: "15:00",
         tipo: "Primeira Consulta",
         status: "concluida"
       }
     ];
 
-    // Dados fictícios de receitas
     const mockReceitas: Receita[] = [
       {
         id: 1,
@@ -159,7 +155,6 @@ const AreaPaciente = () => {
     
     setLoading(true);
     
-    // Simulação de cancelamento (em um app real, seria uma chamada à API)
     setTimeout(() => {
       setConsultas(prevConsultas => 
         prevConsultas.map(consulta => 
@@ -196,8 +191,10 @@ const AreaPaciente = () => {
     fotoUrl: "", // or a link to the image
   };
 
+  const pacienteId = 1;
+
   if (!isAuthenticated) {
-    return null; // Página será redirecionada no useEffect
+    return null;
   }
 
   const consultasAgendadas = consultas.filter(c => c.status === "agendada");
@@ -237,6 +234,9 @@ const AreaPaciente = () => {
                     <span>{consultasConcluidas.length} consultas realizadas</span>
                   </li>
                 </ul>
+                <div className="mt-4">
+                  <PacienteSaldoCard pacienteId={pacienteId} />
+                </div>
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <Button 
                     onClick={() => navigate('/agendar')}
@@ -522,7 +522,6 @@ const AreaPaciente = () => {
       </main>
       <Footer />
       
-      {/* Dialog de confirmação de cancelamento */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent>
           <DialogHeader>
