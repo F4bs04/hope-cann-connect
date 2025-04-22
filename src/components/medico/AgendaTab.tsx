@@ -5,7 +5,11 @@ import CalendarViews from './CalendarViews';
 import SummaryCards from './SummaryCards';
 import FastAgendamento from './FastAgendamento';
 
-const AgendaTab: React.FC = () => {
+interface AgendaTabProps {
+  isQuickMode?: boolean;
+}
+
+const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
   const {
     consultas,
     mensagens,
@@ -41,6 +45,18 @@ const AgendaTab: React.FC = () => {
     handleFastAgendamento,
     currentConsultationDuration
   } = useDoctorSchedule();
+
+  if (isQuickMode) {
+    return (
+      <div>
+        <FastAgendamento 
+          consultationDuration={currentConsultationDuration}
+          onAgendamentoRapido={handleFastAgendamento}
+          fullWidth
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
