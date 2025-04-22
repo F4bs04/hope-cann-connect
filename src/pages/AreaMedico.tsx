@@ -28,7 +28,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// Dashboard components
 import DashboardHome from '@/components/medico-dashboard/DashboardHome';
 import AgendaMedica from '@/components/medico-dashboard/AgendaMedica';
 import Prescricoes from '@/components/medico-dashboard/Prescricoes';
@@ -42,6 +41,7 @@ import ConsultaView from '@/components/medico-dashboard/ConsultaView';
 
 import ProntuarioAba from '@/components/medico/ProntuarioAba';
 import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
+import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
 
 const AreaMedico: React.FC = () => {
   const { toast } = useToast();
@@ -85,6 +85,8 @@ const AreaMedico: React.FC = () => {
     switch (currentSection) {
       case 'dashboard':
         return <DashboardHome onOpenConsulta={handleOpenConsulta} />;
+      case 'dashboard-clinica':
+        return <ClinicaDashboard />;
       case 'agenda':
         return <AgendaMedica />;
       case 'prescricoes':
@@ -131,6 +133,21 @@ const AreaMedico: React.FC = () => {
                     className="text-white hover:bg-[#009E9B]"
                   >
                     <Home className="w-5 h-5 mr-2" /> Área Médica
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setCurrentSection('dashboard-clinica')}
+                    isActive={currentSection === 'dashboard-clinica'}
+                    className="text-white hover:bg-[#009E9B]"
+                  >
+                    <span className="mr-2 inline-flex items-center">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor">
+                        <use href="#lucide-layout-dashboard" />
+                      </svg>
+                    </span>
+                    Dashboard Clínica
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 
