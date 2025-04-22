@@ -3,6 +3,7 @@ import React from 'react';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 import CalendarViews from './CalendarViews';
 import SummaryCards from './SummaryCards';
+import FastAgendamento from './FastAgendamento';
 
 const AgendaTab: React.FC = () => {
   const {
@@ -36,19 +37,27 @@ const AgendaTab: React.FC = () => {
     handleCancelarConsulta,
     setSelectedMensagem,
     setMensagemDialogOpen,
-    saveAvailability
+    saveAvailability,
+    handleFastAgendamento,
+    currentConsultationDuration
   } = useDoctorSchedule();
 
   return (
     <div className="space-y-6">
-      <SummaryCards 
-        consultas={consultas}
-        mensagens={mensagens}
-        receitasMock={receitas}
-        handleCancelarConsulta={handleCancelarConsulta}
-        setSelectedMensagem={setSelectedMensagem}
-        setMensagemDialogOpen={setMensagemDialogOpen}
-      />
+      <div className="flex justify-between items-center">
+        <SummaryCards 
+          consultas={consultas}
+          mensagens={mensagens}
+          receitasMock={receitas}
+          handleCancelarConsulta={handleCancelarConsulta}
+          setSelectedMensagem={setSelectedMensagem}
+          setMensagemDialogOpen={setMensagemDialogOpen}
+        />
+        <FastAgendamento 
+          consultationDuration={currentConsultationDuration}
+          onAgendamentoRapido={handleFastAgendamento}
+        />
+      </div>
       
       <div>
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">

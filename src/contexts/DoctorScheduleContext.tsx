@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { DoctorScheduleContextType } from '@/types/doctorScheduleTypes';
@@ -7,6 +6,7 @@ import { useHorarios } from '@/hooks/useHorarios';
 import { usePacientesData } from '@/hooks/usePacientesData';
 import { useDialogState } from '@/hooks/useDialogState';
 import { todosHorariosDisponiveis } from '@/mocks/doctorScheduleMockData';
+import { format } from 'date-fns';
 
 const DoctorScheduleContext = createContext<DoctorScheduleContextType | undefined>(undefined);
 
@@ -16,6 +16,16 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
   const horarios = useHorarios();
   const pacientesData = usePacientesData();
   const dialogState = useDialogState();
+  const [currentConsultationDuration, setCurrentConsultationDuration] = useState("30");
+
+  const handleFastAgendamento = ({ dia, horario }: { dia: Date; horario: string }) => {
+    // Aqui você pode implementar a lógica para criar a consulta
+    // Por enquanto vamos apenas mostrar um toast de sucesso
+    toast({
+      title: "Consulta agendada",
+      description: `Agendamento rápido realizado com sucesso para ${format(dia, "dd/MM/yyyy")} às ${horario}`,
+    });
+  };
 
   // Initialize all horarios on first load
   useEffect(() => {
@@ -32,6 +42,9 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     ...horarios,
     ...pacientesData,
     ...dialogState,
+    handleFastAgendamento,
+    currentConsultationDuration,
+    setCurrentConsultationDuration,
   };
 
   return (

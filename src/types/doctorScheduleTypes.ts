@@ -144,4 +144,7 @@ export type DoctorScheduleContextType = {
   setHorarioDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   consultaDialogOpen: boolean;
   setConsultaDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleFastAgendamento: (data: { dia: Date; horario: string }) => void;
+  currentConsultationDuration: string;
+  setCurrentConsultationDuration: React.Dispatch<React.SetStateAction<string>>;
 };
