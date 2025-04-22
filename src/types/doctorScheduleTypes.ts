@@ -31,6 +31,22 @@ export type Mensagem = {
   lida: boolean;
 };
 
+export type Anamnese = {
+  queixa_principal: string;
+  historia_doenca_atual: string;
+  historia_medica_pregressa: string;
+  historia_familiar: string;
+  habitos_vida: string;
+  medicamentos_em_uso: string;
+};
+
+export type SOAP = {
+  subjetivo: string;
+  objetivo: string;
+  avaliacao: string;
+  plano: string;
+};
+
 export type HistoricoPaciente = {
   id?: number;
   id_paciente: number;
@@ -39,6 +55,8 @@ export type HistoricoPaciente = {
   medicamentos_atuais: string;
   historico_familiar: string;
   ultima_atualizacao: string;
+  anamnese?: Anamnese;
+  soap?: SOAP;
 };
 
 export type AcompanhamentoPaciente = {
@@ -60,73 +78,3 @@ export type HorariosConfig = {
   sabado: string[];
   domingo: string[];
 };
-
-export interface DoctorScheduleContextType {
-  // Estado
-  currentDate: Date;
-  selectedWeekStart: Date;
-  selectedSlot: { day: Date; time: string } | null;
-  horarioDialogOpen: boolean;
-  receitaDialogOpen: boolean;
-  consultaDialogOpen: boolean;
-  prontuarioDialogOpen: boolean;
-  mensagemDialogOpen: boolean;
-  selectedPaciente: Paciente | null;
-  selectedMensagem: Mensagem | null;
-  mensagens: Mensagem[];
-  consultas: Consulta[];
-  selectedDay: Date | null;
-  viewMode: 'week' | 'day' | 'calendar';
-  selectedViewDay: Date;
-  quickSetMode: 'morning' | 'afternoon' | 'all' | 'custom';
-  selectedDate: Date | undefined;
-  horariosConfig: HorariosConfig;
-  horariosDisponiveis: {
-    manha: string[];
-    tarde: string[];
-  };
-  todosHorariosDisponiveis: string[];
-  pacientes: Paciente[];
-  receitas: Receita[];
-  historicoPaciente: HistoricoPaciente | null;
-  acompanhamentosPaciente: AcompanhamentoPaciente[];
-  
-  // Setters
-  setCurrentDate: React.Dispatch<React.SetStateAction<Date>>;
-  setSelectedWeekStart: React.Dispatch<React.SetStateAction<Date>>;
-  setSelectedSlot: React.Dispatch<React.SetStateAction<{ day: Date; time: string } | null>>;
-  setHorarioDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setReceitaDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setConsultaDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setProntuarioDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setMensagemDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setSelectedPaciente: React.Dispatch<React.SetStateAction<Paciente | null>>;
-  setSelectedMensagem: React.Dispatch<React.SetStateAction<Mensagem | null>>;
-  setMensagens: React.Dispatch<React.SetStateAction<Mensagem[]>>;
-  setConsultas: React.Dispatch<React.SetStateAction<Consulta[]>>;
-  setSelectedDay: React.Dispatch<React.SetStateAction<Date | null>>;
-  setViewMode: React.Dispatch<React.SetStateAction<'week' | 'day' | 'calendar'>>;
-  setSelectedViewDay: React.Dispatch<React.SetStateAction<Date>>;
-  setQuickSetMode: React.Dispatch<React.SetStateAction<'morning' | 'afternoon' | 'all' | 'custom'>>;
-  setSelectedDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
-  setHorariosConfig: React.Dispatch<React.SetStateAction<HorariosConfig>>;
-  
-  // Funções
-  nextWeek: () => void;
-  prevWeek: () => void;
-  nextDay: () => void;
-  prevDay: () => void;
-  formatWeekday: (date: Date) => string;
-  getAvailableSlotsForDay: (date: Date) => string[];
-  handleQuickSetAvailability: (day: Date, mode: 'morning' | 'afternoon' | 'all' | 'none') => void;
-  applyPatternToWeek: (pattern: 'workdays' | 'weekend' | 'all' | 'none', timePattern: 'morning' | 'afternoon' | 'all' | 'none') => void;
-  handleResponderMensagem: () => void;
-  handleCancelarConsulta: (consultaId: number) => void;
-  handleAdicionarHorario: () => void;
-  handleRemoverHorario: (day: Date, time: string) => void;
-  handleToggleDayAvailability: (day: Date, isAvailable: boolean) => void;
-  handleDateSelect: (date: Date | undefined) => void;
-  handleAddSlot: (day: Date, time: string) => void;
-  handleSaveProntuario: (historico: HistoricoPaciente, acompanhamento: AcompanhamentoPaciente) => void;
-  saveAvailability: () => Promise<boolean>;
-}

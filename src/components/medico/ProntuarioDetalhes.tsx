@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
+import { Anamnese, SOAP } from '@/types/doctorScheduleTypes';
 
 interface ProntuarioDetalhesProps {
   onBack: () => void;
@@ -24,7 +25,23 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
     historico_familiar: historicoPaciente?.historico_familiar || '',
   });
 
-  const [anamneseData, setAnamneseData] = useState({
+  const defaultAnamnese: Anamnese = {
+    queixa_principal: '',
+    historia_doenca_atual: '',
+    historia_medica_pregressa: '',
+    historia_familiar: '',
+    habitos_vida: '',
+    medicamentos_em_uso: ''
+  };
+
+  const defaultSoap: SOAP = {
+    subjetivo: '',
+    objetivo: '',
+    avaliacao: '',
+    plano: ''
+  };
+
+  const [anamneseData, setAnamneseData] = useState<Anamnese>({
     queixa_principal: historicoPaciente?.anamnese?.queixa_principal || '',
     historia_doenca_atual: historicoPaciente?.anamnese?.historia_doenca_atual || '',
     historia_medica_pregressa: historicoPaciente?.anamnese?.historia_medica_pregressa || '',
@@ -33,7 +50,7 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
     medicamentos_em_uso: historicoPaciente?.anamnese?.medicamentos_em_uso || '',
   });
 
-  const [soapData, setSoapData] = useState({
+  const [soapData, setSoapData] = useState<SOAP>({
     subjetivo: historicoPaciente?.soap?.subjetivo || '',
     objetivo: historicoPaciente?.soap?.objetivo || '',
     avaliacao: historicoPaciente?.soap?.avaliacao || '',
@@ -67,13 +84,22 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
 
   const handleSave = () => {
     if (selectedPaciente) {
+      const acompanhamentoData = {
+        sintomas: '',
+        efeitos_colaterais: '',
+        eficacia: '',
+        notas_adicionais: '',
+        id_paciente: selectedPaciente.id,
+        data_registro: new Date().toISOString(),
+      };
+
       handleSaveProntuario({
         ...prontuarioData,
         id_paciente: selectedPaciente.id,
         ultima_atualizacao: new Date().toISOString(),
         anamnese: anamneseData,
         soap: soapData
-      });
+      }, acompanhamentoData);
       
       setIsEditing(false);
       toast({
