@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
@@ -52,6 +51,14 @@ const Login = () => {
   // Generate a simple CAPTCHA
   useEffect(() => {
     generateCaptcha();
+    
+    // Check if user is already logged in
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    const userType = localStorage.getItem('userType');
+    
+    if (isAuthenticated && userType) {
+      redirectBasedOnUserType(userType);
+    }
   }, []);
 
   const generateCaptcha = () => {
@@ -113,6 +120,9 @@ const Login = () => {
         // Don't throw here, continue with login
       }
 
+      // Clear any previous authentication data
+      localStorage.clear();
+      
       // Store user info in localStorage with clear expiration
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', values.email);
@@ -130,8 +140,10 @@ const Login = () => {
         description: "Bem-vindo ao sistema!",
       });
 
-      // Redirect based on user type
-      redirectBasedOnUserType(data.tipo_usuario);
+      // Redirect based on user type with a slight delay to ensure state updates
+      setTimeout(() => {
+        redirectBasedOnUserType(data.tipo_usuario);
+      }, 500);
       
     } catch (error: any) {
       console.error("Login error:", error);
@@ -149,22 +161,19 @@ const Login = () => {
   const redirectBasedOnUserType = (userType: string) => {
     console.log("Redirecting user with type:", userType);
     
-    // Add a short delay to ensure everything is saved properly
-    setTimeout(() => {
-      switch (userType) {
-        case 'paciente':
-          navigate('/area-paciente');
-          break;
-        case 'medico':
-          navigate('/area-medico');
-          break;
-        case 'admin_clinica':
-          navigate('/admin');
-          break;
-        default:
-          navigate('/area-paciente');
-      }
-    }, 100);
+    switch (userType) {
+      case 'paciente':
+        navigate('/area-paciente', { replace: true });
+        break;
+      case 'medico':
+        navigate('/area-medico', { replace: true });
+        break;
+      case 'admin_clinica':
+        navigate('/admin', { replace: true });
+        break;
+      default:
+        navigate('/area-paciente', { replace: true });
+    }
   };
 
   const handleGoogleLogin = async () => {
