@@ -11,7 +11,7 @@ interface PacienteProfileCardProps {
   genero?: string;
   dataNascimento?: string;
   fotoUrl?: string;
-  onEditar?: () => void; // Add the missing onEditar prop
+  onEditar?: () => void;
 }
 
 const PacienteProfileCard: React.FC<PacienteProfileCardProps> = ({

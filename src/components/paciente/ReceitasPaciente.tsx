@@ -1,96 +1,62 @@
 
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileText, Clock, Download, User } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { FileText, Calendar, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-interface Receita {
-  id: number;
-  medicamento: string;
-  posologia: string;
-  data: Date;
-  data_validade: Date;
-  status: 'ativa' | 'expirada' | 'cancelada';
-  observacoes?: string;
-  medico: {
-    id: number;
-    nome: string;
-    especialidade: string;
-  };
+interface ReceitasPacienteProps {
+  pacienteId: number;
 }
 
-const ReceitasPaciente: React.FC = () => {
-  const { toast } = useToast();
-  const [receitas, setReceitas] = useState<Receita[]>([]);
+const ReceitasPaciente: React.FC<ReceitasPacienteProps> = ({ pacienteId }) => {
+  const [receitas, setReceitas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Dados mockados - em um aplicativo real, viriam do banco de dados
+
   useEffect(() => {
-    setTimeout(() => {
-      setReceitas([
-        {
-          id: 1,
-          medicamento: 'Óleo de CBD 100mg/ml',
-          posologia: '1 gota sublingual, 2x ao dia',
-          data: new Date(2025, 3, 15),
-          data_validade: new Date(2025, 9, 15),
-          status: 'ativa',
-          observacoes: 'Em caso de efeitos colaterais, reduzir para 1x ao dia.',
-          medico: {
-            id: 2,
-            nome: 'Dr. Ricardo Silva',
-            especialidade: 'Neurologia',
-          }
-        },
-        {
-          id: 2,
-          medicamento: 'Extrato de Cannabis 50mg/ml (THC:CBD 1:20)',
-          posologia: '0,5ml via oral após o jantar',
-          data: new Date(2025, 2, 10),
-          data_validade: new Date(2025, 8, 10),
-          status: 'ativa',
-          medico: {
-            id: 3,
-            nome: 'Dra. Amanda Oliveira',
-            especialidade: 'Clínica Geral',
-          }
-        },
-        {
-          id: 3,
-          medicamento: 'Óleo de CBD 50mg/ml',
-          posologia: '2 gotas sublingual, 3x ao dia',
-          data: new Date(2024, 11, 5),
-          data_validade: new Date(2025, 2, 5),
-          status: 'expirada',
-          medico: {
-            id: 2,
-            nome: 'Dr. Ricardo Silva',
-            especialidade: 'Neurologia',
-          }
+    if (pacienteId <= 0) return;
+    
+    const buscarReceitas = async () => {
+      setLoading(true);
+      try {
+        // Buscando receitas reais do paciente no banco de dados
+        const { data, error } = await supabase
+          .from('receitas_app')
+          .select('*')
+          .eq('id_paciente', pacienteId)
+          .order('data', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setReceitas(data);
+        } else {
+          console.log("Nenhuma receita encontrada para o paciente ID:", pacienteId);
+          setReceitas([]);
         }
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+      } catch (error) {
+        console.error("Erro ao buscar receitas:", error);
+        setReceitas([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    buscarReceitas();
+  }, [pacienteId]);
 
-  const handleDownloadReceita = (id: number) => {
-    // Em um aplicativo real, isso geraria e baixaria um PDF
-    toast({
-      title: "Download iniciado",
-      description: "O download da sua receita começará em instantes.",
-    });
-  };
-
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, dataValidade?: string) => {
+    if (dataValidade && isAfter(new Date(), new Date(dataValidade))) {
+      return <Badge className="bg-amber-100 text-amber-800">Vencida</Badge>;
+    }
+    
     switch (status) {
       case 'ativa':
         return <Badge className="bg-green-100 text-green-800">Ativa</Badge>;
-      case 'expirada':
-        return <Badge className="bg-amber-100 text-amber-800">Expirada</Badge>;
+      case 'utilizada':
+        return <Badge className="bg-blue-100 text-blue-800">Utilizada</Badge>;
       case 'cancelada':
         return <Badge className="bg-red-100 text-red-800">Cancelada</Badge>;
       default:
@@ -115,58 +81,59 @@ const ReceitasPaciente: React.FC = () => {
           <CardContent className="flex flex-col items-center justify-center p-8 text-center">
             <FileText className="h-16 w-16 text-gray-300 mb-4" />
             <h3 className="text-xl font-semibold mb-2">Nenhuma receita encontrada</h3>
-            <p className="text-gray-500 mb-4">
-              Você ainda não possui receitas registradas em nosso sistema.
+            <p className="text-gray-500">
+              Você ainda não possui receitas. Após uma consulta, seu médico poderá prescrever receitas que aparecerão aqui.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
           {receitas.map(receita => (
-            <Card key={receita.id}>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{receita.medicamento}</CardTitle>
-                  {getStatusBadge(receita.status)}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">
-                    Posologia: {receita.posologia}
-                  </p>
-                  
-                  {receita.observacoes && (
-                    <p className="text-sm text-gray-600">
-                      Observações: {receita.observacoes}
+            <Card key={receita.id} className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="flex flex-col md:flex-row">
+                  <div className={`w-full md:w-2 p-0 md:p-0 ${
+                    receita.status === 'ativa' ? 'bg-green-500' : 
+                    receita.status === 'utilizada' ? 'bg-blue-500' : 
+                    'bg-red-500'
+                  }`}></div>
+                  <div className="p-4 flex-1">
+                    <div className="flex justify-between flex-wrap gap-2">
+                      <div>
+                        <h3 className="font-semibold">{receita.medicamento}</h3>
+                      </div>
+                      {getStatusBadge(receita.status, receita.data_validade)}
+                    </div>
+                    
+                    <p className="text-sm text-gray-700 mt-2">
+                      {receita.posologia}
                     </p>
-                  )}
-                  
-                  <div className="flex items-center text-sm text-gray-500">
-                    <User className="h-4 w-4 mr-1" />
-                    <span>{receita.medico.nome} - {receita.medico.especialidade}</span>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-4 text-xs text-gray-500">
-                    <div className="flex items-center">
-                      <FileText className="h-3 w-3 mr-1" />
-                      <span>Emitida em: {format(new Date(receita.data), "dd/MM/yyyy", { locale: ptBR })}</span>
+                    
+                    {receita.observacoes && (
+                      <p className="text-sm text-gray-600 mt-2 italic">
+                        {receita.observacoes}
+                      </p>
+                    )}
+                    
+                    <div className="mt-3 flex items-center text-sm text-gray-500">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      <span>Emitida em: {format(new Date(receita.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
                     </div>
-                    <div className="flex items-center">
-                      <Clock className="h-3 w-3 mr-1" />
-                      <span>Válida até: {format(new Date(receita.data_validade), "dd/MM/yyyy", { locale: ptBR })}</span>
-                    </div>
+                    
+                    {receita.data_validade && (
+                      <div className="mt-1 flex items-center text-sm text-gray-500">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        <span>Válida até: {format(new Date(receita.data_validade), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                        
+                        {receita.data_validade && isAfter(new Date(), new Date(receita.data_validade)) && (
+                          <div className="ml-2 flex items-center text-amber-600">
+                            <AlertTriangle className="h-4 w-4 mr-1" />
+                            <span className="text-xs">Vencida</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2"
-                    onClick={() => handleDownloadReceita(receita.id)}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Baixar Receita
-                  </Button>
                 </div>
               </CardContent>
             </Card>

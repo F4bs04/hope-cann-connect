@@ -7,57 +7,56 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-const ConsultasPaciente: React.FC = () => {
+interface ConsultasPacienteProps {
+  pacienteId: number;
+}
+
+const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => {
   const { toast } = useToast();
   const [consultas, setConsultas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Dados mockados - em um aplicativo real, viriam do banco de dados
   useEffect(() => {
-    // Simular busca de dados
-    setTimeout(() => {
-      setConsultas([
-        {
-          id: 1,
-          data_hora: new Date(2025, 3, 30, 14, 30),
-          medico: {
-            id: 2,
-            nome: 'Dr. Ricardo Silva',
-            especialidade: 'Neurologia',
-            foto_perfil: 'https://randomuser.me/api/portraits/men/34.jpg'
-          },
-          status: 'agendada',
-          motivo: 'Avaliação inicial para tratamento com canabidiol'
-        },
-        {
-          id: 2,
-          data_hora: new Date(2025, 3, 15, 10, 0),
-          medico: {
-            id: 3,
-            nome: 'Dra. Amanda Oliveira',
-            especialidade: 'Clínica Geral',
-            foto_perfil: 'https://randomuser.me/api/portraits/women/65.jpg'
-          },
-          status: 'realizada',
-          motivo: 'Acompanhamento de tratamento'
-        },
-        {
-          id: 3,
-          data_hora: new Date(2025, 2, 10, 9, 45),
-          medico: {
-            id: 4,
-            nome: 'Dr. João Santos',
-            especialidade: 'Neurologia',
-            foto_perfil: 'https://randomuser.me/api/portraits/men/44.jpg'
-          },
-          status: 'cancelada',
-          motivo: 'Segunda opinião sobre tratamento'
+    if (pacienteId <= 0) return;
+    
+    const buscarConsultas = async () => {
+      setLoading(true);
+      try {
+        // Buscando consultas reais do paciente no banco de dados
+        const { data, error } = await supabase
+          .from('consultas')
+          .select(`
+            *,
+            medicos (id, nome, especialidade, foto_perfil)
+          `)
+          .eq('id_paciente', pacienteId)
+          .order('data_hora', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setConsultas(data);
+        } else {
+          console.log("Nenhuma consulta encontrada para o paciente ID:", pacienteId);
+          setConsultas([]);
         }
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+      } catch (error) {
+        console.error("Erro ao buscar consultas:", error);
+        toast({
+          title: "Erro ao carregar consultas",
+          description: "Não foi possível carregar suas consultas. Por favor, tente novamente mais tarde.",
+          variant: "destructive"
+        });
+        setConsultas([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    buscarConsultas();
+  }, [pacienteId]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -72,17 +71,32 @@ const ConsultasPaciente: React.FC = () => {
     }
   };
 
-  const handleCancelarConsulta = (id: number) => {
-    // Em um aplicativo real, chamaria uma API
-    toast({
-      title: "Consulta cancelada",
-      description: "Sua consulta foi cancelada com sucesso.",
-    });
-    
-    // Atualização local
-    setConsultas(consultas.map(consulta => 
-      consulta.id === id ? {...consulta, status: 'cancelada'} : consulta
-    ));
+  const handleCancelarConsulta = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('consultas')
+        .update({ status: 'cancelada' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Atualização local
+      setConsultas(consultas.map(consulta => 
+        consulta.id === id ? {...consulta, status: 'cancelada'} : consulta
+      ));
+      
+      toast({
+        title: "Consulta cancelada",
+        description: "Sua consulta foi cancelada com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao cancelar consulta:", error);
+      toast({
+        title: "Erro ao cancelar",
+        description: "Não foi possível cancelar sua consulta. Por favor, tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleReagendar = (id: number) => {

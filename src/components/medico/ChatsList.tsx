@@ -1,93 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { MessageSquare, Calendar, Clock, Search } from 'lucide-react';
-import { getChatsAtivos } from '@/services/supabaseService';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-
-interface Chat {
-  id: number;
-  id_medico: number;
-  id_paciente: number;
-  data_inicio: string;
-  data_fim: string;
-  ativo: boolean;
-  consultas?: {
-    id: number;
-    motivo: string;
-  } | null;
-  pacientes_app?: {
-    id: number;
-    nome: string;
-  } | null;
-}
+import { Input } from '@/components/ui/input';
+import { Search, MessageCircle, User, Calendar } from 'lucide-react';
+import { getChatsAtivos } from '@/services/supabaseService';
 
 interface ChatsListProps {
   medicoId: number;
-  onSelectChat: (chat: Chat) => void;
+  onSelectChat: (chat: any) => void;
 }
 
 const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [filteredChats, setFilteredChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [chats, setChats] = useState<any[]>([]);
+  const [filteredChats, setFilteredChats] = useState<any[]>([]);
 
   useEffect(() => {
-    const loadChats = async () => {
-      setLoading(true);
-      try {
-        const data = await getChatsAtivos(medicoId);
-        // Safely handle potentially invalid data structures
-        const processedChats = data.map(chat => ({
-          ...chat,
-          consultas: chat.consultas && typeof chat.consultas === 'object' ? {
-            id: chat.consultas.id || 0,
-            motivo: chat.consultas.motivo || 'Consulta'
-          } : { id: 0, motivo: 'Consulta' },
-          pacientes_app: chat.pacientes_app && typeof chat.pacientes_app === 'object' ? {
-            id: chat.pacientes_app.id || 0,
-            nome: chat.pacientes_app.nome || 'Paciente'
-          } : { id: 0, nome: 'Paciente' }
-        })) as Chat[];
-        
-        setChats(processedChats);
-        setFilteredChats(processedChats);
-      } catch (error) {
-        console.error('Error loading chats:', error);
-        setChats([]);
-        setFilteredChats([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const filtered = chats.filter(chat => 
+      chat.pacientes_app && 
+      chat.pacientes_app.nome && 
+      chat.pacientes_app.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredChats(filtered);
+  }, [searchTerm, chats]);
 
+  useEffect(() => {
     loadChats();
-    
-    // Atualizar a lista de chats a cada 30 segundos
-    const interval = setInterval(() => {
-      loadChats();
-    }, 30000);
-    
-    return () => clearInterval(interval);
   }, [medicoId]);
 
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredChats(chats);
-    } else {
-      const lowercaseSearch = searchTerm.toLowerCase();
-      setFilteredChats(
-        chats.filter(chat => 
-          chat.pacientes_app?.nome.toLowerCase().includes(lowercaseSearch) ||
-          chat.consultas?.motivo.toLowerCase().includes(lowercaseSearch)
-        )
-      );
+  const loadChats = async () => {
+    if (!medicoId) return;
+    
+    setLoading(true);
+    try {
+      const data = await getChatsAtivos(medicoId);
+      // Safely handle potentially invalid data structures
+      const processedChats = data.map(chat => ({
+        ...chat,
+        consultas: {
+          id: chat.consultas && typeof chat.consultas === 'object' ? chat.consultas.id : 0,
+          motivo: chat.consultas && typeof chat.consultas === 'object' ? chat.consultas.motivo : 'Consulta'
+        },
+        pacientes_app: {
+          id: chat.pacientes_app && typeof chat.pacientes_app === 'object' ? chat.pacientes_app.id : 0,
+          nome: chat.pacientes_app && typeof chat.pacientes_app === 'object' ? chat.pacientes_app.nome : 'Paciente'
+        }
+      }));
+      
+      setChats(processedChats);
+      setFilteredChats(processedChats);
+    } catch (error) {
+      console.error('Error loading chats:', error);
+      setChats([]);
+      setFilteredChats([]);
+    } finally {
+      setLoading(false);
     }
-  }, [searchTerm, chats]);
+  };
 
   return (
     <div>
@@ -112,7 +85,7 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
         <div className="text-center my-12 text-gray-500">
           {chats.length === 0 ? (
             <>
-              <MessageSquare className="mx-auto h-12 w-12 text-gray-300" />
+              <MessageCircle className="mx-auto h-12 w-12 text-gray-300" />
               <p className="mt-4 text-lg">Nenhuma conversa ativa no momento</p>
               <p className="mt-2">As conversas serão ativadas automaticamente após a conclusão de consultas.</p>
             </>
