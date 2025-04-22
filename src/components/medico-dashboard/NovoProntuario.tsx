@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -17,7 +16,6 @@ const NovoProntuario: React.FC<NovoProntuarioProps> = ({ onBack }) => {
   const { toast } = useToast();
   const [pacientes, setPacientes] = useState<any[]>([]);
   
-  // Form state
   const [pacienteId, setPacienteId] = useState('');
   const [dataConsulta, setDataConsulta] = useState('');
   const [sintomas, setSintomas] = useState('');
@@ -26,6 +24,22 @@ const NovoProntuario: React.FC<NovoProntuarioProps> = ({ onBack }) => {
   const [observacoes, setObservacoes] = useState('');
   const [status, setStatus] = useState('concluído');
   const [loading, setLoading] = useState(false);
+  
+  const [anamnese, setAnamnese] = useState({
+    queixaPrincipal: '',
+    historiaDoencaAtual: '',
+    historiaMedicaPregressa: '',
+    historiaFamiliar: '',
+    habitosVida: '',
+    medicamentosEmUso: '',
+  });
+  
+  const [soap, setSoap] = useState({
+    subjetivo: '',
+    objetivo: '',
+    avaliacao: '',
+    plano: '',
+  });
   
   useEffect(() => {
     const loadPacientes = async () => {
@@ -39,7 +53,6 @@ const NovoProntuario: React.FC<NovoProntuarioProps> = ({ onBack }) => {
   const handleCreateProntuario = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validations
     if (!pacienteId) {
       toast({
         variant: "destructive",
@@ -67,7 +80,9 @@ const NovoProntuario: React.FC<NovoProntuarioProps> = ({ onBack }) => {
       diagnostico,
       tratamento,
       observacoes,
-      status
+      status,
+      anamnese,
+      soap,
     };
     
     const newProntuario = await createProntuario(prontuarioData);
@@ -100,6 +115,20 @@ const NovoProntuario: React.FC<NovoProntuarioProps> = ({ onBack }) => {
     setTratamento('');
     setObservacoes('');
     setStatus('concluído');
+    setAnamnese({
+      queixaPrincipal: '',
+      historiaDoencaAtual: '',
+      historiaMedicaPregressa: '',
+      historiaFamiliar: '',
+      habitosVida: '',
+      medicamentosEmUso: '',
+    });
+    setSoap({
+      subjetivo: '',
+      objetivo: '',
+      avaliacao: '',
+      plano: '',
+    });
   };
   
   return (
@@ -151,6 +180,120 @@ const NovoProntuario: React.FC<NovoProntuarioProps> = ({ onBack }) => {
               onChange={(e) => setDataConsulta(e.target.value)}
               className="mt-1"
             />
+          </div>
+        </div>
+        
+        <div>
+          <h3 className="text-lg font-medium mb-4">Anamnese</h3>
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="queixaPrincipal">Queixa Principal</Label>
+              <Textarea
+                id="queixaPrincipal"
+                value={anamnese.queixaPrincipal}
+                onChange={(e) => setAnamnese({...anamnese, queixaPrincipal: e.target.value})}
+                placeholder="Descreva a queixa principal do paciente"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="historiaDoencaAtual">História da Doença Atual</Label>
+              <Textarea
+                id="historiaDoencaAtual"
+                value={anamnese.historiaDoencaAtual}
+                onChange={(e) => setAnamnese({...anamnese, historiaDoencaAtual: e.target.value})}
+                placeholder="Descreva a história da doença atual"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="historiaMedicaPregressa">História Médica Pregressa</Label>
+              <Textarea
+                id="historiaMedicaPregressa"
+                value={anamnese.historiaMedicaPregressa}
+                onChange={(e) => setAnamnese({...anamnese, historiaMedicaPregressa: e.target.value})}
+                placeholder="Descreva a história médica pregressa"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="historiaFamiliar">História Familiar</Label>
+              <Textarea
+                id="historiaFamiliar"
+                value={anamnese.historiaFamiliar}
+                onChange={(e) => setAnamnese({...anamnese, historiaFamiliar: e.target.value})}
+                placeholder="Descreva a história familiar relevante"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="habitosVida">Hábitos de Vida</Label>
+              <Textarea
+                id="habitosVida"
+                value={anamnese.habitosVida}
+                onChange={(e) => setAnamnese({...anamnese, habitosVida: e.target.value})}
+                placeholder="Descreva os hábitos de vida do paciente"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="medicamentosEmUso">Medicamentos em Uso</Label>
+              <Textarea
+                id="medicamentosEmUso"
+                value={anamnese.medicamentosEmUso}
+                onChange={(e) => setAnamnese({...anamnese, medicamentosEmUso: e.target.value})}
+                placeholder="Liste os medicamentos em uso"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h3 className="text-lg font-medium mb-4">SOAP - Registro Orientado por Problemas</h3>
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="subjetivo">S - Subjetivo</Label>
+              <Textarea
+                id="subjetivo"
+                value={soap.subjetivo}
+                onChange={(e) => setSoap({...soap, subjetivo: e.target.value})}
+                placeholder="Relato do paciente, sintomas e sensações"
+                rows={4}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="objetivo">O - Objetivo</Label>
+              <Textarea
+                id="objetivo"
+                value={soap.objetivo}
+                onChange={(e) => setSoap({...soap, objetivo: e.target.value})}
+                placeholder="Dados do exame físico e resultados de exames"
+                rows={4}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="avaliacao">A - Avaliação</Label>
+              <Textarea
+                id="avaliacao"
+                value={soap.avaliacao}
+                onChange={(e) => setSoap({...soap, avaliacao: e.target.value})}
+                placeholder="Avaliação dos problemas e diagnósticos"
+                rows={4}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="plano">P - Plano</Label>
+              <Textarea
+                id="plano"
+                value={soap.plano}
+                onChange={(e) => setSoap({...soap, plano: e.target.value})}
+                placeholder="Plano de tratamento e condutas"
+                rows={4}
+              />
+            </div>
           </div>
         </div>
         
