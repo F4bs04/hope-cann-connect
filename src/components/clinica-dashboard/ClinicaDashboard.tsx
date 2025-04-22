@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -21,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getSaldoMedicos, getTransacoesMedicos } from "@/services/supabaseService";
 
 // Tipos para médicos
 interface MedicoBase {
@@ -61,12 +61,12 @@ interface SaldoMedico {
   };
 }
 
-// Tipo para transações
+// Tipo para transações - atualizando o tipo para aceitar string no tipo de transação
 interface TransacaoMedico {
   id: number;
   id_medico: number;
   id_consulta?: number | null;
-  tipo: 'credito' | 'debito';
+  tipo: string; // Alterado de 'credito' | 'debito' para string para compatibilidade
   valor: number;
   data_transacao: string;
   descricao: string;
@@ -167,42 +167,31 @@ const ClinicaDashboard: React.FC = () => {
         }
 
         // Buscar saldo dos médicos
-        const { data: saldoData, error: saldoError } = await supabase
-          .from('saldo_medicos')
-          .select('*, medicos(nome, especialidade, crm, foto_perfil)')
-          .order('saldo_total', { ascending: false });
-        
-        if (saldoError) throw saldoError;
+        const saldoData = await getSaldoMedicos();
         setSaldoMedicos(saldoData || []);
 
         // Buscar últimas transações
-        const { data: transacoesData, error: transacoesError } = await supabase
-          .from('transacoes_medicos')
-          .select('*, medicos(nome)')
-          .order('data_transacao', { ascending: false })
-          .limit(5);
-        
-        if (transacoesError) throw transacoesError;
-        setUltimasTransacoes(transacoesData || []);
+        const transacoesData = await getTransacoesMedicos();
+        setUltimasTransacoes(transacoesData as TransacaoMedico[]);
 
         // Buscar estatísticas para os cards
-        const { data: receitasData, error: receitasError } = await supabase
+        const { data: estatisticasData, error: estatisticasError } = await supabase
           .from('receitas_app')
-          .select('count', { count: 'exact' });
+          .select('count');
           
-        const receitasCount = receitasData ? receitasData[0]?.count || 0 : 0;
+        const receitasCount = estatisticasData ? estatisticasData.length : 0;
 
         const { data: pacientesData, error: pacientesError } = await supabase
           .from('pacientes_app')
-          .select('count', { count: 'exact' });
+          .select('count');
           
-        const pacientesCount = pacientesData ? pacientesData[0]?.count || 0 : 0;
+        const pacientesCount = pacientesData ? pacientesData.length : 0;
 
         const { data: consultasData, error: consultasError } = await supabase
           .from('consultas')
-          .select('count', { count: 'exact' });
+          .select('count');
           
-        const consultasCount = consultasData ? consultasData[0]?.count || 0 : 0;
+        const consultasCount = consultasData ? consultasData.length : 0;
 
         // Atualizar os cards com dados reais
         const newDashData = [...dashData];
@@ -466,4 +455,3 @@ const ClinicaDashboard: React.FC = () => {
 };
 
 export default ClinicaDashboard;
-
