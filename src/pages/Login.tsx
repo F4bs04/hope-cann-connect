@@ -33,6 +33,7 @@ const Login = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,17 +49,44 @@ const Login = () => {
     },
   });
 
-  // Generate a simple CAPTCHA
+  // Check if user is already logged in and redirect appropriately
   useEffect(() => {
+    const checkAuthStatus = async () => {
+      // Clear any previous authentication errors
+      setAuthError(null);
+      
+      try {
+        // Check localStorage for authentication info
+        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        const userType = localStorage.getItem('userType');
+        const authTimestamp = localStorage.getItem('authTimestamp');
+        
+        // If we have auth data and it's recent (less than 1 day old)
+        if (isAuthenticated && userType && authTimestamp) {
+          const now = Date.now();
+          const authTime = parseInt(authTimestamp, 10);
+          const oneDayMs = 24 * 60 * 60 * 1000;
+          
+          // Check if auth is still valid (less than a day old)
+          if (!isNaN(authTime) && now - authTime < oneDayMs) {
+            console.log("User already authenticated, redirecting to", userType);
+            redirectBasedOnUserType(userType);
+            return;
+          } else {
+            // Auth data is too old, clear it
+            localStorage.clear();
+          }
+        }
+        
+        setIsAuthChecking(false);
+      } catch (error) {
+        console.error("Error checking auth status:", error);
+        setIsAuthChecking(false);
+      }
+    };
+    
+    checkAuthStatus();
     generateCaptcha();
-    
-    // Check if user is already logged in
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    const userType = localStorage.getItem('userType');
-    
-    if (isAuthenticated && userType) {
-      redirectBasedOnUserType(userType);
-    }
   }, []);
 
   const generateCaptcha = () => {
@@ -91,7 +119,7 @@ const Login = () => {
         .from('usuarios')
         .select('*')
         .eq('email', values.email)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Login query error:", error);
@@ -140,9 +168,13 @@ const Login = () => {
         description: "Bem-vindo ao sistema!",
       });
 
+      // Make sure we have the updated user type before redirecting
+      const userType = data.tipo_usuario;
+      console.log("User authenticated, redirecting as:", userType);
+      
       // Redirect based on user type with a slight delay to ensure state updates
       setTimeout(() => {
-        redirectBasedOnUserType(data.tipo_usuario);
+        redirectBasedOnUserType(userType);
       }, 500);
       
     } catch (error: any) {
@@ -298,6 +330,19 @@ const Login = () => {
     
     checkSession();
   }, []);
+
+  // If we're still checking auth, show a loading spinner
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow py-12 bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full"></div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
