@@ -146,6 +146,36 @@ export type Database = {
           },
         ]
       }
+      chat_ativo: {
+        Row: {
+          ativo: boolean | null
+          data_fim: string
+          data_inicio: string
+          id: number
+          id_consulta: number | null
+          id_medico: number
+          id_paciente: number
+        }
+        Insert: {
+          ativo?: boolean | null
+          data_fim: string
+          data_inicio?: string
+          id?: number
+          id_consulta?: number | null
+          id_medico: number
+          id_paciente: number
+        }
+        Update: {
+          ativo?: boolean | null
+          data_fim?: string
+          data_inicio?: string
+          id?: number
+          id_consulta?: number | null
+          id_medico?: number
+          id_paciente?: number
+        }
+        Relationships: []
+      }
       clinicas: {
         Row: {
           cnpj: string
@@ -505,6 +535,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mensagens_chat: {
+        Row: {
+          data_envio: string
+          id: number
+          id_consulta: number | null
+          id_medico: number
+          id_paciente: number
+          lida: boolean | null
+          mensagem: string
+          remetente_tipo: string
+        }
+        Insert: {
+          data_envio?: string
+          id?: number
+          id_consulta?: number | null
+          id_medico: number
+          id_paciente: number
+          lida?: boolean | null
+          mensagem: string
+          remetente_tipo: string
+        }
+        Update: {
+          data_envio?: string
+          id?: number
+          id_consulta?: number | null
+          id_medico?: number
+          id_paciente?: number
+          lida?: boolean | null
+          mensagem?: string
+          remetente_tipo?: string
+        }
+        Relationships: []
       }
       notificacoes: {
         Row: {
@@ -1139,7 +1202,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      verificar_chats_expirados: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

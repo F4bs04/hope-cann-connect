@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { format, parseISO, isToday, isTomorrow, isThisWeek, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Clock, User, FileText, X, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, User, FileText, X, CheckCircle, MessageSquare } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { verificarChatAtivo } from '@/services/supabaseService';
 
 interface Appointment {
   id: number;
@@ -31,14 +32,18 @@ interface Appointment {
 
 interface AppointmentsListProps {
   appointments: Appointment[];
+  onChatWithPatient?: (appointment: Appointment) => void;
 }
 
-const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments }) => {
+const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onChatWithPatient }) => {
   const { toast } = useToast();
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Estados para controlar os botões de chat
+  const [chatButtonsStatus, setChatButtonsStatus] = useState<Record<number, boolean>>({});
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -88,6 +93,33 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments }) => 
     setCancelDialogOpen(true);
   };
 
+  const handleChatClick = (appointment: Appointment) => {
+    if (onChatWithPatient && appointment.pacientes_app) {
+      onChatWithPatient(appointment);
+    }
+  };
+
+  // Verificar status de chat para consultas realizadas
+  React.useEffect(() => {
+    const checkChatStatus = async () => {
+      const completedAppointments = appointments.filter(apt => apt.status === 'realizada');
+      
+      for (const apt of completedAppointments) {
+        if (apt.pacientes_app?.id) {
+          // Assumindo que o ID do médico é 1 para fins de demonstração
+          const medicoId = 1;
+          const isChatActive = await verificarChatAtivo(medicoId, apt.pacientes_app.id);
+          setChatButtonsStatus(prev => ({
+            ...prev,
+            [apt.id]: isChatActive
+          }));
+        }
+      }
+    };
+    
+    checkChatStatus();
+  }, [appointments]);
+
   // Group appointments by time periods
   const today = appointments.filter(apt => 
     isToday(new Date(apt.data_hora)) && apt.status !== 'cancelada'
@@ -111,7 +143,7 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments }) => 
   );
   
   const past = appointments.filter(apt => 
-    new Date(apt.data_hora) < new Date()
+    new Date(apt.data_hora) < new Date() && apt.status === 'realizada'
   );
   
   const cancelled = appointments.filter(apt => 
@@ -192,6 +224,23 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments }) => 
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Concluir
                         </Button>
+                      </div>
+                    )}
+                    
+                    {appointment.status === 'realizada' && onChatWithPatient && appointment.pacientes_app && (
+                      <div className="mt-3 flex justify-end">
+                        {chatButtonsStatus[appointment.id] !== undefined && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-hopecann-teal"
+                            disabled={!chatButtonsStatus[appointment.id]}
+                            onClick={() => handleChatClick(appointment)}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                            {chatButtonsStatus[appointment.id] ? 'Conversar' : 'Chat expirado'}
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>

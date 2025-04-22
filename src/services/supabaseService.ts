@@ -367,3 +367,131 @@ export const getSaldoPacienteById = async (pacienteId: number) => {
     return { saldo_total: 0 };
   }
 };
+
+// Chat Médico-Paciente
+export const getChatsAtivos = async (medicoId: number) => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_ativo')
+      .select(`
+        *,
+        consultas!inner(id, motivo),
+        pacientes_app!inner(id, nome)
+      `)
+      .eq('id_medico', medicoId)
+      .eq('ativo', true)
+      .order('data_inicio', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error: any) {
+    console.error('Error fetching active chats:', error);
+    return [];
+  }
+};
+
+export const getChatsAtivosPaciente = async (pacienteId: number) => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_ativo')
+      .select(`
+        *,
+        consultas!inner(id, motivo),
+        medicos!inner(id, nome, especialidade, foto_perfil)
+      `)
+      .eq('id_paciente', pacienteId)
+      .eq('ativo', true)
+      .order('data_inicio', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error: any) {
+    console.error('Error fetching patient active chats:', error);
+    return [];
+  }
+};
+
+export const getMensagensChat = async (medicoId: number, pacienteId: number) => {
+  try {
+    const { data, error } = await supabase
+      .from('mensagens_chat')
+      .select('*')
+      .eq('id_medico', medicoId)
+      .eq('id_paciente', pacienteId)
+      .order('data_envio', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error: any) {
+    console.error('Error fetching chat messages:', error);
+    return [];
+  }
+};
+
+export const enviarMensagem = async (mensagem: {
+  id_medico: number;
+  id_paciente: number;
+  remetente_tipo: 'medico' | 'paciente';
+  mensagem: string;
+  id_consulta?: number;
+}) => {
+  try {
+    const { data, error } = await supabase
+      .from('mensagens_chat')
+      .insert(mensagem)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return data;
+  } catch (error: any) {
+    console.error('Error sending message:', error);
+    toast({
+      variant: "destructive",
+      title: "Erro ao enviar mensagem",
+      description: error.message,
+    });
+    return null;
+  }
+};
+
+export const marcarMensagensComoLidas = async (medicoId: number, pacienteId: number, remetenteTipo: 'medico' | 'paciente') => {
+  try {
+    const tipoOposto = remetenteTipo === 'medico' ? 'paciente' : 'medico';
+    
+    const { error } = await supabase
+      .from('mensagens_chat')
+      .update({ lida: true })
+      .eq('id_medico', medicoId)
+      .eq('id_paciente', pacienteId)
+      .eq('remetente_tipo', tipoOposto)
+      .eq('lida', false);
+    
+    if (error) throw error;
+    
+    return true;
+  } catch (error: any) {
+    console.error('Error marking messages as read:', error);
+    return false;
+  }
+};
+
+export const verificarChatAtivo = async (medicoId: number, pacienteId: number) => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_ativo')
+      .select('*')
+      .eq('id_medico', medicoId)
+      .eq('id_paciente', pacienteId)
+      .eq('ativo', true)
+      .maybeSingle();
+    
+    if (error) throw error;
+    
+    return data !== null;
+  } catch (error: any) {
+    console.error('Error checking active chat:', error);
+    return false;
+  }
+};

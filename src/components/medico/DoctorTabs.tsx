@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 import AgendaTab from './AgendaTab';
@@ -7,6 +7,8 @@ import PacientesTable from './PacientesTable';
 import ReceitasTable from './ReceitasTable';
 import MensagensTable from './MensagensTable';
 import ProntuarioDialog from './ProntuarioDialog';
+import ChatsList from './ChatsList';
+import ChatMedico from './ChatMedico';
 
 const DoctorTabs: React.FC = () => {
   const {
@@ -20,6 +22,10 @@ const DoctorTabs: React.FC = () => {
     setMensagemDialogOpen,
     prontuarioDialogOpen
   } = useDoctorSchedule();
+  
+  // Estados para o sistema de chat
+  const [selectedChat, setSelectedChat] = useState<any>(null);
+  const medicoId = 1; // Em um caso real, seria obtido da autenticação
 
   return (
     <>
@@ -29,6 +35,7 @@ const DoctorTabs: React.FC = () => {
           <TabsTrigger value="pacientes">Pacientes</TabsTrigger>
           <TabsTrigger value="receitas">Receitas</TabsTrigger>
           <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
+          <TabsTrigger value="chat">Chat com Pacientes</TabsTrigger>
         </TabsList>
         
         <TabsContent value="agenda">
@@ -54,6 +61,24 @@ const DoctorTabs: React.FC = () => {
             setSelectedMensagem={setSelectedMensagem}
             setMensagemDialogOpen={setMensagemDialogOpen}
           />
+        </TabsContent>
+        
+        <TabsContent value="chat">
+          {selectedChat ? (
+            <ChatMedico
+              medicoId={medicoId}
+              pacienteId={selectedChat.pacientes_app.id}
+              pacienteNome={selectedChat.pacientes_app.nome}
+              motivoConsulta={selectedChat.consultas.motivo}
+              dataConsulta={selectedChat.data_inicio}
+              onBack={() => setSelectedChat(null)}
+            />
+          ) : (
+            <ChatsList 
+              medicoId={medicoId} 
+              onSelectChat={setSelectedChat} 
+            />
+          )}
         </TabsContent>
       </Tabs>
       

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Calendar, MapPin, Phone, Mail, Clock, Flag, Send } from 'lucide-react';
+import { Star, Calendar, MapPin, Phone, Mail, Clock, Flag, Send, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -253,6 +253,10 @@ const PerfilMedico = () => {
     navigate('/agendar', { state: { medicoId: id } });
   }
 
+  function handleIniciarChat() {
+    navigate('/area-paciente', { state: { activeTab: 'chat', medicoId: id } });
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -352,6 +356,15 @@ const PerfilMedico = () => {
                 </div>
                 
                 <div className="flex justify-between items-center">
+                  <Button 
+                    onClick={handleIniciarChat}
+                    variant="outline"
+                    className="text-hopecann-teal"
+                  >
+                    <MessageSquare size={16} className="mr-2" />
+                    Conversar com Médico
+                  </Button>
+                  
                   <Button 
                     variant="outline" 
                     size="sm" 

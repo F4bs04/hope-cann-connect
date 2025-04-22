@@ -1,111 +1,107 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 import CalendarViews from './CalendarViews';
-import SummaryCards from './SummaryCards';
-import FastAgendamento from './FastAgendamento';
+import AppointmentsList from './AppointmentsList';
+import ConsultaView from '@/components/medico-dashboard/ConsultaView';
+import ChatMedico from './ChatMedico';
 
-interface AgendaTabProps {
-  isQuickMode?: boolean;
-}
-
-const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
+const AgendaTab: React.FC = () => {
   const {
-    consultas,
-    mensagens,
-    receitas,
     viewMode,
     setViewMode,
     selectedWeekStart,
+    setSelectedWeekStart,
+    currentDate,
+    setCurrentDate,
     selectedViewDay,
-    selectedDate,
-    quickSetMode,
-    horariosConfig,
-    horariosDisponiveis,
-    handleDateSelect,
-    applyPatternToWeek,
-    handleToggleDayAvailability,
-    handleQuickSetAvailability,
-    handleRemoverHorario,
-    formatWeekday,
+    setSelectedViewDay,
     prevWeek,
     nextWeek,
     prevDay,
     nextDay,
-    setQuickSetMode,
-    setSelectedViewDay,
-    setSelectedDay,
+    horarioDialogOpen,
     setHorarioDialogOpen,
-    setHorariosConfig,
-    getAvailableSlotsForDay,
-    handleCancelarConsulta,
-    setSelectedMensagem,
-    setMensagemDialogOpen,
-    saveAvailability,
     handleFastAgendamento,
-    currentConsultationDuration
   } = useDoctorSchedule();
+  
+  const [selectedConsultaId, setSelectedConsultaId] = useState<number | null>(null);
+  const [chatWithPatient, setChatWithPatient] = useState<any>(null);
+  const medicoId = 1; // Em um caso real, seria obtido da autenticação
+  
+  // Criar alguns dados de exemplo de consultas
+  const consultasMock = [
+    {
+      id: 1,
+      data_hora: '2025-04-26T14:00:00',
+      motivo: 'Consulta de rotina',
+      status: 'agendada' as const,
+      tipo_consulta: 'Primeira Consulta',
+      pacientes_app: { id: 1, nome: 'Maria Silva' }
+    },
+    {
+      id: 2,
+      data_hora: '2025-04-24T10:00:00',
+      motivo: 'Dores na coluna',
+      status: 'realizada' as const,
+      tipo_consulta: 'Retorno',
+      pacientes_app: { id: 2, nome: 'João Santos' }
+    },
+    {
+      id: 3,
+      data_hora: '2025-04-23T16:30:00',
+      motivo: 'Avaliação de exames',
+      status: 'cancelada' as const,
+      tipo_consulta: 'Retorno',
+      pacientes_app: { id: 3, nome: 'Ana Oliveira' }
+    }
+  ];
 
-  if (isQuickMode) {
+  if (selectedConsultaId) {
     return (
-      <div>
-        <FastAgendamento 
-          consultationDuration={currentConsultationDuration}
-          onAgendamentoRapido={handleFastAgendamento}
-          fullWidth
-        />
-      </div>
+      <ConsultaView 
+        consultaId={selectedConsultaId} 
+        onBack={() => setSelectedConsultaId(null)} 
+      />
+    );
+  }
+  
+  if (chatWithPatient) {
+    return (
+      <ChatMedico
+        medicoId={medicoId}
+        pacienteId={chatWithPatient.pacientes_app.id}
+        pacienteNome={chatWithPatient.pacientes_app.nome}
+        motivoConsulta={chatWithPatient.motivo}
+        dataConsulta={chatWithPatient.data_hora}
+        onBack={() => setChatWithPatient(null)}
+      />
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <SummaryCards 
-          consultas={consultas}
-          mensagens={mensagens}
-          receitasMock={receitas}
-          handleCancelarConsulta={handleCancelarConsulta}
-          setSelectedMensagem={setSelectedMensagem}
-          setMensagemDialogOpen={setMensagemDialogOpen}
-        />
-        <FastAgendamento 
-          consultationDuration={currentConsultationDuration}
-          onAgendamentoRapido={handleFastAgendamento}
-        />
-      </div>
+    <div>
+      <CalendarViews
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        selectedWeekStart={selectedWeekStart}
+        setSelectedWeekStart={setSelectedWeekStart}
+        currentDate={currentDate}
+        setCurrentDate={setCurrentDate}
+        selectedViewDay={selectedViewDay}
+        setSelectedViewDay={setSelectedViewDay}
+        prevWeek={prevWeek}
+        nextWeek={nextWeek}
+        prevDay={prevDay}
+        nextDay={nextDay}
+        setHorarioDialogOpen={setHorarioDialogOpen}
+        handleFastAgendamento={handleFastAgendamento}
+      />
       
-      <div>
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          Gerenciar disponibilidade
-        </h2>
-        
-        <CalendarViews 
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          selectedWeekStart={selectedWeekStart}
-          selectedViewDay={selectedViewDay}
-          selectedDate={selectedDate}
-          quickSetMode={quickSetMode}
-          horariosConfig={horariosConfig}
-          horariosDisponiveis={horariosDisponiveis}
-          handleDateSelect={handleDateSelect}
-          applyPatternToWeek={applyPatternToWeek}
-          handleToggleDayAvailability={handleToggleDayAvailability}
-          handleQuickSetAvailability={handleQuickSetAvailability}
-          handleRemoverHorario={handleRemoverHorario}
-          formatWeekday={formatWeekday}
-          prevWeek={prevWeek}
-          nextWeek={nextWeek}
-          prevDay={prevDay}
-          nextDay={nextDay}
-          setQuickSetMode={setQuickSetMode}
-          setSelectedViewDay={setSelectedViewDay}
-          setSelectedDay={setSelectedDay}
-          setHorarioDialogOpen={setHorarioDialogOpen}
-          setHorariosConfig={setHorariosConfig}
-          getAvailableSlotsForDay={getAvailableSlotsForDay}
-          saveAvailability={saveAvailability}
+      <div className="mt-8">
+        <AppointmentsList 
+          appointments={consultasMock} 
+          onChatWithPatient={setChatWithPatient}
         />
       </div>
     </div>
