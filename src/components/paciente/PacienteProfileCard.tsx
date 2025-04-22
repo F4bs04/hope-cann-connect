@@ -1,7 +1,9 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from "lucide-react";
+import { User, Layout } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface PacienteProfileCardProps {
   nome: string;
@@ -18,6 +20,12 @@ const PacienteProfileCard: React.FC<PacienteProfileCardProps> = ({
   dataNascimento,
   fotoUrl,
 }) => {
+  const navigate = useNavigate();
+
+  const handleDashboardNavigation = () => {
+    navigate('/area-paciente-v2');
+  };
+
   return (
     <div className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-md mb-6 border border-gray-100 w-full max-w-md mx-auto animate-fade-in">
       <Avatar className="w-24 h-24 mb-3">
@@ -39,6 +47,13 @@ const PacienteProfileCard: React.FC<PacienteProfileCardProps> = ({
           </span>
         )}
       </div>
+      <Button 
+        onClick={handleDashboardNavigation} 
+        className="mt-4 w-full bg-hopecann-teal hover:bg-hopecann-teal/90"
+      >
+        <Layout className="mr-2 h-4 w-4" />
+        Ver Dashboard V2
+      </Button>
     </div>
   );
 };
