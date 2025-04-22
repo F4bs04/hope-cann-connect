@@ -22,8 +22,70 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+// Tipos para médicos
+interface MedicoBase {
+  id: number;
+  nome: string;
+  especialidade: string;
+  crm: string;
+}
+
+// Tipo para médicos locais (usados inicialmente)
+interface MedicoLocal extends MedicoBase {
+  foto: string;
+}
+
+// Tipo para médicos do Supabase
+interface MedicoSupabase extends MedicoBase {
+  foto_perfil: string | null;
+  biografia: string | null;
+  cpf: string;
+  id_clinica: number | null;
+  id_usuario: number | null;
+  status_disponibilidade: boolean | null;
+  telefone: string;
+  valor_por_consulta: number | null;
+}
+
+// Tipo para o saldo dos médicos
+interface SaldoMedico {
+  id: number;
+  id_medico: number;
+  saldo_total: number;
+  ultima_atualizacao: string;
+  medicos?: {
+    nome?: string;
+    crm?: string;
+    especialidade?: string;
+    foto_perfil?: string | null;
+  };
+}
+
+// Tipo para transações
+interface TransacaoMedico {
+  id: number;
+  id_medico: number;
+  id_consulta?: number | null;
+  tipo: 'credito' | 'debito';
+  valor: number;
+  data_transacao: string;
+  descricao: string;
+  status: string;
+  medicos?: {
+    nome?: string;
+  };
+}
+
+// Tipo para card de dashboard
+interface DashCardData {
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  sub: string;
+}
+
 // Simulação de médicos cadastrados (poderá ser substituído por dados reais depois)
-const MEDICOS_CADASTRADOS = [
+const MEDICOS_CADASTRADOS: MedicoLocal[] = [
   {
     id: 1,
     nome: "Dr. Ricardo Silva",
@@ -48,7 +110,7 @@ const MEDICOS_CADASTRADOS = [
 ];
 
 // Dados simulados para os cards do dashboard que serão substituídos por dados reais
-const DASH_DATA_INITIAL = [
+const DASH_DATA_INITIAL: DashCardData[] = [
   {
     title: "Receitas emitidas",
     value: "0",
@@ -76,10 +138,10 @@ const DASH_DATA_INITIAL = [
 ];
 
 const ClinicaDashboard: React.FC = () => {
-  const [dashData, setDashData] = useState(DASH_DATA_INITIAL);
-  const [medicos, setMedicos] = useState(MEDICOS_CADASTRADOS);
-  const [saldoMedicos, setSaldoMedicos] = useState<any[]>([]);
-  const [ultimasTransacoes, setUltimasTransacoes] = useState<any[]>([]);
+  const [dashData, setDashData] = useState<DashCardData[]>(DASH_DATA_INITIAL);
+  const [medicos, setMedicos] = useState<MedicoLocal[]>(MEDICOS_CADASTRADOS);
+  const [saldoMedicos, setSaldoMedicos] = useState<SaldoMedico[]>([]);
+  const [ultimasTransacoes, setUltimasTransacoes] = useState<TransacaoMedico[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -93,7 +155,15 @@ const ClinicaDashboard: React.FC = () => {
         
         if (medicosError) throw medicosError;
         if (medicosData && medicosData.length > 0) {
-          setMedicos(medicosData);
+          // Converter o formato dos médicos do Supabase para o formato local
+          const medicosFormatados: MedicoLocal[] = medicosData.map((medico: MedicoSupabase) => ({
+            id: medico.id,
+            nome: medico.nome,
+            especialidade: medico.especialidade,
+            crm: medico.crm,
+            foto: medico.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`
+          }));
+          setMedicos(medicosFormatados);
         }
 
         // Buscar saldo dos médicos
@@ -116,26 +186,30 @@ const ClinicaDashboard: React.FC = () => {
         setUltimasTransacoes(transacoesData || []);
 
         // Buscar estatísticas para os cards
-        const { data: receitasData } = await supabase
+        const { data: receitasData, error: receitasError } = await supabase
           .from('receitas_app')
-          .select('count', { count: 'exact' })
-          .gte('data', new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString());
+          .select('count', { count: 'exact' });
+          
+        const receitasCount = receitasData ? receitasData[0]?.count || 0 : 0;
 
-        const { data: pacientesData } = await supabase
+        const { data: pacientesData, error: pacientesError } = await supabase
           .from('pacientes_app')
           .select('count', { count: 'exact' });
+          
+        const pacientesCount = pacientesData ? pacientesData[0]?.count || 0 : 0;
 
-        const { data: consultasData } = await supabase
+        const { data: consultasData, error: consultasError } = await supabase
           .from('consultas')
-          .select('count', { count: 'exact' })
-          .gte('data_hora', new Date(new Date().setDate(new Date().getDate() - 7)).toISOString());
+          .select('count', { count: 'exact' });
+          
+        const consultasCount = consultasData ? consultasData[0]?.count || 0 : 0;
 
         // Atualizar os cards com dados reais
         const newDashData = [...dashData];
-        if (receitasData) newDashData[0].value = receitasData.count?.toString() || "0";
-        if (pacientesData) newDashData[1].value = pacientesData.count?.toString() || "0";
+        newDashData[0].value = receitasCount.toString();
+        newDashData[1].value = pacientesCount.toString();
         if (medicosData) newDashData[2].value = medicosData.length.toString();
-        if (consultasData) newDashData[3].value = consultasData.count?.toString() || "0";
+        newDashData[3].value = consultasCount.toString();
         
         setDashData(newDashData);
       } catch (error) {
@@ -211,7 +285,7 @@ const ClinicaDashboard: React.FC = () => {
                             {saldo.medicos?.foto_perfil ? (
                               <img 
                                 src={saldo.medicos.foto_perfil} 
-                                alt={saldo.medicos.nome} 
+                                alt={saldo.medicos.nome || 'Médico'} 
                                 className="h-8 w-8 rounded-full mr-2 object-cover"
                               />
                             ) : (
@@ -329,7 +403,7 @@ const ClinicaDashboard: React.FC = () => {
                   key={medico.id}
                 >
                   <img
-                    src={medico.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`}
+                    src={medico.foto || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`}
                     className="h-14 w-14 rounded-full border-2 border-[#E5DEFF] object-cover shadow"
                     alt={medico.nome}
                   />
@@ -392,3 +466,4 @@ const ClinicaDashboard: React.FC = () => {
 };
 
 export default ClinicaDashboard;
+
