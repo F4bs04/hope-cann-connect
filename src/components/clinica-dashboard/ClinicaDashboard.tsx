@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { "layout-dashboard" as LayoutDashboard } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 
 const ClinicaDashboard: React.FC = () => {
   return (
