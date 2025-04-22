@@ -15,11 +15,25 @@ interface ChatsListProps {
   onSelectChat: (chat: any) => void;
 }
 
+interface ChatData {
+  id: number;
+  data_inicio: string;
+  data_fim: string;
+  consultas?: {
+    id?: number;
+    motivo?: string;
+  } | null;
+  pacientes_app?: {
+    id?: number;
+    nome?: string;
+  } | null;
+}
+
 const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [chats, setChats] = useState<any[]>([]);
-  const [filteredChats, setFilteredChats] = useState<any[]>([]);
+  const [chats, setChats] = useState<ChatData[]>([]);
+  const [filteredChats, setFilteredChats] = useState<ChatData[]>([]);
 
   useEffect(() => {
     const filtered = chats.filter(chat => 
@@ -41,7 +55,7 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
     try {
       const data = await getChatsAtivos(medicoId);
       // Safely handle potentially invalid data structures
-      const processedChats = data.map(chat => ({
+      const processedChats = data.map((chat: any) => ({
         ...chat,
         consultas: {
           id: chat.consultas?.id || 0,
