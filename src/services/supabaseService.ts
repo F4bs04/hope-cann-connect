@@ -495,3 +495,20 @@ export const verificarChatAtivo = async (medicoId: number, pacienteId: number) =
     return false;
   }
 };
+
+// Função para verificar senha de clínica
+export const verifyClinicPassword = async (email: string, password: string) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('verify_clinic_password', {
+        p_email: email,
+        p_password: password
+      });
+    
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error('Error verifying clinic password:', error);
+    return false;
+  }
+};
