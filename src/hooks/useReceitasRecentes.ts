@@ -38,10 +38,7 @@ export function useReceitasRecentes() {
         
         if (error) throw error;
         
-        if (data) {
-          // Corrigido o problema de tipo adicionando type assertion explícito
-          setReceitas(data as unknown as ReceitaRecente[]);
-        }
+        setReceitas(data || []);
       } catch (error: any) {
         console.error('Error fetching prescriptions:', error);
         toast({
@@ -59,3 +56,4 @@ export function useReceitasRecentes() {
 
   return { receitas, isLoading };
 }
+

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -141,7 +142,7 @@ import MedicosPendentesAprovacao from "./MedicosPendentesAprovacao";
 
 const ClinicaDashboard: React.FC = () => {
   const [dashData, setDashData] = useState<DashCardData[]>(DASH_DATA_INITIAL);
-  const [medicos, setMedicos] = useState<MedicoLocal[]>(MEDICOS_CADASTRADOS);
+  const [medicos, setMedicos] = useState<MedicoLocal[]>([]);
   const [saldoMedicos, setSaldoMedicos] = useState<SaldoMedico[]>([]);
   const [ultimasTransacoes, setUltimasTransacoes] = useState<TransacaoMedico[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,59 +151,70 @@ const ClinicaDashboard: React.FC = () => {
     const fetchDados = async () => {
       setLoading(true);
       try {
-        // Buscar médicos
-        const { data: medicosData, error: medicosError } = await supabase
-          .from('medicos')
-          .select('*');
-        
-        if (medicosError) throw medicosError;
-        if (medicosData && medicosData.length > 0) {
-          // Converter o formato dos médicos do Supabase para o formato local
-          const medicosFormatados: MedicoLocal[] = medicosData.map((medico: MedicoSupabase) => ({
-            id: medico.id,
-            nome: medico.nome,
-            especialidade: medico.especialidade,
-            crm: medico.crm,
-            foto: medico.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`
-          }));
-          setMedicos(medicosFormatados);
+        const clinicaEmail = localStorage.getItem('userEmail');
+        if (!clinicaEmail) {
+          setLoading(false);
+          return;
         }
 
-        // Buscar saldo dos médicos
-        const saldoData = await getSaldoMedicos();
-        setSaldoMedicos(saldoData || []);
+        // Buscar dados da clínica
+        const { data: clinicaData, error: clinicaError } = await supabase
+          .from('clinicas')
+          .select('id')
+          .eq('email', clinicaEmail)
+          .single();
 
-        // Buscar últimas transações
-        const transacoesData = await getTransacoesMedicos();
-        setUltimasTransacoes(transacoesData as TransacaoMedico[]);
+        if (clinicaError) throw clinicaError;
 
-        // Buscar estatísticas para os cards
-        const { data: estatisticasData, error: estatisticasError } = await supabase
-          .from('receitas_app')
-          .select('count');
-          
-        const receitasCount = estatisticasData ? estatisticasData.length : 0;
+        if (clinicaData) {
+          // Buscar médicos da clínica
+          const { data: medicosData, error: medicosError } = await supabase
+            .from('medicos')
+            .select('*')
+            .eq('id_clinica', clinicaData.id);
 
-        const { data: pacientesData, error: pacientesError } = await supabase
-          .from('pacientes_app')
-          .select('count');
-          
-        const pacientesCount = pacientesData ? pacientesData.length : 0;
+          if (medicosError) throw medicosError;
 
-        const { data: consultasData, error: consultasError } = await supabase
-          .from('consultas')
-          .select('count');
-          
-        const consultasCount = consultasData ? consultasData.length : 0;
+          if (medicosData) {
+            const medicosFormatados = medicosData.map(medico => ({
+              id: medico.id,
+              nome: medico.nome,
+              especialidade: medico.especialidade,
+              crm: medico.crm,
+              foto: medico.foto_perfil || "/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png"
+            }));
+            setMedicos(medicosFormatados);
 
-        // Atualizar os cards com dados reais
-        const newDashData = [...dashData];
-        newDashData[0].value = receitasCount.toString();
-        newDashData[1].value = pacientesCount.toString();
-        if (medicosData) newDashData[2].value = medicosData.length.toString();
-        newDashData[3].value = consultasCount.toString();
-        
-        setDashData(newDashData);
+            // Atualizar os cards com dados reais
+            const newDashData = [...DASH_DATA_INITIAL];
+            newDashData[0].value = String(medicosData.length); // Total de médicos
+            
+            // Buscar total de consultas da clínica
+            const { count: consultasCount } = await supabase
+              .from('consultas')
+              .select('*', { count: 'exact' })
+              .eq('id_clinica', clinicaData.id);
+
+            newDashData[1].value = String(consultasCount || 0);
+
+            // Buscar pacientes atendidos
+            const { count: pacientesCount } = await supabase
+              .from('pacientes')
+              .select('*', { count: 'exact' });
+
+            newDashData[2].value = String(pacientesCount || 0);
+
+            setDashData(newDashData);
+
+            // Buscar saldo dos médicos
+            const saldoData = await getSaldoMedicos();
+            setSaldoMedicos(saldoData || []);
+
+            // Buscar últimas transações
+            const transacoesData = await getTransacoesMedicos();
+            setUltimasTransacoes(transacoesData || []);
+          }
+        }
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
       } finally {

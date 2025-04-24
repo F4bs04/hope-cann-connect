@@ -51,6 +51,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedUserTy
           default:
             navigate('/login');
         }
+        return;
       }
     };
 
