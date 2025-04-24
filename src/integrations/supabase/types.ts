@@ -223,6 +223,7 @@ export type Database = {
           endereco: string
           id: number
           nome: string
+          senha_hash: string | null
           status: boolean | null
           telefone: string
         }
@@ -233,6 +234,7 @@ export type Database = {
           endereco: string
           id?: never
           nome: string
+          senha_hash?: string | null
           status?: boolean | null
           telefone: string
         }
@@ -243,6 +245,7 @@ export type Database = {
           endereco?: string
           id?: never
           nome?: string
+          senha_hash?: string | null
           status?: boolean | null
           telefone?: string
         }

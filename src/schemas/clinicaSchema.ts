@@ -7,6 +7,11 @@ export const clinicaSchema = z.object({
   email: z.string().email("Email inválido"),
   telefone: z.string().min(10, "Telefone inválido"),
   endereco: z.string().min(5, "Endereço inválido"),
+  senha: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
+  confirmarSenha: z.string()
+}).refine((data) => data.senha === data.confirmarSenha, {
+  message: "As senhas não correspondem",
+  path: ["confirmarSenha"],
 });
 
 export type ClinicaFormValues = z.infer<typeof clinicaSchema>;

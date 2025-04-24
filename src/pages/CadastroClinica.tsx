@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +24,8 @@ const CadastroClinica = () => {
       email: "",
       telefone: "",
       endereco: "",
+      senha: "",
+      confirmarSenha: "",
     }
   });
 
@@ -38,7 +39,8 @@ const CadastroClinica = () => {
           cnpj: values.cnpj,
           email: values.email,
           telefone: values.telefone,
-          endereco: values.endereco
+          endereco: values.endereco,
+          senha_hash: values.senha // This will trigger the hash_clinic_password trigger
         }])
         .select()
         .single();
@@ -155,6 +157,34 @@ const CadastroClinica = () => {
                     <FormLabel>Endereço</FormLabel>
                     <FormControl>
                       <Input placeholder="Endereço completo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="senha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Senha" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="confirmarSenha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmar Senha</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Confirme a senha" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
