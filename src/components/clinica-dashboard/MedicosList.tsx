@@ -34,12 +34,29 @@ export const MedicosList = () => {
   
   React.useEffect(() => {
     const fetchMedicos = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('medicos')
         .select('*')
         .order('nome', { ascending: true });
       
-      if (data) setMedicos(data);
+      if (error) {
+        console.error("Error fetching doctors:", error);
+        return;
+      }
+      
+      if (data) {
+        const formattedData = data.map(medico => ({
+          id: medico.id,
+          nome: medico.nome,
+          crm: medico.crm,
+          especialidade: medico.especialidade,
+          status: medico.aprovado ? 'Aprovado' : 'Pendente',
+          aprovado: medico.aprovado,
+          foto_perfil: medico.foto_perfil,
+          data_aprovacao: medico.data_aprovacao
+        }));
+        setMedicos(formattedData);
+      }
     };
     
     fetchMedicos();
@@ -83,7 +100,7 @@ export const MedicosList = () => {
                 <TableCell>{medico.especialidade}</TableCell>
                 <TableCell>
                   <Badge variant={medico.aprovado ? "success" : "warning"}>
-                    {medico.aprovado ? "Aprovado" : "Pendente"}
+                    {medico.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="flex items-center gap-2">

@@ -34,27 +34,35 @@ export const AgendamentosList = () => {
   
   React.useEffect(() => {
     const fetchAgendamentos = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('consultas')
         .select(`
           id,
-          data,
-          horario,
+          data_hora,
           pacientes (nome),
           medicos (nome),
           status
         `)
-        .order('data', { ascending: true });
+        .order('data_hora', { ascending: true });
+      
+      if (error) {
+        console.error("Error fetching agendamentos:", error);
+        return;
+      }
       
       if (data) {
-        const formattedData = data.map(item => ({
-          id: item.id,
-          data: item.data,
-          horario: item.horario,
-          paciente: item.pacientes?.nome || 'N/A',
-          medico: item.medicos?.nome || 'N/A',
-          status: item.status
-        }));
+        // Extract date and time from data_hora
+        const formattedData = data.map(item => {
+          const dateTime = new Date(item.data_hora);
+          return {
+            id: item.id,
+            data: dateTime.toISOString().split('T')[0], // Extract just the date part
+            horario: dateTime.toTimeString().substring(0, 5), // Extract hours and minutes
+            paciente: item.pacientes?.nome || 'N/A',
+            medico: item.medicos?.nome || 'N/A',
+            status: item.status
+          };
+        });
         setAgendamentos(formattedData);
       }
     };
