@@ -28,6 +28,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChang
   useEffect(() => {
     // Carregar dados do estado caso já exista
     if (userData) {
+      console.log("Carregando dados do perfil a partir do userData:", userData);
       setNome(userData.nome || "");
       setTelefone(userData.telefone || "");
       setEspecialidade(userData.especialidade || "");
@@ -39,13 +40,23 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChang
     // Ou buscar dados da API se não tiver no estado
     const fetchData = async () => {
       if (!userId) return;
+      console.log("Buscando dados do médico com id_usuario:", userId);
       const { data, error } = await supabase.from("medicos").select("*").eq("id_usuario", userId).maybeSingle();
+      
+      if (error) {
+        console.error("Erro ao buscar dados do médico:", error);
+        return;
+      }
+      
       if (data) {
+        console.log("Dados do médico recuperados:", data);
         setNome(data.nome || "");
         setTelefone(data.telefone || "");
         setEspecialidade(data.especialidade || "");
         setBiografia(data.biografia || "");
         setFoto(data.foto_perfil || null);
+      } else {
+        console.log("Nenhum médico encontrado com id_usuario:", userId);
       }
     };
     
@@ -65,6 +76,10 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChang
     setLoading(true);
 
     try {
+      if (!userId) {
+        throw new Error("ID do usuário não encontrado");
+      }
+
       let fotoUrl = foto;
       if (fotoFile) {
         const fileExt = fotoFile.name.split('.').pop();
@@ -83,6 +98,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChang
       }
 
       // Atualiza dados no Supabase
+      console.log("Atualizando médico com id_usuario:", userId);
       const { error } = await supabase.from("medicos").update({
         nome,
         telefone,
@@ -91,7 +107,10 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChang
         foto_perfil: fotoUrl
       }).eq("id_usuario", userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao atualizar médico:", error);
+        throw error;
+      }
 
       toast({
         title: "Perfil atualizado!",
@@ -164,7 +183,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChang
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 };
 
 export default EditProfileDialog;

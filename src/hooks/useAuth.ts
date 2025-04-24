@@ -33,7 +33,16 @@ export const useAuth = () => {
             .eq('email', userEmail)
             .maybeSingle();
             
-          if (clinicError) throw clinicError;
+          if (clinicError) {
+            console.error("Clinic lookup error:", clinicError);
+            throw clinicError;
+          }
+          
+          if (!clinicData) {
+            console.error("Clinic not found:", userEmail);
+            throw new Error("Clínica não encontrada");
+          }
+          
           userData = clinicData;
         } else if (storedUserType === 'medico') {
           // Buscar dados do médico
@@ -46,7 +55,16 @@ export const useAuth = () => {
             .eq('id_usuario', parseInt(userId))
             .maybeSingle();
             
-          if (medicoError) throw medicoError;
+          if (medicoError) {
+            console.error("Doctor lookup error:", medicoError);
+            throw medicoError;
+          }
+          
+          if (!medicoData) {
+            console.error("Doctor not found with id_usuario:", userId);
+            throw new Error("Médico não encontrado");
+          }
+          
           userData = medicoData;
         } else {
           // Buscar dados do usuário/paciente
@@ -87,10 +105,11 @@ export const useAuth = () => {
         setUserType(storedUserType);
         console.log("Usuário autenticado:", userData);
 
-        // Only redirect if we're not already on the correct path
+        // Verifica se estamos na página correta com base no tipo de usuário
         const currentPath = window.location.pathname;
         const correctPath = getCorrectPath(storedUserType || 'paciente');
         
+        // Apenas redireciona se não estivermos já no caminho correto ou em um subcaminho
         if (currentPath !== correctPath && !currentPath.startsWith(correctPath)) {
           navigate(correctPath);
         }
