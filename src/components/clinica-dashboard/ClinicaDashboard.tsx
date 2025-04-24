@@ -139,6 +139,7 @@ const DASH_DATA_INITIAL: DashCardData[] = [
 ];
 
 import MedicosPendentesAprovacao from "./MedicosPendentesAprovacao";
+import { DashboardCharts } from "./DashboardCharts";
 
 const ClinicaDashboard: React.FC = () => {
   const [dashData, setDashData] = useState<DashCardData[]>(DASH_DATA_INITIAL);
@@ -236,6 +237,7 @@ const ClinicaDashboard: React.FC = () => {
     <div className="space-y-10 w-full max-w-6xl mx-auto">
       {/* Bloco de médicos pendentes de aprovação */}
       <MedicosPendentesAprovacao />
+      
       {/* Resumo com cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {dashData.map((item, idx) => (
@@ -251,6 +253,9 @@ const ClinicaDashboard: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      {/* Adicionar os gráficos do dashboard */}
+      <DashboardCharts />
 
       {/* Saldo dos médicos */}
       <div>
