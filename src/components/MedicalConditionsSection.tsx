@@ -62,31 +62,33 @@ const MedicalConditionsSection = () => {
           </p>
         </div>
         
-        <div className="px-8 md:px-16">
+        <div className="px-4 md:px-8">
           <Carousel
             opts={{
-              align: "start",
-              loop: true
+              align: "center",
+              loop: true,
+              autoplay: true,
+              interval: 4000
             }}
             className="w-full"
           >
             <CarouselContent className="-ml-2 md:-ml-4">
               {conditions.map((condition, index) => (
-                <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/2">
                   <Card className="overflow-hidden transition-all hover:shadow-lg border-green-100">
-                    <div className="relative h-48 md:h-64 bg-gray-200">
+                    <div className="relative h-64 md:h-80 bg-gray-200">
                       <img
                         src={condition.imageSrc}
                         alt={condition.title}
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                       />
                     </div>
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <condition.icon className="w-6 h-6 text-hopecann-teal" />
-                        <h3 className="text-xl font-semibold text-hopecann-green">{condition.title}</h3>
+                    <CardContent className="p-8">
+                      <div className="flex items-center gap-4 mb-4">
+                        <condition.icon className="w-8 h-8 text-hopecann-teal" />
+                        <h3 className="text-2xl font-semibold text-hopecann-green">{condition.title}</h3>
                       </div>
-                      <p className="text-gray-600">{condition.description}</p>
+                      <p className="text-gray-600 text-lg">{condition.description}</p>
                     </CardContent>
                   </Card>
                 </CarouselItem>
