@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,10 @@ const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (pacienteId <= 0) return;
+    if (pacienteId <= 0) {
+      setLoading(false);
+      return;
+    }
     
     const buscarConsultas = async () => {
       setLoading(true);
@@ -31,7 +33,7 @@ const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => 
             *,
             medicos (id, nome, especialidade, foto_perfil)
           `)
-          .eq('id_paciente', pacienteId)
+          .eq('id_paciente', pacienteId) // Filter by the logged-in patient's ID
           .order('data_hora', { ascending: false });
         
         if (error) throw error;
@@ -56,7 +58,7 @@ const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => 
     };
     
     buscarConsultas();
-  }, [pacienteId]);
+  }, [pacienteId, toast]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -110,7 +112,7 @@ const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => 
   if (loading) {
     return (
       <div className="flex justify-center my-8">
-        <div className="animate-spin h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal" />
       </div>
     );
   }

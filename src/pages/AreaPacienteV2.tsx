@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   SidebarProvider,
@@ -19,6 +18,7 @@ import {
   Users,
   MessageSquare,
   HeartPulse,
+  Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -28,8 +28,8 @@ import PacienteHeader from "@/components/paciente/PacienteHeader";
 import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
 import ReceitasPaciente from "@/components/paciente/ReceitasPaciente";
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-// Define menu items for the sidebar
 const MENU_ITEMS = [
   {
     key: 'dashboard',
@@ -90,7 +90,7 @@ const CARD_DATA = [
 ];
 
 const perfilPaciente = {
-  id: 1, // ID de exemplo, ajuste conforme necessário para dados reais
+  id: 1,
   nome: "Gabriel Almeida",
   email: "gabriel@email.com",
   genero: "Masculino",
@@ -98,25 +98,56 @@ const perfilPaciente = {
   fotoUrl: "",
 };
 
-const DashboardPaciente = () => {
+const DashboardPaciente = ({ pacienteId }: { pacienteId: number }) => {
   const [receitas, setReceitas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Fetch recent prescriptions
+    if (pacienteId <= 0) {
+      setLoading(false);
+      return;
+    }
+    
     const fetchReceitas = async () => {
-      const { data, error } = await supabase
-        .from('receitas_app')
-        .select('*')
-        .order('data', { ascending: false })
-        .limit(3);
-      
-      if (data) {
-        setReceitas(data);
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('receitas_app')
+          .select('*')
+          .eq('id_paciente', pacienteId)
+          .order('data', { ascending: false })
+          .limit(3);
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          setReceitas(data);
+        }
+      } catch (error) {
+        console.error('Error fetching prescriptions:', error);
+        toast({
+          title: "Erro ao carregar receitas",
+          description: "Não foi possível carregar suas receitas. Por favor, tente novamente mais tarde.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchReceitas();
-  }, []);
+  }, [pacienteId, toast]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -149,9 +180,7 @@ const DashboardPaciente = () => {
   );
 };
 
-// Placeholder components for other sections
-// These would be properly implemented in separate files in a production app
-const ConsultasPaciente = () => {
+const ConsultasPaciente = ({ pacienteId }: { pacienteId: number }) => {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Consultas</h2>
@@ -160,7 +189,7 @@ const ConsultasPaciente = () => {
   );
 };
 
-const PrescricoesPaciente = () => {
+const PrescricoesPaciente = ({ pacienteId }: { pacienteId: number }) => {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Prescrições</h2>
@@ -169,7 +198,7 @@ const PrescricoesPaciente = () => {
   );
 };
 
-const AtestadosPaciente = () => {
+const AtestadosPaciente = ({ pacienteId }: { pacienteId: number }) => {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Atestados</h2>
@@ -178,7 +207,7 @@ const AtestadosPaciente = () => {
   );
 };
 
-const LaudosPaciente = () => {
+const LaudosPaciente = ({ pacienteId }: { pacienteId: number }) => {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Laudos</h2>
@@ -187,7 +216,7 @@ const LaudosPaciente = () => {
   );
 };
 
-const PedidosExamePaciente = () => {
+const PedidosExamePaciente = ({ pacienteId }: { pacienteId: number }) => {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Pedidos de Exame</h2>
@@ -196,7 +225,7 @@ const PedidosExamePaciente = () => {
   );
 };
 
-const MedicosPaciente = () => {
+const MedicosPaciente = ({ pacienteId }: { pacienteId: number }) => {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Meus Médicos</h2>
@@ -208,53 +237,105 @@ const MedicosPaciente = () => {
 const AreaPacienteV2: React.FC = () => {
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [paciente, setPaciente] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
-      const userEmail = localStorage.getItem('userEmail');
-      
-      if (!userEmail) {
+      setLoading(true);
+      try {
+        const userEmail = localStorage.getItem('userEmail');
+        
+        if (!userEmail) {
+          toast({
+            title: "Acesso não autorizado",
+            description: "Faça login para acessar a área do paciente.",
+            variant: "destructive"
+          });
+          navigate('/login');
+          return;
+        }
+        
+        const { data: pacienteData, error } = await supabase
+          .from('pacientes_app')
+          .select('*')
+          .eq('email', userEmail)
+          .single();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (pacienteData) {
+          setPaciente(pacienteData);
+        } else {
+          toast({
+            title: "Perfil não encontrado",
+            description: "Não encontramos um perfil de paciente associado ao seu login.",
+            variant: "destructive"
+          });
+          localStorage.removeItem('isAuthenticated');
+          localStorage.removeItem('userEmail');
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error('Authentication error:', error);
+        toast({
+          title: "Erro de autenticação",
+          description: "Ocorreu um erro ao verificar suas credenciais. Por favor, faça login novamente.",
+          variant: "destructive"
+        });
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('userEmail');
         navigate('/login');
-        return;
-      }
-      
-      const { data: pacienteData } = await supabase
-        .from('pacientes_app')
-        .select('*')
-        .eq('email', userEmail)
-        .single();
-      
-      if (pacienteData) {
-        setPaciente(pacienteData);
+      } finally {
+        setLoading(false);
+        setAuthChecked(true);
       }
     };
     
     checkAuth();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const renderSection = () => {
+    const pacienteId = paciente?.id || 0;
+    
     switch (currentSection) {
       case 'dashboard':
-        return <DashboardPaciente />;
+        return <DashboardPaciente pacienteId={pacienteId} />;
       case 'consultas':
-        return <ConsultasPaciente />;
+        return <ConsultasPaciente pacienteId={pacienteId} />;
       case 'prescricoes':
-        return <PrescricoesPaciente />;
+        return <PrescricoesPaciente pacienteId={pacienteId} />;
       case 'receitas':
-        return <ReceitasPaciente pacienteId={paciente?.id || 0} />;
+        return <ReceitasPaciente pacienteId={pacienteId} />;
       case 'atestados':
-        return <AtestadosPaciente />;
+        return <AtestadosPaciente pacienteId={pacienteId} />;
       case 'laudos':
-        return <LaudosPaciente />;
+        return <LaudosPaciente pacienteId={pacienteId} />;
       case 'pedidos-exame':
-        return <PedidosExamePaciente />;
+        return <PedidosExamePaciente pacienteId={pacienteId} />;
       case 'medicos':
-        return <MedicosPaciente />;
+        return <MedicosPaciente pacienteId={pacienteId} />;
       default:
-        return <DashboardPaciente />;
+        return <DashboardPaciente pacienteId={pacienteId} />;
     }
   };
+
+  if (loading && !authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal mx-auto mb-4" />
+          <p>Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authChecked) return null;
 
   return (
     <div className="min-h-screen flex flex-col">

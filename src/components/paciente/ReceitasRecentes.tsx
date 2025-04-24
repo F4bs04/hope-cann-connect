@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { FileText, Loader2 } from 'lucide-react';
 
 interface Receita {
   id: number;
@@ -16,13 +16,27 @@ interface Receita {
 
 interface ReceitasRecentesProps {
   receitas: Receita[];
+  isLoading?: boolean;
 }
 
-const ReceitasRecentes: React.FC<ReceitasRecentesProps> = ({ receitas }) => {
+const ReceitasRecentes: React.FC<ReceitasRecentesProps> = ({ receitas, isLoading = false }) => {
   const handleDownloadPDF = (receitaId: number) => {
     // Implement PDF download logic here
     console.log('Download PDF for receita:', receitaId);
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-xl font-bold">Receitas Recentes</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

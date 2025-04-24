@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Calendar, AlertTriangle } from 'lucide-react';
+import { FileText, Calendar, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReceitasPacienteProps {
   pacienteId: number;
@@ -14,9 +14,13 @@ interface ReceitasPacienteProps {
 const ReceitasPaciente: React.FC<ReceitasPacienteProps> = ({ pacienteId }) => {
   const [receitas, setReceitas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (pacienteId <= 0) return;
+    if (pacienteId <= 0) {
+      setLoading(false);
+      return;
+    }
     
     const buscarReceitas = async () => {
       setLoading(true);
@@ -25,19 +29,23 @@ const ReceitasPaciente: React.FC<ReceitasPacienteProps> = ({ pacienteId }) => {
         const { data, error } = await supabase
           .from('receitas_app')
           .select('*')
-          .eq('id_paciente', pacienteId)
+          .eq('id_paciente', pacienteId) // Filter by the logged-in patient's ID
           .order('data', { ascending: false });
         
         if (error) throw error;
         
-        if (data && data.length > 0) {
+        if (data) {
           setReceitas(data);
         } else {
-          console.log("Nenhuma receita encontrada para o paciente ID:", pacienteId);
           setReceitas([]);
         }
       } catch (error) {
         console.error("Erro ao buscar receitas:", error);
+        toast({
+          title: "Erro ao buscar receitas",
+          description: "Não foi possível carregar suas receitas. Por favor, tente novamente mais tarde.",
+          variant: "destructive"
+        });
         setReceitas([]);
       } finally {
         setLoading(false);
@@ -45,7 +53,7 @@ const ReceitasPaciente: React.FC<ReceitasPacienteProps> = ({ pacienteId }) => {
     };
     
     buscarReceitas();
-  }, [pacienteId]);
+  }, [pacienteId, toast]);
 
   const getStatusBadge = (status: string, dataValidade?: string) => {
     if (dataValidade && isAfter(new Date(), new Date(dataValidade))) {
@@ -67,7 +75,7 @@ const ReceitasPaciente: React.FC<ReceitasPacienteProps> = ({ pacienteId }) => {
   if (loading) {
     return (
       <div className="flex justify-center my-8">
-        <div className="animate-spin h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal" />
       </div>
     );
   }
