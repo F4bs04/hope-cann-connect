@@ -22,13 +22,13 @@ export function useReceitasRecentes() {
   
   useEffect(() => {
     const fetchReceitas = async () => {
-      const userEmail = localStorage.getItem('userEmail');
-      if (!userEmail) {
-        setIsLoading(false);
-        return;
-      }
-      
       try {
+        const userEmail = localStorage.getItem('userEmail');
+        if (!userEmail) {
+          setIsLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase
           .from('receitas_app')
           .select('*')
@@ -56,4 +56,3 @@ export function useReceitasRecentes() {
 
   return { receitas, isLoading };
 }
-

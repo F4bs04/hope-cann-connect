@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +19,7 @@ import CompleteRegistroMedico from "./pages/CompleteRegistroMedico";
 import CadastroClinica from "./pages/CadastroClinica";
 import React from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AreaClinica from "./pages/AreaClinica";
 
 const queryClient = new QueryClient();
 
@@ -59,7 +59,7 @@ function App() {
               path="/admin" 
               element={
                 <ProtectedRoute allowedUserTypes={['admin_clinica']}>
-                  <AreaMedico />
+                  <AreaClinica />
                 </ProtectedRoute>
               } 
             />
