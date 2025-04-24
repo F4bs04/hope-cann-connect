@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
 import AgendaTab from '@/components/medico/AgendaTab';
+import FastAgendamento from '@/components/medico/FastAgendamento';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, AlertCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import AppointmentsList from '@/components/medico/AppointmentsList';
+
 const AgendaMedica: React.FC = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchAppointments = async () => {
       setLoading(true);
       try {
-        // Get current doctor ID
         const {
           data: {
             session
@@ -44,7 +45,6 @@ const AgendaMedica: React.FC = () => {
           throw doctorError;
         }
 
-        // Get doctor's appointments
         const {
           data: appointmentsData,
           error: appointmentsError
@@ -71,19 +71,18 @@ const AgendaMedica: React.FC = () => {
     };
     fetchAppointments();
 
-    // Set up real-time subscription for appointments
     const appointmentsChannel = supabase.channel('appointments-changes').on('postgres_changes', {
       event: '*',
       schema: 'public',
       table: 'consultas'
     }, payload => {
-      // Refresh appointments when there's a change
       fetchAppointments();
     }).subscribe();
     return () => {
       supabase.removeChannel(appointmentsChannel);
     };
   }, []);
+
   return <div className="space-y-6">
       <h1 className="text-2xl font-bold">Agenda Médica</h1>
       <DoctorScheduleProvider>
@@ -128,11 +127,21 @@ const AgendaMedica: React.FC = () => {
                 <Clock className="h-5 w-5 text-hopecann-teal" />
                 Agendamento Rápido
               </h2>
-              
+              <FastAgendamento 
+                consultationDuration="30"
+                onAgendamentoRapido={async (data) => {
+                  try {
+                    await fetchAppointments();
+                  } catch (error) {
+                    console.error('Error refreshing appointments:', error);
+                  }
+                }}
+              />
             </div>
           </TabsContent>
         </Tabs>
       </DoctorScheduleProvider>
     </div>;
 };
+
 export default AgendaMedica;
