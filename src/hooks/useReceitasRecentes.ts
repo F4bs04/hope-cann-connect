@@ -53,7 +53,6 @@ export function useReceitasRecentes() {
       }
       
       try {
-        // Explicitly type the query result
         const { data, error } = await supabase
           .from('receitas_app')
           .select('*')
@@ -64,9 +63,8 @@ export function useReceitasRecentes() {
         if (error) throw error;
         
         if (data) {
-          // Explicitly cast the data to RawReceitaData[] before mapping
-          const rawData = data as unknown as RawReceitaData[];
-          const typedReceitas = rawData.map(mapToReceitaRecente);
+          // Use type assertion with a more basic approach
+          const typedReceitas = data.map((item: any) => mapToReceitaRecente(item as RawReceitaData));
           setReceitas(typedReceitas);
         }
       } catch (error) {
