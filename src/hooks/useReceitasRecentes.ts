@@ -15,6 +15,30 @@ export interface ReceitaRecente {
   observacoes?: string | null;
 }
 
+interface RawReceitaData {
+  id: number;
+  medicamento: string;
+  data: string;
+  status: string;
+  posologia: string;
+  id_paciente: number;
+  email_paciente?: string;
+  data_validade: string | null;
+  observacoes: string | null;
+}
+
+const mapToReceitaRecente = (data: RawReceitaData): ReceitaRecente => ({
+  id: data.id,
+  medicamento: data.medicamento,
+  data: data.data,
+  status: data.status,
+  posologia: data.posologia,
+  id_paciente: data.id_paciente,
+  ...(data.email_paciente && { email_paciente: data.email_paciente }),
+  data_validade: data.data_validade,
+  observacoes: data.observacoes
+});
+
 export function useReceitasRecentes() {
   const [receitas, setReceitas] = useState<ReceitaRecente[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,7 +47,10 @@ export function useReceitasRecentes() {
   useEffect(() => {
     const fetchReceitas = async () => {
       const userEmail = localStorage.getItem('userEmail');
-      if (!userEmail) return;
+      if (!userEmail) {
+        setIsLoading(false);
+        return;
+      }
       
       try {
         const { data, error } = await supabase
@@ -36,20 +63,7 @@ export function useReceitasRecentes() {
         if (error) throw error;
         
         if (data) {
-          // Transform the raw data to match our ReceitaRecente interface
-          const typedReceitas: ReceitaRecente[] = data.map(item => ({
-            id: item.id,
-            medicamento: item.medicamento,
-            data: item.data,
-            status: item.status,
-            posologia: item.posologia,
-            id_paciente: item.id_paciente,
-            // Only include email_paciente if it exists in the item
-            ...(item.email_paciente !== undefined && { email_paciente: item.email_paciente }),
-            data_validade: item.data_validade,
-            observacoes: item.observacoes
-          }));
-          
+          const typedReceitas = data.map(mapToReceitaRecente);
           setReceitas(typedReceitas);
         }
       } catch (error) {
