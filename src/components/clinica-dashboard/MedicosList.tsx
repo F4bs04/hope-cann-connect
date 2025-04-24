@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Card,
@@ -21,7 +20,9 @@ import {
   Award, 
   Trash,
   UserMinus,
-  AlertCircle
+  AlertCircle,
+  Pencil,
+  Eye
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -36,6 +37,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { EditMedicoDialog } from './EditMedicoDialog';
+import { MedicoDetails } from './MedicoDetails';
 
 interface MedicoInfo {
   id: number;
@@ -53,6 +56,10 @@ export const MedicosList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [medicoParaRemover, setMedicoParaRemover] = useState<MedicoInfo | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [medicoParaEditar, setMedicoParaEditar] = useState<MedicoInfo | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedMedicoId, setSelectedMedicoId] = useState<number | null>(null);
   const { toast } = useToast();
   
   React.useEffect(() => {
@@ -126,13 +133,22 @@ export const MedicosList = () => {
         variant: "default"
       });
       
-      // Atualizar a lista de médicos
       setMedicos(medicos.filter(m => m.id !== medicoParaRemover.id));
     } finally {
       setDialogOpen(false);
       setMedicoParaRemover(null);
       setIsLoading(false);
     }
+  };
+
+  const handleEditarMedico = (medico: MedicoInfo) => {
+    setMedicoParaEditar(medico);
+    setEditDialogOpen(true);
+  };
+
+  const handleVerDetalhes = (medicoId: number) => {
+    setSelectedMedicoId(medicoId);
+    setDetailsOpen(true);
   };
 
   return (
@@ -196,14 +212,32 @@ export const MedicosList = () => {
                       <Award className="h-4 w-4 text-blue-500" />
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleRemoverMedico(medico)}
-                      >
-                        <UserMinus className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                          onClick={() => handleVerDetalhes(medico.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                          onClick={() => handleEditarMedico(medico)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleRemoverMedico(medico)}
+                        >
+                          <UserMinus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -238,6 +272,19 @@ export const MedicosList = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditMedicoDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        medico={medicoParaEditar}
+        onUpdate={fetchMedicos}
+      />
+
+      <MedicoDetails
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        medicoId={selectedMedicoId}
+      />
     </>
   );
 };
