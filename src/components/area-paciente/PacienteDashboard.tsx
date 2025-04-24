@@ -5,15 +5,15 @@ import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Define a simple type for the card data
+// Define the interface with a more specific icon type
 interface CardData {
   label: string;
   value: string;
-  icon: React.ReactElement;
+  icon: JSX.Element; // Using JSX.Element instead of React.ReactElement
   colorClass: string;
 }
 
-// Define the constant outside the component
+// Define the constant outside the component with explicit typing
 const CARD_DATA: CardData[] = [
   {
     label: "Próxima Consulta",
