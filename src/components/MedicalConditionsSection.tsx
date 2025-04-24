@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Puzzle, Zap, Activity, Hand, HelpCircle } from 'lucide-react';
@@ -46,7 +47,7 @@ const conditions = [
     title: "Alzheimer",
     description: "Proporcionamos suporte e esperança para famílias que lidam com Alzheimer, oferecendo tratamentos que podem ajudar a manter a qualidade de vida.",
     icon: HelpCircle,
-    imageSrc: "/lovable-uploads/9826141f-2e80-41ba-8792-01e2ed93ac69.png"
+    imageSrc: "https://nxiaxpgyqpmnkmebvvap.supabase.co/storage/v1/object/public/images//ChatGPT%20Image%2024%20de%20abr.%20de%202025,%2015_54_39.png"
   }
 ];
 
