@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   SidebarProvider,
@@ -23,7 +24,49 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import PacienteProfileCard from "@/components/paciente/PacienteProfileCard";
 import PacienteSaldoCard from "@/components/paciente/PacienteSaldoCard";
-import { supabase } from '@/lib/supabase';
+import PacienteHeader from "@/components/paciente/PacienteHeader";
+import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
+import ReceitasPaciente from "@/components/paciente/ReceitasPaciente";
+import { supabase } from '@/integrations/supabase/client';
+
+// Define menu items for the sidebar
+const MENU_ITEMS = [
+  {
+    key: 'dashboard',
+    icon: CalendarDays,
+    label: 'Início'
+  },
+  {
+    key: 'consultas',
+    icon: HeartPulse,
+    label: 'Consultas'
+  },
+  {
+    key: 'receitas',
+    icon: FileText,
+    label: 'Receitas'
+  },
+  {
+    key: 'laudos',
+    icon: File,
+    label: 'Laudos'
+  },
+  {
+    key: 'atestados',
+    icon: File,
+    label: 'Atestados'
+  },
+  {
+    key: 'pedidos-exame',
+    icon: File,
+    label: 'Pedidos de Exame'
+  },
+  {
+    key: 'medicos',
+    icon: Users,
+    label: 'Meus Médicos'
+  },
+];
 
 const CARD_DATA = [
   {
@@ -106,6 +149,62 @@ const DashboardPaciente = () => {
   );
 };
 
+// Placeholder components for other sections
+// These would be properly implemented in separate files in a production app
+const ConsultasPaciente = () => {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Consultas</h2>
+      <p>Esta seção exibirá suas consultas agendadas e históricas.</p>
+    </div>
+  );
+};
+
+const PrescricoesPaciente = () => {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Prescrições</h2>
+      <p>Esta seção exibirá suas prescrições médicas.</p>
+    </div>
+  );
+};
+
+const AtestadosPaciente = () => {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Atestados</h2>
+      <p>Esta seção exibirá seus atestados médicos.</p>
+    </div>
+  );
+};
+
+const LaudosPaciente = () => {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Laudos</h2>
+      <p>Esta seção exibirá seus laudos médicos.</p>
+    </div>
+  );
+};
+
+const PedidosExamePaciente = () => {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Pedidos de Exame</h2>
+      <p>Esta seção exibirá seus pedidos de exames.</p>
+    </div>
+  );
+};
+
+const MedicosPaciente = () => {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Meus Médicos</h2>
+      <p>Esta seção exibirá a lista de médicos que você já consultou.</p>
+    </div>
+  );
+};
+
 const AreaPacienteV2: React.FC = () => {
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [paciente, setPaciente] = useState<any>(null);
@@ -143,7 +242,7 @@ const AreaPacienteV2: React.FC = () => {
       case 'prescricoes':
         return <PrescricoesPaciente />;
       case 'receitas':
-        return <ReceitasPaciente />;
+        return <ReceitasPaciente pacienteId={paciente?.id || 0} />;
       case 'atestados':
         return <AtestadosPaciente />;
       case 'laudos':
