@@ -153,7 +153,8 @@ export function DoctorRoadmap() {
                     <p className="text-sm text-gray-500">consultas realizadas</p>
                   </div>
                 </div>
-              ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
