@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
+import { supabase } from '@/integrations/supabase/client';
 import CalendarViews from './CalendarViews';
 import AppointmentsList from './AppointmentsList';
 import ConsultaView from '@/components/medico-dashboard/ConsultaView';

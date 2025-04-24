@@ -1247,6 +1247,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_authenticated_email: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       verificar_chats_expirados: {
         Args: Record<PropertyKey, never>
         Returns: undefined
