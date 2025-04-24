@@ -72,7 +72,7 @@ const MedicalConditionsSection = () => {
               dragFree: true,
               containScroll: "trimSnaps",
               slidesToScroll: 1,
-              speed: 50
+              duration: 50 // Changed from 'speed' to 'duration' which is the correct property name
             }}
             plugins={[
               Autoplay({
