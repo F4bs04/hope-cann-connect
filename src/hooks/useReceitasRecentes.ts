@@ -45,7 +45,7 @@ export function useReceitasRecentes() {
             posologia: item.posologia,
             id_paciente: item.id_paciente,
             // Only include email_paciente if it exists in the item
-            ...(item.email_paciente && { email_paciente: item.email_paciente }),
+            ...(item.email_paciente !== undefined && { email_paciente: item.email_paciente }),
             data_validade: item.data_validade,
             observacoes: item.observacoes
           }));
