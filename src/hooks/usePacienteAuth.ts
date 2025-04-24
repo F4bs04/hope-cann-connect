@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 
 export const usePacienteAuth = () => {
@@ -25,31 +25,74 @@ export const usePacienteAuth = () => {
           return;
         }
         
-        const { data: pacienteData, error } = await supabase
-          .from('pacientes_app')
+        // First check if the user exists in usuarios table
+        const { data: userData, error: userError } = await supabase
+          .from('usuarios')
           .select('*')
           .eq('email', userEmail)
-          .single();
+          .maybeSingle();
+          
+        if (userError) {
+          console.error("Error fetching user data:", userError);
+          throw new Error("Erro ao verificar usuário");
+        }
         
-        if (error) throw error;
+        if (!userData) {
+          console.error("User not found in usuarios table");
+          throw new Error("Usuário não encontrado");
+        }
+        
+        // Then check if there's a matching paciente record
+        const { data: pacienteData, error: pacienteError } = await supabase
+          .from('pacientes')
+          .select('*')
+          .eq('email', userEmail)
+          .maybeSingle();
+        
+        if (pacienteError && pacienteError.code !== 'PGRST116') {
+          console.error("Error fetching patient data:", pacienteError);
+          throw new Error("Erro ao verificar paciente");
+        }
         
         if (pacienteData) {
           setPaciente(pacienteData);
         } else {
-          toast({
-            title: "Perfil não encontrado",
-            description: "Não encontramos um perfil de paciente associado ao seu login.",
-            variant: "destructive"
-          });
-          localStorage.removeItem('isAuthenticated');
-          localStorage.removeItem('userEmail');
-          navigate('/login');
+          // If no patient record exists, try to create one
+          // based on the user information we have
+          const newPaciente = {
+            id_usuario: userData.id,
+            email: userEmail,
+            nome: userData.nome || "Usuário",
+            cpf: "",
+            data_nascimento: new Date().toISOString().split('T')[0],
+            telefone: "",
+            endereco: ""
+          };
+          
+          const { data: insertedPaciente, error: insertError } = await supabase
+            .from('pacientes')
+            .insert([newPaciente])
+            .select()
+            .single();
+            
+          if (insertError) {
+            console.error("Error creating patient record:", insertError);
+            toast({
+              title: "Perfil incompleto",
+              description: "Por favor, complete seu perfil de paciente.",
+              variant: "warning"
+            });
+            // Even with error, allow access but set paciente as minimal data
+            setPaciente({ ...newPaciente, id: null });
+          } else {
+            setPaciente(insertedPaciente);
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Authentication error:', error);
         toast({
           title: "Erro de autenticação",
-          description: "Ocorreu um erro ao verificar suas credenciais. Por favor, faça login novamente.",
+          description: error.message || "Ocorreu um erro ao verificar suas credenciais. Por favor, faça login novamente.",
           variant: "destructive"
         });
         localStorage.removeItem('isAuthenticated');

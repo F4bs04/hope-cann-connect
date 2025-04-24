@@ -14,8 +14,9 @@ export const useAuth = () => {
     const checkAuth = async () => {
       try {
         const userEmail = localStorage.getItem('userEmail');
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
         
-        if (!userEmail) {
+        if (!userEmail || !isAuthenticated) {
           throw new Error("Não autenticado");
         }
         
@@ -23,40 +24,47 @@ export const useAuth = () => {
           .from('usuarios')
           .select('tipo_usuario')
           .eq('email', userEmail)
-          .single();
+          .maybeSingle();
         
-        if (error) throw error;
+        if (error) {
+          console.error("User lookup error:", error);
+          throw new Error("Erro ao verificar usuário");
+        }
         
-        if (userData) {
-          setUserType(userData.tipo_usuario);
-          localStorage.setItem('userType', userData.tipo_usuario);
-
-          // Redirect based on user type
-          switch (userData.tipo_usuario) {
-            case 'medico':
-              navigate('/area-medico');
-              break;
-            case 'paciente':
-              navigate('/area-paciente');
-              break;
-            case 'admin_clinica':
-              navigate('/admin');
-              break;
-            default:
-              throw new Error("Tipo de usuário inválido");
-          }
-        } else {
+        if (!userData) {
+          console.error("User not found:", userEmail);
           throw new Error("Usuário não encontrado");
+        }
+        
+        setUserType(userData.tipo_usuario);
+        localStorage.setItem('userType', userData.tipo_usuario);
+
+        // Only redirect if we're not already on the correct page
+        const currentPath = window.location.pathname;
+        const correctPath = getCorrectPath(userData.tipo_usuario);
+        
+        if (currentPath !== correctPath) {
+          navigate(correctPath);
         }
       } catch (error: any) {
         console.error('Authentication error:', error);
         toast({
           title: "Erro de autenticação",
-          description: "Por favor, faça login novamente.",
+          description: error.message || "Por favor, faça login novamente.",
           variant: "destructive"
         });
-        localStorage.clear();
-        navigate('/login');
+        // Clear auth data
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userType');
+        localStorage.removeItem('authTimestamp');
+        localStorage.removeItem('userAvatar');
+        
+        // Only navigate to login if we're not already there
+        if (window.location.pathname !== '/login') {
+          navigate('/login');
+        }
       } finally {
         setLoading(false);
       }
@@ -64,6 +72,20 @@ export const useAuth = () => {
     
     checkAuth();
   }, [navigate, toast]);
+
+  // Helper function to get the correct path based on user type
+  const getCorrectPath = (userType: string): string => {
+    switch (userType) {
+      case 'medico':
+        return '/area-medico';
+      case 'paciente':
+        return '/area-paciente';
+      case 'admin_clinica':
+        return '/admin';
+      default:
+        return '/area-paciente';
+    }
+  };
 
   return { loading, userType };
 };

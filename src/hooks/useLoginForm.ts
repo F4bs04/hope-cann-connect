@@ -32,27 +32,58 @@ export const useLoginForm = () => {
     setIsLoading(true);
     setAuthError(null);
     try {
+      // First check if the email exists in the system
+      const { data: userExists, error: emailCheckError } = await supabase
+        .from('usuarios')
+        .select('id, email')
+        .eq('email', values.email)
+        .maybeSingle();
+
+      if (emailCheckError) {
+        console.error("Email check error:", emailCheckError);
+        throw new Error("Erro ao verificar email. Tente novamente.");
+      }
+      
+      if (!userExists) {
+        throw new Error("Usuário não encontrado. Verifique seu email.");
+      }
+
+      // Then verify credentials
       const { data, error } = await supabase
         .from('usuarios')
         .select('*')
         .eq('email', values.email)
+        .eq('senha', values.password)
         .maybeSingle();
 
-      if (error) throw error;
-      if (!data) throw new Error("Usuário não encontrado");
-      if (data.senha !== values.password) throw new Error("Senha incorreta");
+      if (error) {
+        console.error("Login query error:", error);
+        throw new Error("Erro ao verificar credenciais. Tente novamente.");
+      }
+      
+      if (!data) {
+        throw new Error("Senha incorreta. Tente novamente.");
+      }
 
+      // Save auth data to localStorage
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', values.email);
       localStorage.setItem('userId', data.id.toString());
       localStorage.setItem('userType', data.tipo_usuario);
       localStorage.setItem('authTimestamp', Date.now().toString());
 
+      // Update last access timestamp
+      await supabase
+        .from('usuarios')
+        .update({ ultimo_acesso: new Date().toISOString() })
+        .eq('id', data.id);
+
       toast({
         title: "Login bem-sucedido",
         description: "Bem-vindo ao sistema!"
       });
 
+      // Navigate based on user type
       switch (data.tipo_usuario) {
         case 'medico':
           navigate('/area-medico');
