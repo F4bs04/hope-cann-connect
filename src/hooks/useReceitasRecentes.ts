@@ -39,8 +39,8 @@ export function useReceitasRecentes() {
         if (error) throw error;
         
         if (data) {
-          // Convert the response to ReceitaRecente[] without deep type instantiation
-          setReceitas(data as unknown as ReceitaRecente[]);
+          // Corrigindo o problema de tipagem
+          setReceitas(data as ReceitaRecente[]);
         }
       } catch (error: any) {
         console.error('Error fetching prescriptions:', error);

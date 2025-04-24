@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 export const useAuth = () => {
   const [loading, setLoading] = useState(true);
   const [userType, setUserType] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -15,35 +16,77 @@ export const useAuth = () => {
       try {
         const userEmail = localStorage.getItem('userEmail');
         const isAuthenticated = localStorage.getItem('isAuthenticated');
+        const storedUserType = localStorage.getItem('userType');
         
         if (!userEmail || !isAuthenticated) {
           throw new Error("Não autenticado");
         }
         
-        const { data: userData, error } = await supabase
-          .from('usuarios')
-          .select('tipo_usuario')
-          .eq('email', userEmail)
-          .maybeSingle();
+        let userData = null;
         
-        if (error) {
-          console.error("User lookup error:", error);
-          throw new Error("Erro ao verificar usuário");
+        // Verifica o tipo de usuário armazenado e busca os dados correspondentes
+        if (storedUserType === 'admin_clinica') {
+          // Buscar dados da clínica
+          const { data: clinicData, error: clinicError } = await supabase
+            .from('clinicas')
+            .select('*')
+            .eq('email', userEmail)
+            .maybeSingle();
+            
+          if (clinicError) throw clinicError;
+          userData = clinicData;
+        } else if (storedUserType === 'medico') {
+          // Buscar dados do médico
+          const { data: medicoData, error: medicoError } = await supabase
+            .from('medicos')
+            .select('*')
+            .eq('id_usuario', localStorage.getItem('userId'))
+            .maybeSingle();
+            
+          if (medicoError) throw medicoError;
+          userData = medicoData;
+        } else {
+          // Buscar dados do usuário/paciente
+          const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', userEmail)
+            .maybeSingle();
+          
+          if (userError) {
+            console.error("User lookup error:", userError);
+            throw new Error("Erro ao verificar usuário");
+          }
+          
+          if (!userData) {
+            console.error("User not found:", userEmail);
+            throw new Error("Usuário não encontrado");
+          }
+          
+          // Se for paciente, buscar dados adicionais do paciente
+          if (userData.tipo_usuario === 'paciente') {
+            const { data: pacienteData, error: pacienteError } = await supabase
+              .from('pacientes')
+              .select('*')
+              .eq('id_usuario', userData.id)
+              .maybeSingle();
+              
+            if (!pacienteError && pacienteData) {
+              userData = { ...userData, ...pacienteData };
+            }
+          }
         }
         
-        if (!userData) {
-          console.error("User not found:", userEmail);
-          throw new Error("Usuário não encontrado");
-        }
-        
-        setUserType(userData.tipo_usuario);
-        localStorage.setItem('userType', userData.tipo_usuario);
+        // Armazena os dados do usuário no estado
+        setUserData(userData);
+        setUserType(storedUserType);
+        console.log("Usuário autenticado:", userData);
 
-        // Only redirect if we're not already on the correct page
+        // Only redirect if we're not already on the correct path
         const currentPath = window.location.pathname;
-        const correctPath = getCorrectPath(userData.tipo_usuario);
+        const correctPath = getCorrectPath(storedUserType || 'paciente');
         
-        if (currentPath !== correctPath) {
+        if (currentPath !== correctPath && !currentPath.startsWith(correctPath)) {
           navigate(correctPath);
         }
       } catch (error: any) {
@@ -87,5 +130,5 @@ export const useAuth = () => {
     }
   };
 
-  return { loading, userType };
+  return { loading, userType, userData };
 };
