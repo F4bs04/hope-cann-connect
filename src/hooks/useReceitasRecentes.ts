@@ -10,6 +10,8 @@ export interface ReceitaRecente {
   status: string;
   posologia: string;
   email_paciente?: string;
+  data_validade?: string | null;
+  observacoes?: string | null;
 }
 
 export function useReceitasRecentes() {
@@ -31,7 +33,11 @@ export function useReceitasRecentes() {
           .limit(3);
         
         if (error) throw error;
-        if (data) setReceitas(data as ReceitaRecente[]);
+        
+        if (data) {
+          // Explicitly cast the data to our ReceitaRecente interface
+          setReceitas(data as ReceitaRecente[]);
+        }
       } catch (error) {
         console.error('Error fetching prescriptions:', error);
         toast({
