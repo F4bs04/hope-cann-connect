@@ -1,18 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
 import { CalendarDays, FileText, HeartPulse } from 'lucide-react';
 import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Define a simpler type for the card data
-type CardData = {
+// Define a simple type for the card data
+interface CardData {
   label: string;
   value: string;
   icon: React.ReactElement;
   colorClass: string;
-};
+}
 
-// Move the constant outside the component with an explicit type
+// Define the constant outside the component
 const CARD_DATA: CardData[] = [
   {
     label: "Próxima Consulta",
