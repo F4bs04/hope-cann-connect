@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,7 @@ import PerfilMedico from "./pages/PerfilMedico";
 import CadastroMedico from "./pages/CadastroMedico";
 import NotFound from "./pages/NotFound";
 import CompleteRegistroMedico from "./pages/CompleteRegistroMedico";
+import CadastroClinica from "./pages/CadastroClinica";
 import React from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 

@@ -39,9 +39,10 @@ export function useReceitasRecentes() {
         if (error) throw error;
         
         if (data) {
+          // Use type assertion here to avoid deep type instantiation
           setReceitas(data as ReceitaRecente[]);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching prescriptions:', error);
         toast({
           title: "Erro ao carregar receitas",
