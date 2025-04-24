@@ -9,6 +9,7 @@ import { ptBR } from 'date-fns/locale';
 import { getPacientes, getReceitas, getProntuarios, getSaldoMedico, getTransacoesMedico } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DashboardHomeProps {
   onOpenConsulta: (consultaId: number) => void;
@@ -24,6 +25,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
   const [proximaConsulta, setProximaConsulta] = useState<any>(null);
   const [saldoMedico, setSaldoMedico] = useState<any>(null);
   const [transacoes, setTransacoes] = useState<any[]>([]);
+  const { userData } = useAuth();
   
   // ID do médico para teste (futuro: pegar ID do médico logado)
   const MEDICO_ID = 1;
@@ -91,7 +93,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Bem-vindo, Dr. João</h1>
+          <h1 className="text-3xl font-bold">Bem-vindo, {userData?.nome || 'Doutor(a)'}</h1>
           <p className="text-gray-600">Última visita: {format(new Date(), 'dd MMM yyyy', { locale: ptBR })}</p>
         </div>
         <div className="flex items-center gap-4">
@@ -103,7 +105,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
           <Bell className="h-6 w-6 text-gray-400" />
           <div className="h-10 w-10 rounded-full bg-teal-500 overflow-hidden">
             <img 
-              src="/lovable-uploads/4187ef44-3d50-43dc-afd3-3632726fbd1f.png" 
+              src={userData?.foto_perfil || "/lovable-uploads/4187ef44-3d50-43dc-afd3-3632726fbd1f.png"}
               alt="Perfil do médico" 
               className="h-full w-full object-cover"
             />

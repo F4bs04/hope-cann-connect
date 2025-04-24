@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface EditProfileDialogProps {
 const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChange, userId }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const { userData } = useAuth();
 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -24,7 +26,17 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChang
   const [fotoFile, setFotoFile] = useState<File | null>(null);
 
   useEffect(() => {
-    // Busca dados atuais
+    // Carregar dados do estado caso já exista
+    if (userData) {
+      setNome(userData.nome || "");
+      setTelefone(userData.telefone || "");
+      setEspecialidade(userData.especialidade || "");
+      setBiografia(userData.biografia || "");
+      setFoto(userData.foto_perfil || null);
+      return;
+    }
+    
+    // Ou buscar dados da API se não tiver no estado
     const fetchData = async () => {
       if (!userId) return;
       const { data, error } = await supabase.from("medicos").select("*").eq("id_usuario", userId).maybeSingle();
@@ -36,8 +48,9 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChang
         setFoto(data.foto_perfil || null);
       }
     };
+    
     if (open) fetchData();
-  }, [userId, open]);
+  }, [userId, open, userData]);
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -155,4 +168,3 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ open, onOpenChang
 };
 
 export default EditProfileDialog;
-

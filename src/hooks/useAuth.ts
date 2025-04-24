@@ -37,17 +37,20 @@ export const useAuth = () => {
           userData = clinicData;
         } else if (storedUserType === 'medico') {
           // Buscar dados do médico
+          const userId = localStorage.getItem('userId');
+          if (!userId) throw new Error("ID do usuário não encontrado");
+          
           const { data: medicoData, error: medicoError } = await supabase
             .from('medicos')
             .select('*')
-            .eq('id_usuario', localStorage.getItem('userId'))
+            .eq('id_usuario', parseInt(userId))
             .maybeSingle();
             
           if (medicoError) throw medicoError;
           userData = medicoData;
         } else {
           // Buscar dados do usuário/paciente
-          const { data: userData, error: userError } = await supabase
+          const { data: userInfo, error: userError } = await supabase
             .from('usuarios')
             .select('*')
             .eq('email', userEmail)
@@ -58,17 +61,19 @@ export const useAuth = () => {
             throw new Error("Erro ao verificar usuário");
           }
           
-          if (!userData) {
+          if (!userInfo) {
             console.error("User not found:", userEmail);
             throw new Error("Usuário não encontrado");
           }
           
+          userData = userInfo;
+          
           // Se for paciente, buscar dados adicionais do paciente
-          if (userData.tipo_usuario === 'paciente') {
+          if (userInfo.tipo_usuario === 'paciente') {
             const { data: pacienteData, error: pacienteError } = await supabase
               .from('pacientes')
               .select('*')
-              .eq('id_usuario', userData.id)
+              .eq('id_usuario', userInfo.id)
               .maybeSingle();
               
             if (!pacienteError && pacienteData) {
