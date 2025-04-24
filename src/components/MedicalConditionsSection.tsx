@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Puzzle, Zap, Activity, Hand, HelpCircle } from 'lucide-react';
@@ -9,6 +8,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
 
 const conditions = [
   {
@@ -66,10 +67,15 @@ const MedicalConditionsSection = () => {
           <Carousel
             opts={{
               align: "center",
-              loop: true,
-              autoplay: true,
-              interval: 4000
+              loop: true
             }}
+            plugins={[
+              Autoplay({
+                delay: 4000,
+                stopOnInteraction: false,
+                stopOnMouseEnter: true
+              })
+            ]}
             className="w-full"
           >
             <CarouselContent className="-ml-2 md:-ml-4">
@@ -104,4 +110,3 @@ const MedicalConditionsSection = () => {
 };
 
 export default MedicalConditionsSection;
-
