@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CalendarDays, FileText, HeartPulse } from 'lucide-react';
 import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
@@ -9,11 +8,11 @@ import { useToast } from '@/hooks/use-toast';
 type CardData = {
   label: string;
   value: string;
-  icon: JSX.Element;
+  icon: React.ReactElement;
   colorClass: string;
 };
 
-// Move the constant outside the component
+// Move the constant outside the component with an explicit type
 const CARD_DATA: CardData[] = [
   {
     label: "Próxima Consulta",
@@ -32,8 +31,8 @@ const CARD_DATA: CardData[] = [
     value: "1 receita",
     icon: <FileText className="w-6 h-6 text-blue-600" />,
     colorClass: "bg-blue-100",
-  },
-] as const;
+  }
+];
 
 const PacienteDashboard = () => {
   const [receitas, setReceitas] = useState<any[]>([]);
