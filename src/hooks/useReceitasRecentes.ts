@@ -35,8 +35,19 @@ export function useReceitasRecentes() {
         if (error) throw error;
         
         if (data) {
-          // Explicitly cast the data to our ReceitaRecente interface
-          setReceitas(data as ReceitaRecente[]);
+          // Convert the raw data to our ReceitaRecente interface
+          const typedReceitas: ReceitaRecente[] = data.map(item => ({
+            id: item.id,
+            medicamento: item.medicamento,
+            data: item.data,
+            status: item.status,
+            posologia: item.posologia,
+            email_paciente: item.email_paciente,
+            data_validade: item.data_validade,
+            observacoes: item.observacoes
+          }));
+          
+          setReceitas(typedReceitas);
         }
       } catch (error) {
         console.error('Error fetching prescriptions:', error);
