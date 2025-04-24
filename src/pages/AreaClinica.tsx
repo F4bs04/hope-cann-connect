@@ -22,8 +22,12 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
+import { MedicosList } from '@/components/clinica-dashboard/MedicosList';
+import { AgendamentosList } from '@/components/clinica-dashboard/AgendamentosList';
+import { DocumentosList } from '@/components/clinica-dashboard/DocumentosList';
 import EditProfileDialog from '@/components/medico/EditProfileDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const AreaClinica: React.FC = () => {
   const navigate = useNavigate();
@@ -110,7 +114,9 @@ const AreaClinica: React.FC = () => {
         <SidebarInset className="bg-gray-50 flex-1">
           <main className="w-full h-full p-8">
             {currentSection === 'dashboard' && <ClinicaDashboard />}
-            {/* Outros componentes serão adicionados aqui conforme necessário */}
+            {currentSection === 'medicos' && <MedicosList />}
+            {currentSection === 'agendamentos' && <AgendamentosList />}
+            {currentSection === 'documentos' && <DocumentosList />}
             <EditProfileDialog 
               open={showProfileDialog}
               onOpenChange={setShowProfileDialog}

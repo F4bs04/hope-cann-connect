@@ -39,7 +39,7 @@ export function useReceitasRecentes() {
         if (error) throw error;
         
         setReceitas(data || []);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error fetching prescriptions:', error);
         toast({
           title: "Erro ao carregar receitas",
