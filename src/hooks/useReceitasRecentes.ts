@@ -9,6 +9,7 @@ export interface ReceitaRecente {
   data: string;
   status: string;
   posologia: string;
+  id_paciente?: number;
   email_paciente?: string;
   data_validade?: string | null;
   observacoes?: string | null;
@@ -35,13 +36,14 @@ export function useReceitasRecentes() {
         if (error) throw error;
         
         if (data) {
-          // Convert the raw data to our ReceitaRecente interface
+          // Map the raw data to match our ReceitaRecente interface
           const typedReceitas: ReceitaRecente[] = data.map(item => ({
             id: item.id,
             medicamento: item.medicamento,
             data: item.data,
             status: item.status,
             posologia: item.posologia,
+            id_paciente: item.id_paciente,
             email_paciente: item.email_paciente,
             data_validade: item.data_validade,
             observacoes: item.observacoes
