@@ -31,7 +31,7 @@ export function useReceitasRecentes() {
 
         const { data, error } = await supabase
           .from('receitas_app')
-          .select('*')
+          .select('id, medicamento, data, status, posologia, id_paciente, email_paciente, data_validade, observacoes')
           .eq('email_paciente', userEmail)
           .order('data', { ascending: false })
           .limit(3);

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { User, Shield, Award } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MedicoInfo {
   id: number;
