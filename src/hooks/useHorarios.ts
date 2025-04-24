@@ -5,9 +5,11 @@ import { useHorariosSelection } from './useHorariosSelection';
 import { horariosDisponiveis, todosHorariosDisponiveis } from '@/mocks/doctorScheduleMockData';
 import { useToast } from './use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useCurrentUserInfo } from './useCurrentUserInfo';
 
 export function useHorarios() {
   const { toast } = useToast();
+  const { userInfo } = useCurrentUserInfo();
   
   const {
     quickSetMode,
@@ -52,42 +54,19 @@ export function useHorarios() {
 
   const saveAvailability = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!userInfo.medicoId) {
         toast({
           variant: "destructive",
           title: "Não autorizado",
-          description: "Você precisa estar logado para salvar os horários.",
+          description: "Você precisa estar logado como médico para salvar os horários.",
         });
         return false;
       }
 
-      const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .select('id')
-        .eq('email', session.user.email)
-        .single();
-
-      if (userError) {
-        throw userError;
-      }
-
-      const { data: doctorData, error: doctorError } = await supabase
-        .from('medicos')
-        .select('id')
-        .eq('id_usuario', userData.id)
-        .single();
-
-      if (doctorError) {
-        throw doctorError;
-      }
-
-      const doctorId = doctorData.id;
-
       await supabase
         .from('horarios_disponiveis')
         .delete()
-        .eq('id_medico', doctorId);
+        .eq('id_medico', userInfo.medicoId);
 
       const scheduleEntries = [];
       for (const [diaSemana, horarios] of Object.entries(horariosConfig)) {
@@ -105,7 +84,7 @@ export function useHorarios() {
               endHour = `${(currentHourNum + 1).toString().padStart(2, '0')}:00`;
               
               scheduleEntries.push({
-                id_medico: doctorId,
+                id_medico: userInfo.medicoId,
                 dia_semana: diaSemana,
                 hora_inicio: startHour,
                 hora_fim: endHour
@@ -132,7 +111,7 @@ export function useHorarios() {
       const { error: statusError } = await supabase
         .from('medicos')
         .update({ status_disponibilidade: true })
-        .eq('id', doctorId);
+        .eq('id', userInfo.medicoId);
 
       if (statusError) {
         throw statusError;
