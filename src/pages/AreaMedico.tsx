@@ -45,6 +45,7 @@ import ProntuarioAba from '@/components/medico/ProntuarioAba';
 import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
 import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
 import EditProfileDialog from '@/components/medico/EditProfileDialog';
+import MedicoHeader from '@/components/medico/MedicoHeader';
 
 const AreaMedico: React.FC = () => {
   const { toast } = useToast();
@@ -299,6 +300,7 @@ const AreaMedico: React.FC = () => {
           </Sidebar>
           
           <SidebarInset className="bg-gray-50 flex-1">
+            <MedicoHeader />
             <main className="w-full h-full p-8">
               {renderSection()}
               <EditProfileDialog 
