@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,7 +11,6 @@ import Agendar from "./pages/Agendar";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
 import AreaPaciente from "./pages/AreaPaciente";
-import AreaPacienteV2 from "./pages/AreaPacienteV2";
 import AreaMedico from "./pages/AreaMedico";
 import PerfilMedico from "./pages/PerfilMedico";
 import CadastroMedico from "./pages/CadastroMedico";
@@ -23,7 +21,6 @@ import React from "react";
 // Create the query client
 const queryClient = new QueryClient();
 
-// Define App as a function component
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -41,7 +38,6 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/area-paciente" element={<AreaPaciente />} />
-            <Route path="/area-paciente-v2" element={<AreaPacienteV2 />} />
             <Route path="/area-medico" element={<AreaMedico />} />
             <Route path="/cadastro-medico" element={<CadastroMedico />} />
             <Route path="/complete-registro-medico" element={<CompleteRegistroMedico />} />
