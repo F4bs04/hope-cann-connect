@@ -17,37 +17,37 @@ const conditions = [
     title: "Ansiedade e Depressão",
     description: "Ajudamos pessoas a recuperarem sua qualidade de vida através do tratamento com cannabis medicinal, proporcionando alívio dos sintomas de ansiedade e depressão.",
     icon: Brain,
-    imageSrc: "/lovable-uploads/4c61ba35-b917-48df-a2d5-424e22a77db2.png"
+    imageSrc: "/lovable-uploads/fdb4047f-8998-45c3-92d1-3af66294139a.png" // Imagem mais adequada para ansiedade/depressão
   },
   {
     title: "Autismo",
     description: "Apoiamos famílias e indivíduos com autismo a encontrarem mais conforto e melhor qualidade de vida através de tratamentos personalizados.",
     icon: Puzzle,
-    imageSrc: "/lovable-uploads/38500e89-61f6-4f91-902b-2b4d1b1bb1ba.png"
+    imageSrc: "/lovable-uploads/85346101-1749-48db-abe2-b28eb3687e1e.png" // Imagem mais adequada para autismo
   },
   {
     title: "Epilepsia",
     description: "Nossa abordagem ajuda no controle de convulsões, permitindo que pacientes com epilepsia vivam com mais segurança e tranquilidade.",
     icon: Zap,
-    imageSrc: "/lovable-uploads/3ad8bd40-7607-47d2-a32d-7c5a0e8286fb.png"
+    imageSrc: "/lovable-uploads/54efb4d4-b8e5-4450-be5f-00aadc8c6c37.png" // Imagem mais adequada para epilepsia
   },
   {
     title: "Fibromialgia",
     description: "Oferecemos esperança e alívio para pessoas que convivem com as dores crônicas da fibromialgia, melhorando sua qualidade de vida diária.",
     icon: Activity,
-    imageSrc: "/lovable-uploads/4357c3c3-e33d-4756-b440-f505e4170615.png"
+    imageSrc: "/lovable-uploads/83dc9ade-cea8-47db-99de-498db4ce2767.png" // Imagem mais adequada para fibromialgia
   },
   {
     title: "Parkinson",
     description: "Auxiliamos pacientes com Parkinson a manterem sua independência e qualidade de vida através de tratamentos inovadores com cannabis medicinal.",
     icon: Hand,
-    imageSrc: "/lovable-uploads/906d320d-17b6-4919-8bd3-30ecf3d226e7.png"
+    imageSrc: "/lovable-uploads/b4f41f98-f9b2-43e0-8610-e1948a67aa51.png" // Imagem mais adequada para Parkinson
   },
   {
     title: "Alzheimer",
     description: "Proporcionamos suporte e esperança para famílias que lidam com Alzheimer, oferecendo tratamentos que podem ajudar a manter a qualidade de vida.",
     icon: HelpCircle,
-    imageSrc: "/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png"
+    imageSrc: "/lovable-uploads/9826141f-2e80-41ba-8792-01e2ed93ac69.png" // Imagem mais adequada para Alzheimer
   }
 ];
 
