@@ -522,6 +522,7 @@ export type Database = {
           id_clinica: number | null
           id_usuario: number | null
           nome: string
+          senha_hash: string | null
           status_disponibilidade: boolean | null
           telefone: string
           valor_por_consulta: number | null
@@ -538,6 +539,7 @@ export type Database = {
           id_clinica?: number | null
           id_usuario?: number | null
           nome: string
+          senha_hash?: string | null
           status_disponibilidade?: boolean | null
           telefone: string
           valor_por_consulta?: number | null
@@ -554,6 +556,7 @@ export type Database = {
           id_clinica?: number | null
           id_usuario?: number | null
           nome?: string
+          senha_hash?: string | null
           status_disponibilidade?: boolean | null
           telefone?: string
           valor_por_consulta?: number | null

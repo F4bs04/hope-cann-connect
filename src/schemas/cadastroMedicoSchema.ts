@@ -6,6 +6,10 @@ export const cadastroMedicoFormSchema = z.object({
   crm: z.string().min(4, {
     message: 'CRM inválido',
   }).max(14),
+  senha: z.string().min(8, {
+    message: 'A senha deve ter pelo menos 8 caracteres',
+  }),
+  confirmarSenha: z.string(),
   telefone: z.string().min(10, {
     message: 'Telefone inválido',
   }).max(15),
@@ -22,6 +26,10 @@ export const cadastroMedicoFormSchema = z.object({
   termoConciencia: z.boolean().refine((val) => val === true, {
     message: 'Você deve aceitar os termos',
   }),
+}).refine((data) => data.senha === data.confirmarSenha, {
+  message: "As senhas não correspondem",
+  path: ["confirmarSenha"],
 });
 
 export type CadastroMedicoFormValues = z.infer<typeof cadastroMedicoFormSchema>;
+

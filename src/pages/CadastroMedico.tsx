@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -54,6 +53,13 @@ const formSchema = z.object({
     message: 'Especialidade é obrigatória',
   }),
   biografia: z.string().optional(),
+  senha: z.string().min(8, {
+    message: 'A senha deve ter pelo menos 8 caracteres',
+  }),
+  confirmarSenha: z.string(),
+}).refine((data) => data.senha === data.confirmarSenha, {
+  message: "As senhas não correspondem",
+  path: ["confirmarSenha"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -77,6 +83,8 @@ const CadastroMedico = () => {
       termoConciencia: false,
       especialidade: '',
       biografia: '',
+      senha: '',
+      confirmarSenha: '',
     },
   });
 
@@ -108,7 +116,7 @@ const CadastroMedico = () => {
       // First, create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
-        password: 'Temppass123!', // Temporary password that will be changed later
+        password: data.senha, // Use the password from the form
         options: {
           data: {
             full_name: data.nome,
@@ -131,7 +139,7 @@ const CadastroMedico = () => {
         .insert([
           {
             email: data.email,
-            senha: 'Temppass123!', // Temporary password
+            senha: data.senha, // Store the password hash
             tipo_usuario: 'medico',
             status: false // Starts as inactive until verified
           }
@@ -177,7 +185,7 @@ const CadastroMedico = () => {
         fotoUrl = publicUrl;
       }
       
-      // Create medico record
+      // Create medico record with password hash
       const { error: medicoError } = await supabase
         .from('medicos')
         .insert([
@@ -190,6 +198,7 @@ const CadastroMedico = () => {
             biografia: data.biografia || null,
             telefone: '', // Will be filled in later
             foto_perfil: fotoUrl,
+            senha_hash: data.senha, // This will be hashed by the database trigger
             status_disponibilidade: false // Starts as inactive until verified and schedule is set
           }
         ]);
@@ -203,7 +212,7 @@ const CadastroMedico = () => {
         description: "Aguarde a verificação das suas informações e complete seu cadastro para começar a atender.",
       });
       
-      // Redirect to complete registration page (where they'll set schedule and more)
+      // Redirect to complete registration page
       navigate('/complete-registro-medico');
       
     } catch (error: any) {
@@ -522,10 +531,48 @@ const CadastroMedico = () => {
                       )}
                     />
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="senha"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Senha</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password" 
+                                placeholder="********" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="confirmarSenha"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Confirmar Senha</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password" 
+                                placeholder="********" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="certificado"
-                      render={() => (
+                      render={({ field }) => (
                         <FormItem>
                           <FormLabel>Certificado Digital PFX A1</FormLabel>
                           <FormControl>
