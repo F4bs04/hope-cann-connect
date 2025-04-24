@@ -5,6 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface DateTimeSelectionProps {
   selectedDate: Date | null;
@@ -61,18 +62,17 @@ const DateTimeSelection = ({
             {selectedDate ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {timeSlots.map((time) => (
-                  <button
+                  <Button
                     key={time}
                     onClick={() => setSelectedTime(time)}
+                    variant={selectedTime === time ? "default" : "outline"}
                     className={cn(
-                      "p-2 rounded-lg text-center transition-colors",
-                      selectedTime === time 
-                        ? "bg-hopecann-teal text-white" 
-                        : "border hover:border-hopecann-teal/50"
+                      "w-full",
+                      selectedTime === time && "bg-hopecann-teal hover:bg-hopecann-teal/90"
                     )}
                   >
                     {time}
-                  </button>
+                  </Button>
                 ))}
               </div>
             ) : (
@@ -85,26 +85,26 @@ const DateTimeSelection = ({
       </div>
       
       <div className="flex justify-between pt-4">
-        <button
-          className="flex items-center gap-2 px-6 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50"
+        <Button
+          variant="outline"
           onClick={onBack}
+          className="flex items-center gap-2"
         >
           <ChevronLeft className="h-4 w-4" />
           Voltar
-        </button>
+        </Button>
         
-        <button
-          className={cn(
-            "flex items-center gap-2 px-6 py-2 rounded-full",
-            "bg-hopecann-teal text-white",
-            "disabled:opacity-50 disabled:cursor-not-allowed"
-          )}
+        <Button
           onClick={onNext}
           disabled={!selectedDate || !selectedTime}
+          className={cn(
+            "flex items-center gap-2",
+            "bg-hopecann-teal hover:bg-hopecann-teal/90"
+          )}
         >
           Confirmar Horário
           <ChevronRight className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

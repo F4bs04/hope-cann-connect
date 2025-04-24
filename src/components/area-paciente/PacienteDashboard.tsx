@@ -5,15 +5,15 @@ import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Define a simpler type for the card data to avoid deep recursion
+// Define a simpler type for the card data
 type CardData = {
   label: string;
   value: string;
-  icon: React.ReactNode;
+  icon: JSX.Element;
   colorClass: string;
-}
+};
 
-// Move the constant outside the component to avoid recreation on each render
+// Move the constant outside the component
 const CARD_DATA: CardData[] = [
   {
     label: "Próxima Consulta",
@@ -33,7 +33,7 @@ const CARD_DATA: CardData[] = [
     icon: <FileText className="w-6 h-6 text-blue-600" />,
     colorClass: "bg-blue-100",
   },
-];
+] as const;
 
 const PacienteDashboard = () => {
   const [receitas, setReceitas] = useState<any[]>([]);
