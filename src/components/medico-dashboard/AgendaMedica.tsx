@@ -16,59 +16,60 @@ const AgendaMedica: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      setLoading(true);
-      try {
-        const {
-          data: {
-            session
-          }
-        } = await supabase.auth.getSession();
-        if (!session) {
-          setError("Você precisa estar logado para visualizar sua agenda");
-          setLoading(false);
-          return;
+  const fetchAppointments = async () => {
+    setLoading(true);
+    try {
+      const {
+        data: {
+          session
         }
-        const {
-          data: userData,
-          error: userError
-        } = await supabase.from('usuarios').select('id').eq('email', session.user.email).single();
-        if (userError) {
-          throw userError;
-        }
-        const {
-          data: doctorData,
-          error: doctorError
-        } = await supabase.from('medicos').select('id').eq('id_usuario', userData.id).single();
-        if (doctorError) {
-          throw doctorError;
-        }
-
-        const {
-          data: appointmentsData,
-          error: appointmentsError
-        } = await supabase.from('consultas').select(`
-            id,
-            data_hora,
-            motivo,
-            status,
-            tipo_consulta,
-            pacientes_app:id_paciente (id, nome)
-          `).eq('id_medico', doctorData.id).order('data_hora', {
-          ascending: true
-        });
-        if (appointmentsError) {
-          throw appointmentsError;
-        }
-        setAppointments(appointmentsData || []);
-      } catch (error: any) {
-        console.error("Erro ao buscar agendamentos:", error);
-        setError("Ocorreu um erro ao buscar seus agendamentos");
-      } finally {
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setError("Você precisa estar logado para visualizar sua agenda");
         setLoading(false);
+        return;
       }
-    };
+      const {
+        data: userData,
+        error: userError
+      } = await supabase.from('usuarios').select('id').eq('email', session.user.email).single();
+      if (userError) {
+        throw userError;
+      }
+      const {
+        data: doctorData,
+        error: doctorError
+      } = await supabase.from('medicos').select('id').eq('id_usuario', userData.id).single();
+      if (doctorError) {
+        throw doctorError;
+      }
+
+      const {
+        data: appointmentsData,
+        error: appointmentsError
+      } = await supabase.from('consultas').select(`
+          id,
+          data_hora,
+          motivo,
+          status,
+          tipo_consulta,
+          pacientes_app:id_paciente (id, nome)
+        `).eq('id_medico', doctorData.id).order('data_hora', {
+        ascending: true
+      });
+      if (appointmentsError) {
+        throw appointmentsError;
+      }
+      setAppointments(appointmentsData || []);
+    } catch (error: any) {
+      console.error("Erro ao buscar agendamentos:", error);
+      setError("Ocorreu um erro ao buscar seus agendamentos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAppointments();
 
     const appointmentsChannel = supabase.channel('appointments-changes').on('postgres_changes', {
@@ -92,6 +93,7 @@ const AgendaMedica: React.FC = () => {
             <TabsTrigger value="configurar">Configurar Horários</TabsTrigger>
             <TabsTrigger value="agendamento-rapido">Agendamento Rápido</TabsTrigger>
           </TabsList>
+
           <TabsContent value="consultas">
             <div className="space-y-4">
               <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -118,25 +120,32 @@ const AgendaMedica: React.FC = () => {
                 </Card>}
             </div>
           </TabsContent>
+
           <TabsContent value="configurar">
             <AgendaTab />
           </TabsContent>
+
           <TabsContent value="agendamento-rapido">
             <div className="space-y-4">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <Clock className="h-5 w-5 text-hopecann-teal" />
                 Agendamento Rápido
               </h2>
-              <FastAgendamento 
-                consultationDuration="30"
-                onAgendamentoRapido={async (data) => {
-                  try {
-                    await fetchAppointments();
-                  } catch (error) {
-                    console.error('Error refreshing appointments:', error);
-                  }
-                }}
-              />
+              <Card>
+                <CardContent className="pt-6">
+                  <FastAgendamento 
+                    consultationDuration="30"
+                    fullWidth={true}
+                    onAgendamentoRapido={async (data) => {
+                      try {
+                        await fetchAppointments();
+                      } catch (error) {
+                        console.error('Error refreshing appointments:', error);
+                      }
+                    }}
+                  />
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>

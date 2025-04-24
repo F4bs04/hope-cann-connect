@@ -1,16 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Clock, CalendarIcon } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Clock } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -23,7 +17,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface FastAgendamentoProps {
   consultationDuration: string;
@@ -37,7 +30,6 @@ const FastAgendamento: React.FC<FastAgendamentoProps> = ({
   fullWidth = false
 }) => {
   const { toast } = useToast();
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string>('');
   const [patientName, setPatientName] = useState('');
@@ -140,12 +132,16 @@ const FastAgendamento: React.FC<FastAgendamentoProps> = ({
       
       // Success!
       onAgendamentoRapido({ dia: date, horario: time });
-      setDialogOpen(false);
+      toast({
+        title: "Consulta agendada",
+        description: "A consulta foi agendada com sucesso!",
+      });
       
       // Reset form
       setPatientName('');
       setPatientEmail('');
       setTime('');
+      
     } catch (error: any) {
       console.error("Erro ao agendar consulta:", error);
       toast({
@@ -159,109 +155,74 @@ const FastAgendamento: React.FC<FastAgendamentoProps> = ({
   };
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      <DialogTrigger asChild>
-        <Button 
-          className={cn(
-            "flex items-center gap-2", 
-            fullWidth && "w-full"
-          )} 
-          variant="default"
-        >
-          <Clock className="h-4 w-4" />
-          Agendamento Rápido
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Agendamento Rápido</DialogTitle>
-          <DialogDescription>
-            Agende uma consulta rapidamente selecionando data, horário e informando o paciente.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="patient-name">Nome do Paciente</Label>
-            <Input 
-              id="patient-name" 
-              placeholder="Nome completo do paciente" 
-              value={patientName}
-              onChange={(e) => setPatientName(e.target.value)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="patient-email">Email do Paciente (opcional)</Label>
-            <Input 
-              id="patient-email" 
-              type="email" 
-              placeholder="Email do paciente" 
-              value={patientEmail}
-              onChange={(e) => setPatientEmail(e.target.value)}
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Data da Consulta</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    locale={ptBR}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Horário</Label>
-              <Select onValueChange={setTime} value={time}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Horário" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTimes.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 border rounded-md p-2 bg-muted/20">
-            <Clock className="h-4 w-4 text-hopecann-teal" />
-            <span className="text-sm text-gray-600">
-              Duração da consulta: {consultationDuration} minutos
-            </span>
-          </div>
+    <div className="grid gap-4">
+      <div className="grid gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="patient-name">Nome do Paciente</Label>
+          <Input 
+            id="patient-name" 
+            placeholder="Nome completo do paciente" 
+            value={patientName}
+            onChange={(e) => setPatientName(e.target.value)}
+          />
         </div>
         
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSchedule} disabled={loading}>
-            {loading ? "Agendando..." : "Agendar Consulta"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div className="space-y-2">
+          <Label htmlFor="patient-email">Email do Paciente (opcional)</Label>
+          <Input 
+            id="patient-email" 
+            type="email" 
+            placeholder="Email do paciente" 
+            value={patientEmail}
+            onChange={(e) => setPatientEmail(e.target.value)}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Data da Consulta</Label>
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              locale={ptBR}
+              className="rounded-md border"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Horário</Label>
+            <Select onValueChange={setTime} value={time}>
+              <SelectTrigger>
+                <SelectValue placeholder="Horário" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTimes.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2 border rounded-md p-2 bg-muted/20 mt-4">
+              <Clock className="h-4 w-4 text-hopecann-teal" />
+              <span className="text-sm text-gray-600">
+                Duração da consulta: {consultationDuration} minutos
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <Button 
+        onClick={handleSchedule} 
+        disabled={loading}
+        className={cn(fullWidth && "w-full")}
+      >
+        {loading ? "Agendando..." : "Agendar Consulta"}
+      </Button>
+    </div>
   );
 };
 
