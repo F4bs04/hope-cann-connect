@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -26,7 +25,8 @@ const Index = () => {
         <HomeScheduling />
         <BenefitsSection />
         <MedicalConditionsSection />
-        <ConditionsSection />
+        {/* We can keep only one of the two conditions sections */}
+        {/* <ConditionsSection /> */}
         <DoctorsSection />
         <DoctorCTA />
         <TestimonialSection />
