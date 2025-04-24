@@ -17,6 +17,7 @@ import CadastroMedico from "./pages/CadastroMedico";
 import NotFound from "./pages/NotFound";
 import CompleteRegistroMedico from "./pages/CompleteRegistroMedico";
 import React from "react";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -37,8 +38,30 @@ function App() {
             <Route path="/agendar" element={<Agendar />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
-            <Route path="/area-paciente" element={<AreaPaciente />} />
-            <Route path="/area-medico" element={<AreaMedico />} />
+            <Route 
+              path="/area-paciente" 
+              element={
+                <ProtectedRoute allowedUserTypes={['paciente']}>
+                  <AreaPaciente />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/area-medico" 
+              element={
+                <ProtectedRoute allowedUserTypes={['medico']}>
+                  <AreaMedico />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute allowedUserTypes={['admin_clinica']}>
+                  <AreaMedico />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/cadastro-medico" element={<CadastroMedico />} />
             <Route path="/complete-registro-medico" element={<CompleteRegistroMedico />} />
             <Route path="*" element={<NotFound />} />

@@ -1,124 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import { useNavigate } from 'react-router-dom';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock, AlertCircle, LogIn } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 const loginSchema = z.object({
   email: z.string().email("Insira um email válido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-  captcha: z.string().min(1, "Por favor, resolva o CAPTCHA"),
-  rememberMe: z.boolean().default(false)
 });
+
 type LoginFormValues = z.infer<typeof loginSchema>;
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [captchaValue, setCaptchaValue] = useState('');
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
-      captcha: "",
-      rememberMe: false
     }
   });
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      setAuthError(null);
-      try {
-        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-        const userEmail = localStorage.getItem('userEmail');
-        const userType = localStorage.getItem('userType');
-        if (isAuthenticated && userEmail && userType) {
-          console.log("User already authenticated, redirecting to", userType);
-          setTimeout(() => {
-            redirectBasedOnUserType(userType);
-          }, 100);
-          return;
-        }
-        setIsAuthChecking(false);
-      } catch (error) {
-        console.error("Error checking auth status:", error);
-        setIsAuthChecking(false);
-      }
-    };
-    checkAuthStatus();
-    generateCaptcha();
-  }, []);
-  const generateCaptcha = () => {
-    const num1 = Math.floor(Math.random() * 10);
-    const num2 = Math.floor(Math.random() * 10);
-    setCaptchaValue(`${num1} + ${num2} = ?`);
-    setCaptchaAnswer((num1 + num2).toString());
-  };
+
   const handleLogin = async (values: LoginFormValues) => {
-    if (values.captcha !== captchaAnswer) {
-      toast({
-        title: "CAPTCHA incorreto",
-        description: "Por favor, resolva o CAPTCHA corretamente",
-        variant: "destructive"
-      });
-      generateCaptcha();
-      form.setValue("captcha", "");
-      return;
-    }
     setIsLoading(true);
     setAuthError(null);
     try {
-      console.log("Attempting login with:", values.email);
-      const {
-        data,
-        error
-      } = await supabase.from('usuarios').select('*').eq('email', values.email).maybeSingle();
-      if (error) {
-        console.error("Login query error:", error);
-        throw new Error("Credenciais inválidas. Verifique seu email e senha.");
-      }
-      if (!data) {
-        throw new Error("Usuário não encontrado");
-      }
-      console.log("User found:", data);
-      if (data.senha !== values.password) {
-        throw new Error("Senha incorreta");
-      }
-      localStorage.clear();
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('email', values.email)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error("Usuário não encontrado");
+      if (data.senha !== values.password) throw new Error("Senha incorreta");
+
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', values.email);
       localStorage.setItem('userId', data.id.toString());
       localStorage.setItem('userType', data.tipo_usuario);
       localStorage.setItem('authTimestamp', Date.now().toString());
-      if (values.rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-      }
+
       toast({
         title: "Login bem-sucedido",
         description: "Bem-vindo ao sistema!"
       });
-      setTimeout(() => {
-        redirectBasedOnUserType(data.tipo_usuario);
-      }, 100);
+
+      // Redirect based on user type
+      switch (data.tipo_usuario) {
+        case 'medico':
+          navigate('/area-medico');
+          break;
+        case 'paciente':
+          navigate('/area-paciente');
+          break;
+        case 'admin_clinica':
+          navigate('/admin');
+          break;
+        default:
+          navigate('/area-paciente');
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       setAuthError(error.message || "Ocorreu um erro ao fazer login. Tente novamente.");
@@ -127,33 +83,11 @@ const Login = () => {
         description: error.message || "Ocorreu um erro ao fazer login. Tente novamente.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };
-  const redirectBasedOnUserType = (userType: string) => {
-    console.log("Redirecting user with type:", userType);
-    switch (userType) {
-      case 'paciente':
-        navigate('/area-paciente', {
-          replace: true
-        });
-        break;
-      case 'medico':
-        navigate('/area-medico', {
-          replace: true
-        });
-        break;
-      case 'admin_clinica':
-        navigate('/admin', {
-          replace: true
-        });
-        break;
-      default:
-        navigate('/area-paciente', {
-          replace: true
-        });
-    }
-  };
+
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
@@ -253,38 +187,61 @@ const Login = () => {
     };
     checkSession();
   }, []);
-  if (isAuthChecking) {
-    return <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow py-12 bg-gray-50 flex items-center justify-center">
-          <div className="animate-spin h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full"></div>
-        </main>
-        <Footer />
-      </div>;
-  }
-  return <div className="min-h-screen flex flex-col">
+  const redirectBasedOnUserType = (userType: string) => {
+    console.log("Redirecting user with type:", userType);
+    switch (userType) {
+      case 'paciente':
+        navigate('/area-paciente', {
+          replace: true
+        });
+        break;
+      case 'medico':
+        navigate('/area-medico', {
+          replace: true
+        });
+        break;
+      case 'admin_clinica':
+        navigate('/admin', {
+          replace: true
+        });
+        break;
+      default:
+        navigate('/area-paciente', {
+          replace: true
+        });
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow py-12 bg-gray-50">
         <div className="max-w-md mx-auto bg-white p-8 rounded-xl shadow-sm">
           <h1 className="text-2xl font-bold text-center mb-6">Acesse sua conta</h1>
           
-          {userAvatar && <div className="flex justify-center mb-6">
+          {userAvatar && (
+            <div className="flex justify-center mb-6">
               <Avatar className="h-20 w-20">
                 <AvatarImage src={userAvatar} alt="User avatar" />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
-            </div>}
+            </div>
+          )}
           
-          {authError && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
+          {authError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
               <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-600">{authError}</p>
-            </div>}
+            </div>
+          )}
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
-              <FormField control={form.control} name="email" render={({
-              field
-            }) => <FormItem>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel>Email</FormLabel>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -293,64 +250,62 @@ const Login = () => {
                       </FormControl>
                     </div>
                     <FormMessage />
-                  </FormItem>} />
+                  </FormItem>
+                )}
+              />
               
-              <FormField control={form.control} name="password" render={({
-              field
-            }) => <FormItem>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel>Senha</FormLabel>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <FormControl>
-                        <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10" {...field} />
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pl-10"
+                          {...field}
+                        />
                       </FormControl>
-                      <button type="button" className="absolute right-3 top-3 text-gray-400" onClick={() => setShowPassword(!showPassword)}>
+                      <button
+                        type="button"
+                        className="absolute right-3 top-3 text-gray-400"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                     <FormMessage />
-                  </FormItem>} />
+                  </FormItem>
+                )}
+              />
               
-              <FormField control={form.control} name="captcha" render={({
-              field
-            }) => <FormItem>
-                    
-                    
-                    <FormControl>
-                      
-                    </FormControl>
-                    
-                    <FormMessage />
-                  </FormItem>} />
-              
-              <FormField control={form.control} name="rememberMe" render={({
-              field
-            }) => <FormItem className="flex items-center space-x-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="text-sm cursor-pointer">
-                        Lembrar de mim
-                      </FormLabel>
-                    </div>
-                  </FormItem>} />
-              
-              <Button type="submit" className="w-full bg-hopecann-teal hover:bg-hopecann-teal/90 flex items-center justify-center gap-2" disabled={isLoading}>
-                {isLoading ? <>
-                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              <Button
+                type="submit"
+                className="w-full bg-hopecann-teal hover:bg-hopecann-teal/90 flex items-center justify-center gap-2"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                     Processando...
-                  </> : <>
+                  </>
+                ) : (
+                  <>
                     <LogIn className="h-4 w-4 mr-1" />
                     Entrar
-                  </>}
+                  </>
+                )}
               </Button>
             </form>
           </Form>
           
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+              <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="bg-white px-2 text-gray-500">ou continue com</span>
@@ -381,6 +336,8 @@ const Login = () => {
         </div>
       </main>
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default Login;
