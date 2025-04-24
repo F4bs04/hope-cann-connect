@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Puzzle, Zap, Activity, Hand, HelpCircle } from 'lucide-react';
@@ -67,13 +68,18 @@ const MedicalConditionsSection = () => {
           <Carousel
             opts={{
               align: "center",
-              loop: true
+              loop: true,
+              dragFree: true,
+              containScroll: "trimSnaps",
+              slidesToScroll: 1,
+              speed: 50
             }}
             plugins={[
               Autoplay({
-                delay: 4000,
+                delay: 3000,
                 stopOnInteraction: false,
-                stopOnMouseEnter: true
+                stopOnMouseEnter: true,
+                rootNode: (emblaRoot) => emblaRoot.parentElement,
               })
             ]}
             className="w-full"
