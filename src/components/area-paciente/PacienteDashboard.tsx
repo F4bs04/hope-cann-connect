@@ -5,7 +5,14 @@ import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const CARD_DATA = [
+interface CardData {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  colorClass: string;
+}
+
+const CARD_DATA: CardData[] = [
   {
     label: "Próxima Consulta",
     value: "25/04 às 14:00",

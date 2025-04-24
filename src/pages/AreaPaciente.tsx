@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import PacienteHeader from "@/components/paciente/PacienteHeader";
@@ -5,6 +6,10 @@ import { PacienteSidebar } from '@/components/area-paciente/PacienteSidebar';
 import PacienteDashboard from '@/components/area-paciente/PacienteDashboard';
 import ConsultasPaciente from '@/components/paciente/ConsultasPaciente';
 import ReceitasPaciente from '@/components/paciente/ReceitasPaciente';
+import AtestadosPaciente from '@/components/paciente/AtestadosPaciente';
+import LaudosPaciente from '@/components/paciente/LaudosPaciente';
+import PedidosExamePaciente from '@/components/paciente/PedidosExamePaciente';
+import MedicosPaciente from '@/components/paciente/MedicosPaciente';
 import { usePacienteAuth } from '@/hooks/usePacienteAuth';
 
 const AreaPaciente: React.FC = () => {
@@ -19,22 +24,25 @@ const AreaPaciente: React.FC = () => {
     );
   }
 
+  // Make sure we have a valid paciente ID to pass to components
+  const pacienteId = paciente?.id || 0;
+
   const renderSection = () => {
     switch (currentSection) {
       case 'dashboard':
         return <PacienteDashboard />;
       case 'consultas':
-        return <ConsultasPaciente />;
+        return <ConsultasPaciente pacienteId={pacienteId} />;
       case 'receitas':
-        return <ReceitasPaciente />;
+        return <ReceitasPaciente pacienteId={pacienteId} />;
       case 'atestados':
-        return <AtestadosPaciente pacienteId={paciente?.id} />;
+        return <AtestadosPaciente pacienteId={pacienteId} />;
       case 'laudos':
-        return <LaudosPaciente pacienteId={paciente?.id} />;
+        return <LaudosPaciente pacienteId={pacienteId} />;
       case 'pedidos-exame':
-        return <PedidosExamePaciente pacienteId={paciente?.id} />;
+        return <PedidosExamePaciente pacienteId={pacienteId} />;
       case 'medicos':
-        return <MedicosPaciente pacienteId={paciente?.id} />;
+        return <MedicosPaciente pacienteId={pacienteId} />;
       default:
         return <PacienteDashboard />;
     }
