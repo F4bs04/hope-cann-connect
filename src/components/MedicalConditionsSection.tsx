@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Puzzle, Zap, Activity, Hand, HelpCircle } from 'lucide-react';
@@ -71,11 +72,11 @@ const MedicalConditionsSection = () => {
               dragFree: true,
               containScroll: "trimSnaps",
               slidesToScroll: 1,
-              duration: 1000
+              duration: 2000 // Aumentei a duration para tornar a transição mais lenta
             }}
             plugins={[
               Autoplay({
-                delay: 3000,
+                delay: 5000, // Aumentei o delay para 5 segundos para girar mais devagar
                 stopOnInteraction: false,
                 stopOnMouseEnter: false,
                 rootNode: (emblaRoot) => emblaRoot.parentElement,
