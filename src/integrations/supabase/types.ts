@@ -1251,6 +1251,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      verify_clinic_password: {
+        Args: { p_email: string; p_password: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

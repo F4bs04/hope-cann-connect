@@ -506,7 +506,7 @@ export const verifyClinicPassword = async (email: string, password: string) => {
       });
     
     if (error) throw error;
-    return data;
+    return data === true;
   } catch (error: any) {
     console.error('Error verifying clinic password:', error);
     return false;
