@@ -4,6 +4,7 @@ import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface DateTimeSelectionProps {
   selectedDate: Date | null;
@@ -28,51 +29,50 @@ const DateTimeSelection = ({
   ];
   
   return (
-    <div>
+    <div className="space-y-6">
       <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
         <CalendarIcon className="text-hopecann-teal" />
         Escolha a Data e Horário
       </h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left column: Calendar */}
-        <div className="md:col-span-2">
-          <div className="border rounded-lg p-3 bg-white">
-            <Calendar
-              mode="single"
-              selected={selectedDate || undefined}
-              onSelect={(date) => date && setSelectedDate(date)}
-              disabled={{ before: addDays(new Date(), 1) }}
-              className="w-full"
-              locale={ptBR}
-              fromMonth={new Date()}
-              toMonth={addDays(new Date(), 60)}
-            />
-          </div>
+        <div className="bg-white p-4 rounded-lg border">
+          <Calendar
+            mode="single"
+            selected={selectedDate || undefined}
+            onSelect={(date) => date && setSelectedDate(date)}
+            disabled={{ before: addDays(new Date(), 1) }}
+            locale={ptBR}
+            className={cn("p-3 pointer-events-auto")}
+            fromMonth={new Date()}
+            toMonth={addDays(new Date(), 60)}
+          />
         </div>
         
         {/* Right column: Time slots */}
         <div>
-          <div className="border rounded-lg p-4 bg-white h-full">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              <Clock size={16} className="text-hopecann-teal" />
+          <div className="bg-white p-4 rounded-lg border h-full">
+            <h3 className="font-medium mb-4 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-hopecann-teal" />
               Horários Disponíveis
             </h3>
             
             {selectedDate ? (
-              <div className="grid grid-cols-2 gap-2">
-                {timeSlots.map((time, index) => (
-                  <div 
-                    key={index}
-                    className={`p-2 border rounded-lg cursor-pointer transition-colors text-center ${
-                      selectedTime === time 
-                        ? 'border-hopecann-teal bg-hopecann-teal/5 text-hopecann-teal font-medium' 
-                        : 'border-gray-200 hover:border-hopecann-teal/50'
-                    }`}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {timeSlots.map((time) => (
+                  <button
+                    key={time}
                     onClick={() => setSelectedTime(time)}
+                    className={cn(
+                      "p-2 rounded-lg text-center transition-colors",
+                      selectedTime === time 
+                        ? "bg-hopecann-teal text-white" 
+                        : "border hover:border-hopecann-teal/50"
+                    )}
                   >
                     {time}
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
@@ -84,25 +84,26 @@ const DateTimeSelection = ({
         </div>
       </div>
       
-      <div className="flex justify-between">
+      <div className="flex justify-between pt-4">
         <button
-          className="border border-gray-300 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-50"
+          className="flex items-center gap-2 px-6 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50"
           onClick={onBack}
         >
-          <div className="flex items-center gap-2">
-            <ChevronLeft size={16} />
-            Voltar
-          </div>
+          <ChevronLeft className="h-4 w-4" />
+          Voltar
         </button>
+        
         <button
-          className="bg-hopecann-teal text-white px-6 py-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+          className={cn(
+            "flex items-center gap-2 px-6 py-2 rounded-full",
+            "bg-hopecann-teal text-white",
+            "disabled:opacity-50 disabled:cursor-not-allowed"
+          )}
           onClick={onNext}
           disabled={!selectedDate || !selectedTime}
         >
-          <div className="flex items-center gap-2">
-            Confirmar Horário
-            <ChevronRight size={16} />
-          </div>
+          Confirmar Horário
+          <ChevronRight className="h-4 w-4" />
         </button>
       </div>
     </div>
