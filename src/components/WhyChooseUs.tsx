@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Award, Check, FileText, HeartPulse, AlarmClock, Leaf, Stethoscope, Smartphone } from 'lucide-react';
+import { Check, Stethoscope, Clock } from 'lucide-react';
 
 const WhyChooseUs = () => {
   return (
@@ -31,8 +31,10 @@ const WhyChooseUs = () => {
                 { text: "Medicamentos de qualidade e procedência garantida" }
               ].map((item, index) => (
                 <div key={index} className="flex items-start gap-3">
-                  <div className="mt-1 bg-hopecann-teal rounded-full p-1 flex-shrink-0">
-                    <Check className="h-3 w-3 text-white" />
+                  <div className="mt-1">
+                    <div className="bg-[#00D1C7] rounded-full p-1">
+                      <Check className="h-3 w-3 text-white" />
+                    </div>
                   </div>
                   <p className="text-gray-700">{item.text}</p>
                 </div>
@@ -41,7 +43,7 @@ const WhyChooseUs = () => {
             
             <Link 
               to="/sobre" 
-              className="inline-flex items-center text-hopecann-teal hover:text-hopecann-teal/80 font-medium"
+              className="inline-flex items-center text-[#00D1C7] hover:text-[#00D1C7]/80 font-medium"
             >
               Conheça nossa história
               <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -50,47 +52,49 @@ const WhyChooseUs = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-2 gap-5">
-            <div className="hopecann-stat-card col-span-2">
+          <div className="space-y-8">
+            <div className="relative">
               <img 
-                src="/lovable-uploads/54efb4d4-b8e5-4450-be5f-00aadc8c6c37.png" 
-                alt="Médicos especialistas" 
-                className="w-full h-40 object-cover rounded-lg mb-4"
+                src="https://nxiaxpgyqpmnkmebvvap.supabase.co/storage/v1/object/public/images//Group.png"
+                alt="Médica especialista" 
+                className="w-full rounded-2xl"
               />
-              <h3 className="text-xl font-semibold mb-1">Medicina canábica de qualidade</h3>
-              <p className="text-gray-600">Tratamentos baseados em evidências científicas e protocolos avançados.</p>
-            </div>
-            
-            <div className="hopecann-stat-card">
-              <div className="bg-hopecann-teal/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
-                <HeartPulse className="h-6 w-6 text-hopecann-teal" />
+              <div className="absolute top-4 right-4 bg-[#36B37E] p-3 rounded-lg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2ZM16.9 15.7L15.7 16.9C15.5 17.1 15.2 17.1 15 16.9L12 13.9L9 16.9C8.8 17.1 8.5 17.1 8.3 16.9L7.1 15.7C6.9 15.5 6.9 15.2 7.1 15L10.1 12L7.1 9C6.9 8.8 6.9 8.5 7.1 8.3L8.3 7.1C8.5 6.9 8.8 6.9 9 7.1L12 10.1L15 7.1C15.2 6.9 15.5 6.9 15.7 7.1L16.9 8.3C17.1 8.5 17.1 8.8 16.9 9L13.9 12L16.9 15C17.1 15.2 17.1 15.5 16.9 15.7Z" fill="white"/>
+                </svg>
               </div>
-              <div className="hopecann-stat-value">95%</div>
-              <div className="hopecann-stat-label">Taxa de satisfação dos pacientes</div>
             </div>
-            
-            <div className="hopecann-stat-card">
-              <div className="bg-hopecann-teal/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
-                <AlarmClock className="h-6 w-6 text-hopecann-teal" />
-              </div>
-              <div className="hopecann-stat-value">1500+</div>
-              <div className="hopecann-stat-label">Atendimento humanizado</div>
+
+            <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="text-xl font-semibold text-[#36B37E] mb-2">
+                Medicina canábica de qualidade
+              </h3>
+              <p className="text-gray-600 text-center">
+                Tratamentos baseados em evidências científicas e protocolos avançados.
+              </p>
             </div>
-            
-            <div className="hopecann-stat-card">
-              <div className="bg-hopecann-teal/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
-                <Stethoscope className="h-6 w-6 text-hopecann-teal" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-6 bg-[#F7FDFB] rounded-2xl border border-[#E3F5F5]">
+                <div className="flex items-center justify-center mb-2">
+                  <Stethoscope className="h-6 w-6 text-[#36B37E]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#36B37E]">10+</p>
+                  <p className="text-sm text-gray-600">Médicos especializados</p>
+                </div>
               </div>
-              <div className="hopecann-stat-value">10+</div>
-              <div className="hopecann-stat-label">Médicos especializados</div>
-            </div>
-            
-            <div className="hopecann-stat-card">
-              <div className="bg-hopecann-teal/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
-                <Smartphone className="h-6 w-6 text-hopecann-teal" />
+
+              <div className="p-6 bg-[#F7FDFB] rounded-2xl border border-[#E3F5F5]">
+                <div className="flex items-center justify-center mb-2">
+                  <Clock className="h-6 w-6 text-[#36B37E]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#36B37E]">1500+</p>
+                  <p className="text-sm text-gray-600">Atendimento humanizado</p>
+                </div>
               </div>
-              <div className="hopecann-stat-value">5+</div>
-              <div className="hopecann-stat-label">Plataforma acessível</div>
             </div>
           </div>
         </div>
@@ -100,3 +104,4 @@ const WhyChooseUs = () => {
 };
 
 export default WhyChooseUs;
+
