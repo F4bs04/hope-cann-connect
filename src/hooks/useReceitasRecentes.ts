@@ -15,30 +15,6 @@ export interface ReceitaRecente {
   observacoes?: string | null;
 }
 
-interface RawReceitaData {
-  id: number;
-  medicamento: string;
-  data: string;
-  status: string;
-  posologia: string;
-  id_paciente: number;
-  email_paciente?: string;
-  data_validade: string | null;
-  observacoes: string | null;
-}
-
-const mapToReceitaRecente = (data: RawReceitaData): ReceitaRecente => ({
-  id: data.id,
-  medicamento: data.medicamento,
-  data: data.data,
-  status: data.status,
-  posologia: data.posologia,
-  id_paciente: data.id_paciente,
-  ...(data.email_paciente && { email_paciente: data.email_paciente }),
-  data_validade: data.data_validade,
-  observacoes: data.observacoes
-});
-
 export function useReceitasRecentes() {
   const [receitas, setReceitas] = useState<ReceitaRecente[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,9 +39,7 @@ export function useReceitasRecentes() {
         if (error) throw error;
         
         if (data) {
-          // Use type assertion with a more basic approach
-          const typedReceitas = data.map((item: any) => mapToReceitaRecente(item as RawReceitaData));
-          setReceitas(typedReceitas);
+          setReceitas(data as ReceitaRecente[]);
         }
       } catch (error) {
         console.error('Error fetching prescriptions:', error);

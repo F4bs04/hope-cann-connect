@@ -19,7 +19,6 @@ import CompleteRegistroMedico from "./pages/CompleteRegistroMedico";
 import React from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
-// Create the query client
 const queryClient = new QueryClient();
 
 function App() {
@@ -62,6 +61,7 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route path="/cadastro-clinica" element={<CadastroClinica />} />
             <Route path="/cadastro-medico" element={<CadastroMedico />} />
             <Route path="/complete-registro-medico" element={<CompleteRegistroMedico />} />
             <Route path="*" element={<NotFound />} />

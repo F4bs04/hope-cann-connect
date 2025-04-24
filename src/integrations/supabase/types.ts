@@ -176,6 +176,45 @@ export type Database = {
         }
         Relationships: []
       }
+      clinic_users: {
+        Row: {
+          clinic_id: number | null
+          created_at: string | null
+          id: string
+          role: string
+          user_id: number | null
+        }
+        Insert: {
+          clinic_id?: number | null
+          created_at?: string | null
+          id?: string
+          role: string
+          user_id?: number | null
+        }
+        Update: {
+          clinic_id?: number | null
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_users_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinicas: {
         Row: {
           cnpj: string

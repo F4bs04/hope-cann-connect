@@ -62,7 +62,7 @@ export const usePacienteAuth = () => {
           const newPaciente = {
             id_usuario: userData.id,
             email: userEmail,
-            nome: userData.nome || "Usuário",
+            nome: userData.tipo_usuario === 'paciente' ? 'Novo Paciente' : 'Usuário',
             cpf: "",
             data_nascimento: new Date().toISOString().split('T')[0],
             telefone: "",
@@ -80,7 +80,7 @@ export const usePacienteAuth = () => {
             toast({
               title: "Perfil incompleto",
               description: "Por favor, complete seu perfil de paciente.",
-              variant: "warning"
+              variant: "destructive"
             });
             // Even with error, allow access but set paciente as minimal data
             setPaciente({ ...newPaciente, id: null });
