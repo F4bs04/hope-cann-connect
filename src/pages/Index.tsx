@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -12,6 +13,7 @@ import WhyChooseUs from '../components/WhyChooseUs';
 import { HomeScheduling } from '@/components/home-scheduling';
 import FAQSection from '../components/FAQSection';
 import DoctorCTA from '../components/DoctorCTA';
+import MedicalConditionsSection from '../components/MedicalConditionsSection';
 
 const Index = () => {
   return (
@@ -23,6 +25,7 @@ const Index = () => {
         <ProcessSteps />
         <HomeScheduling />
         <BenefitsSection />
+        <MedicalConditionsSection />
         <ConditionsSection />
         <DoctorsSection />
         <DoctorCTA />
