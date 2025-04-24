@@ -14,16 +14,13 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 const loginSchema = z.object({
   email: z.string().email("Insira um email válido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   captcha: z.string().min(1, "Por favor, resolva o CAPTCHA"),
-  rememberMe: z.boolean().default(false),
+  rememberMe: z.boolean().default(false)
 });
-
 type LoginFormValues = z.infer<typeof loginSchema>;
-
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [captchaValue, setCaptchaValue] = useState('');
@@ -33,29 +30,27 @@ const Login = () => {
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
       captcha: "",
-      rememberMe: false,
-    },
+      rememberMe: false
+    }
   });
-
   useEffect(() => {
     const checkAuthStatus = async () => {
       setAuthError(null);
-      
       try {
         const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
         const userEmail = localStorage.getItem('userEmail');
         const userType = localStorage.getItem('userType');
-        
         if (isAuthenticated && userEmail && userType) {
           console.log("User already authenticated, redirecting to", userType);
           setTimeout(() => {
@@ -63,382 +58,292 @@ const Login = () => {
           }, 100);
           return;
         }
-        
         setIsAuthChecking(false);
       } catch (error) {
         console.error("Error checking auth status:", error);
         setIsAuthChecking(false);
       }
     };
-    
     checkAuthStatus();
     generateCaptcha();
   }, []);
-
   const generateCaptcha = () => {
     const num1 = Math.floor(Math.random() * 10);
     const num2 = Math.floor(Math.random() * 10);
     setCaptchaValue(`${num1} + ${num2} = ?`);
     setCaptchaAnswer((num1 + num2).toString());
   };
-
   const handleLogin = async (values: LoginFormValues) => {
     if (values.captcha !== captchaAnswer) {
       toast({
         title: "CAPTCHA incorreto",
         description: "Por favor, resolva o CAPTCHA corretamente",
-        variant: "destructive",
+        variant: "destructive"
       });
       generateCaptcha();
       form.setValue("captcha", "");
       return;
     }
-
     setIsLoading(true);
     setAuthError(null);
-
     try {
       console.log("Attempting login with:", values.email);
-      
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('email', values.email)
-        .maybeSingle();
-
+      const {
+        data,
+        error
+      } = await supabase.from('usuarios').select('*').eq('email', values.email).maybeSingle();
       if (error) {
         console.error("Login query error:", error);
         throw new Error("Credenciais inválidas. Verifique seu email e senha.");
       }
-
       if (!data) {
         throw new Error("Usuário não encontrado");
       }
-
       console.log("User found:", data);
-
       if (data.senha !== values.password) {
         throw new Error("Senha incorreta");
       }
-
       localStorage.clear();
-      
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', values.email);
       localStorage.setItem('userId', data.id.toString());
       localStorage.setItem('userType', data.tipo_usuario);
       localStorage.setItem('authTimestamp', Date.now().toString());
-      
       if (values.rememberMe) {
         localStorage.setItem('rememberMe', 'true');
       }
-
       toast({
         title: "Login bem-sucedido",
-        description: "Bem-vindo ao sistema!",
+        description: "Bem-vindo ao sistema!"
       });
-
       setTimeout(() => {
         redirectBasedOnUserType(data.tipo_usuario);
       }, 100);
-      
     } catch (error: any) {
       console.error("Login error:", error);
       setAuthError(error.message || "Ocorreu um erro ao fazer login. Tente novamente.");
       toast({
         title: "Erro ao fazer login",
         description: error.message || "Ocorreu um erro ao fazer login. Tente novamente.",
-        variant: "destructive",
+        variant: "destructive"
       });
       setIsLoading(false);
     }
   };
-
   const redirectBasedOnUserType = (userType: string) => {
     console.log("Redirecting user with type:", userType);
-    
     switch (userType) {
       case 'paciente':
-        navigate('/area-paciente', { replace: true });
+        navigate('/area-paciente', {
+          replace: true
+        });
         break;
       case 'medico':
-        navigate('/area-medico', { replace: true });
+        navigate('/area-medico', {
+          replace: true
+        });
         break;
       case 'admin_clinica':
-        navigate('/admin', { replace: true });
+        navigate('/admin', {
+          replace: true
+        });
         break;
       default:
-        navigate('/area-paciente', { replace: true });
+        navigate('/area-paciente', {
+          replace: true
+        });
     }
   };
-
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
-    
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const {
+        data,
+        error
+      } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/login`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
+            prompt: 'consent'
+          }
+        }
       });
-      
       if (error) throw error;
-      
     } catch (error: any) {
       console.error("Google login error:", error);
       toast({
         title: "Erro ao fazer login com Google",
         description: error.message || "Ocorreu um erro ao fazer login com Google. Tente novamente.",
-        variant: "destructive",
+        variant: "destructive"
       });
       setGoogleLoading(false);
     }
   };
-
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
       if (session?.provider_token) {
         const user = session.user;
-        
         if (user) {
           setUserAvatar(user.user_metadata.avatar_url);
-          
-          const { data: userData, error: userError } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('email', user.email)
-            .single();
-          
+          const {
+            data: userData,
+            error: userError
+          } = await supabase.from('usuarios').select('*').eq('email', user.email).single();
           if (userError) {
-            const { data: newUser, error: createError } = await supabase
-              .from('usuarios')
-              .insert([
-                {
-                  email: user.email,
-                  senha: '',
-                  tipo_usuario: 'paciente',
-                  ultimo_acesso: new Date().toISOString()
-                }
-              ])
-              .select()
-              .single();
-            
+            const {
+              data: newUser,
+              error: createError
+            } = await supabase.from('usuarios').insert([{
+              email: user.email,
+              senha: '',
+              tipo_usuario: 'paciente',
+              ultimo_acesso: new Date().toISOString()
+            }]).select().single();
             if (createError) {
               throw createError;
             }
-
             if (newUser) {
-              await supabase.from('pacientes').insert([
-                {
-                  id_usuario: newUser.id,
-                  nome: user.user_metadata.full_name || user.email?.split('@')[0] || '',
-                  cpf: '',
-                  data_nascimento: new Date('2000-01-01').toISOString(),
-                  endereco: '',
-                  telefone: '',
-                  email: user.email || ''
-                }
-              ]);
-              
+              await supabase.from('pacientes').insert([{
+                id_usuario: newUser.id,
+                nome: user.user_metadata.full_name || user.email?.split('@')[0] || '',
+                cpf: '',
+                data_nascimento: new Date('2000-01-01').toISOString(),
+                endereco: '',
+                telefone: '',
+                email: user.email || ''
+              }]);
               localStorage.setItem('isAuthenticated', 'true');
               localStorage.setItem('userEmail', user.email || '');
               localStorage.setItem('userId', newUser.id.toString());
               localStorage.setItem('userType', 'paciente');
               localStorage.setItem('userAvatar', user.user_metadata.avatar_url || '');
               localStorage.setItem('authTimestamp', Date.now().toString());
-              
               toast({
                 title: "Conta criada com sucesso",
-                description: "Bem-vindo ao sistema! Por favor, complete seu perfil.",
+                description: "Bem-vindo ao sistema! Por favor, complete seu perfil."
               });
-              
               navigate('/area-paciente');
             }
           } else {
-            await supabase
-              .from('usuarios')
-              .update({ ultimo_acesso: new Date().toISOString() })
-              .eq('id', userData.id);
-            
+            await supabase.from('usuarios').update({
+              ultimo_acesso: new Date().toISOString()
+            }).eq('id', userData.id);
             localStorage.setItem('isAuthenticated', 'true');
             localStorage.setItem('userEmail', user.email || '');
             localStorage.setItem('userId', userData.id.toString());
             localStorage.setItem('userType', userData.tipo_usuario);
             localStorage.setItem('userAvatar', user.user_metadata.avatar_url || '');
             localStorage.setItem('authTimestamp', Date.now().toString());
-            
             toast({
               title: "Login bem-sucedido",
-              description: "Bem-vindo de volta ao sistema!",
+              description: "Bem-vindo de volta ao sistema!"
             });
-            
             redirectBasedOnUserType(userData.tipo_usuario);
           }
         }
       }
       setGoogleLoading(false);
     };
-    
     checkSession();
   }, []);
-
   if (isAuthChecking) {
-    return (
-      <div className="min-h-screen flex flex-col">
+    return <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow py-12 bg-gray-50 flex items-center justify-center">
           <div className="animate-spin h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full"></div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow py-12 bg-gray-50">
         <div className="max-w-md mx-auto bg-white p-8 rounded-xl shadow-sm">
           <h1 className="text-2xl font-bold text-center mb-6">Acesse sua conta</h1>
           
-          {userAvatar && (
-            <div className="flex justify-center mb-6">
+          {userAvatar && <div className="flex justify-center mb-6">
               <Avatar className="h-20 w-20">
                 <AvatarImage src={userAvatar} alt="User avatar" />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
-            </div>
-          )}
+            </div>}
           
-          {authError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
+          {authError && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
               <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-600">{authError}</p>
-            </div>
-          )}
+            </div>}
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="email" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>Email</FormLabel>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <FormControl>
-                        <Input
-                          placeholder="seu@email.com"
-                          className="pl-10"
-                          {...field}
-                        />
+                        <Input placeholder="seu@email.com" className="pl-10" {...field} />
                       </FormControl>
                     </div>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
               
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="password" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>Senha</FormLabel>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <FormControl>
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          className="pl-10"
-                          {...field}
-                        />
+                        <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10" {...field} />
                       </FormControl>
-                      <button
-                        type="button"
-                        className="absolute right-3 top-3 text-gray-400"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
+                      <button type="button" className="absolute right-3 top-3 text-gray-400" onClick={() => setShowPassword(!showPassword)}>
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
               
-              <FormField
-                control={form.control}
-                name="captcha"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CAPTCHA</FormLabel>
-                    <div className="bg-gray-100 p-3 rounded-md text-center font-semibold mb-2">
-                      {captchaValue}
-                    </div>
+              <FormField control={form.control} name="captcha" render={({
+              field
+            }) => <FormItem>
+                    
+                    
                     <FormControl>
-                      <Input
-                        placeholder="Digite a resposta"
-                        {...field}
-                      />
+                      
                     </FormControl>
-                    <button
-                      type="button"
-                      className="text-sm text-hopecann-teal hover:underline mt-1"
-                      onClick={generateCaptcha}
-                    >
-                      Gerar novo CAPTCHA
-                    </button>
+                    
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
               
-              <FormField
-                control={form.control}
-                name="rememberMe"
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2">
+              <FormField control={form.control} name="rememberMe" render={({
+              field
+            }) => <FormItem className="flex items-center space-x-2">
                     <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel className="text-sm cursor-pointer">
                         Lembrar de mim
                       </FormLabel>
                     </div>
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
               
-              <Button 
-                type="submit" 
-                className="w-full bg-hopecann-teal hover:bg-hopecann-teal/90 flex items-center justify-center gap-2" 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
+              <Button type="submit" className="w-full bg-hopecann-teal hover:bg-hopecann-teal/90 flex items-center justify-center gap-2" disabled={isLoading}>
+                {isLoading ? <>
                     <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                     Processando...
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <LogIn className="h-4 w-4 mr-1" />
                     Entrar
-                  </>
-                )}
+                  </>}
               </Button>
             </form>
           </Form>
@@ -452,22 +357,14 @@ const Login = () => {
             </div>
           </div>
           
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full flex items-center justify-center gap-2 mb-4"
-            onClick={handleGoogleLogin}
-            disabled={googleLoading}
-          >
+          <Button type="button" variant="outline" className="w-full flex items-center justify-center gap-2 mb-4" onClick={handleGoogleLogin} disabled={googleLoading}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15.5453 6.5H8.5V9.5H12.6039C12.0442 11.3 10.4228 12.5 8.5 12.5C6.01614 12.5 4 10.4839 4 8C4 5.51614 6.01614 3.5 8.5 3.5C9.56267 3.5 10.5392 3.88194 11.3193 4.5H14.3283C12.9325 2.38305 10.8553 1 8.5 1C4.63396 1 1.5 4.13396 1.5 8C1.5 11.866 4.63396 15 8.5 15C12.3667 15 15 12.3667 15 8.5C15 7.83193 14.7726 7.15722 14.5453 6.5H15.5453Z" fill="#4285F4"/>
+              <path d="M15.5453 6.5H8.5V9.5H12.6039C12.0442 11.3 10.4228 12.5 8.5 12.5C6.01614 12.5 4 10.4839 4 8C4 5.51614 6.01614 3.5 8.5 3.5C9.56267 3.5 10.5392 3.88194 11.3193 4.5H14.3283C12.9325 2.38305 10.8553 1 8.5 1C4.63396 1 1.5 4.13396 1.5 8C1.5 11.866 4.63396 15 8.5 15C12.3667 15 15 12.3667 15 8.5C15 7.83193 14.7726 7.15722 14.5453 6.5H15.5453Z" fill="#4285F4" />
             </svg>
-            {googleLoading ? (
-              <>
+            {googleLoading ? <>
                 <div className="h-4 w-4 border-2 border-hopecann-teal border-t-transparent rounded-full animate-spin mr-2"></div>
                 Processando...
-              </>
-            ) : "Google"}
+              </> : "Google"}
           </Button>
           
           <div className="text-center mt-6">
@@ -484,8 +381,6 @@ const Login = () => {
         </div>
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
