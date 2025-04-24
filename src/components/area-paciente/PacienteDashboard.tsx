@@ -5,13 +5,15 @@ import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface CardData {
+// Define a simpler type for the card data to avoid deep recursion
+type CardData = {
   label: string;
   value: string;
   icon: React.ReactNode;
   colorClass: string;
 }
 
+// Move the constant outside the component to avoid recreation on each render
 const CARD_DATA: CardData[] = [
   {
     label: "Próxima Consulta",
