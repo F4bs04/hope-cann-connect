@@ -49,35 +49,57 @@ export function MedicoDetails({ open, onOpenChange, medicoId }: MedicoDetailsPro
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase
+      // Change approach to first get the consultations, then fetch patient data separately
+      const { data: consultasData, error: consultasError } = await supabase
         .from('consultas')
-        .select(`
-          pacientes_app!inner (
-            id,
-            nome
-          ),
-          data_hora
-        `)
+        .select('id_paciente, data_hora')
         .eq('id_medico', medicoId)
         .eq('status', 'realizada');
+      
+      if (consultasError) throw consultasError;
 
-      if (error) throw error;
-
-      const uniquePacientes = (data || []).reduce((acc: Paciente[], curr) => {
-        if (!curr.pacientes_app) return acc;
+      if (!consultasData || consultasData.length === 0) {
+        setPacientes([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Get unique patient IDs
+      const uniquePacienteIds = [...new Set(consultasData.map(c => c.id_paciente).filter(Boolean))];
+      
+      if (uniquePacienteIds.length === 0) {
+        setPacientes([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Fetch patient data for each unique patient ID
+      const { data: pacientesData, error: pacientesError } = await supabase
+        .from('pacientes_app')
+        .select('id, nome')
+        .in('id', uniquePacienteIds);
+      
+      if (pacientesError) throw pacientesError;
+      
+      // Create final patient data with last consultation date
+      const pacientesWithUltimaConsulta = pacientesData?.map(paciente => {
+        // Find all consultations for this patient
+        const pacienteConsultas = consultasData.filter(c => c.id_paciente === paciente.id);
+        // Get latest consultation date
+        const ultimaConsulta = pacienteConsultas.reduce((latest, consulta) => {
+          return new Date(consulta.data_hora) > new Date(latest) 
+            ? consulta.data_hora 
+            : latest;
+        }, pacienteConsultas[0]?.data_hora || '');
         
-        const existingPaciente = acc.find(p => p.id === curr.pacientes_app.id);
-        if (!existingPaciente) {
-          acc.push({
-            id: curr.pacientes_app.id,
-            nome: curr.pacientes_app.nome,
-            ultima_consulta: curr.data_hora
-          });
-        }
-        return acc;
-      }, []);
-
-      setPacientes(uniquePacientes);
+        return {
+          id: paciente.id,
+          nome: paciente.nome,
+          ultima_consulta: ultimaConsulta
+        };
+      }) || [];
+      
+      setPacientes(pacientesWithUltimaConsulta);
     } catch (error) {
       console.error('Erro ao buscar pacientes:', error);
     } finally {

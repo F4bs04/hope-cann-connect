@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Card,
@@ -45,6 +46,9 @@ interface MedicoInfo {
   nome: string;
   crm: string;
   especialidade: string;
+  biografia: string;
+  telefone: string;
+  valor_por_consulta: number;
   status: string;
   aprovado: boolean;
   foto_perfil?: string | null;
@@ -85,11 +89,14 @@ export const MedicosList = () => {
       }
       
       if (data) {
-        const formattedData = data.map(medico => ({
+        const formattedData: MedicoInfo[] = data.map(medico => ({
           id: medico.id,
           nome: medico.nome,
           crm: medico.crm,
           especialidade: medico.especialidade,
+          biografia: medico.biografia || '',
+          telefone: medico.telefone || '',
+          valor_por_consulta: medico.valor_por_consulta || 0,
           status: medico.aprovado ? 'Aprovado' : 'Pendente',
           aprovado: medico.aprovado,
           foto_perfil: medico.foto_perfil,

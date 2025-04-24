@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -37,11 +38,11 @@ interface MedicoInfo {
 export function EditMedicoDialog({ open, onOpenChange, medico, onUpdate }: EditMedicoDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [formData, setFormData] = React.useState<Partial<Omit<MedicoInfo, 'id'>>>({});
+  const [formData, setFormData] = React.useState<Partial<Omit<MedicoInfo, 'id' | 'status'>>>({});
 
   React.useEffect(() => {
     if (medico) {
-      const { id, ...medicoData } = medico;
+      const { id, status, ...medicoData } = medico;
       setFormData(medicoData);
     }
   }, [medico]);
