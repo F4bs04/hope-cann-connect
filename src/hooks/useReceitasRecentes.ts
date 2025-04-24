@@ -39,8 +39,8 @@ export function useReceitasRecentes() {
         if (error) throw error;
         
         if (data) {
-          // Use type assertion here to avoid deep type instantiation
-          setReceitas(data as ReceitaRecente[]);
+          // Convert the response to ReceitaRecente[] without deep type instantiation
+          setReceitas(data as unknown as ReceitaRecente[]);
         }
       } catch (error: any) {
         console.error('Error fetching prescriptions:', error);
