@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -140,6 +139,7 @@ const DASH_DATA_INITIAL: DashCardData[] = [
 
 import MedicosPendentesAprovacao from "./MedicosPendentesAprovacao";
 import { DashboardCharts } from "./DashboardCharts";
+import { DoctorRoadmap } from "./DoctorRoadmap";
 
 const ClinicaDashboard: React.FC = () => {
   const [dashData, setDashData] = useState<DashCardData[]>(DASH_DATA_INITIAL);
@@ -467,6 +467,9 @@ const ClinicaDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* DoctorRoadmap component */}
+      <DoctorRoadmap />
     </div>
   );
 };

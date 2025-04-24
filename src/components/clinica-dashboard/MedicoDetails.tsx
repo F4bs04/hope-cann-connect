@@ -52,20 +52,20 @@ export function MedicoDetails({ open, onOpenChange, medicoId }: MedicoDetailsPro
       const { data, error } = await supabase
         .from('consultas')
         .select(`
-          id_paciente,
-          pacientes_app (
+          pacientes_app!inner (
             id,
             nome
           ),
           data_hora
         `)
         .eq('id_medico', medicoId)
-        .eq('status', 'realizada')
-        .order('data_hora', { ascending: false });
+        .eq('status', 'realizada');
 
       if (error) throw error;
 
-      const uniquePacientes = data.reduce((acc: Paciente[], curr) => {
+      const uniquePacientes = (data || []).reduce((acc: Paciente[], curr) => {
+        if (!curr.pacientes_app) return acc;
+        
         const existingPaciente = acc.find(p => p.id === curr.pacientes_app.id);
         if (!existingPaciente) {
           acc.push({

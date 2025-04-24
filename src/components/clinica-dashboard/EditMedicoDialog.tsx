@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -26,30 +25,24 @@ interface MedicoInfo {
   nome: string;
   crm: string;
   especialidade: string;
+  biografia: string;
+  telefone: string;
+  valor_por_consulta: number;
   status: string;
   aprovado: boolean;
   foto_perfil?: string | null;
   data_aprovacao?: string | null;
-  biografia: string;
-  telefone: string;
-  valor_por_consulta: number;
 }
 
 export function EditMedicoDialog({ open, onOpenChange, medico, onUpdate }: EditMedicoDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [formData, setFormData] = React.useState<Partial<MedicoInfo>>({});
+  const [formData, setFormData] = React.useState<Partial<Omit<MedicoInfo, 'id'>>>({});
 
   React.useEffect(() => {
     if (medico) {
-      setFormData({
-        nome: medico.nome,
-        crm: medico.crm,
-        especialidade: medico.especialidade,
-        biografia: medico.biografia,
-        telefone: medico.telefone,
-        valor_por_consulta: medico.valor_por_consulta
-      });
+      const { id, ...medicoData } = medico;
+      setFormData(medicoData);
     }
   }, [medico]);
 
