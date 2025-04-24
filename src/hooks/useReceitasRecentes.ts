@@ -3,8 +3,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Define a clear interface for the Receita object
+interface Receita {
+  id: number;
+  medicamento: string;
+  data: string;
+  status: string;
+  posologia: string;
+  email_paciente?: string;
+}
+
 export function useReceitasRecentes() {
-  const [receitas, setReceitas] = useState<any[]>([]);
+  const [receitas, setReceitas] = useState<Receita[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
@@ -22,7 +32,7 @@ export function useReceitasRecentes() {
           .limit(3);
         
         if (error) throw error;
-        if (data) setReceitas(data);
+        if (data) setReceitas(data as Receita[]);
       } catch (error) {
         console.error('Error fetching prescriptions:', error);
         toast({
