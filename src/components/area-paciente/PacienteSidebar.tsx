@@ -2,7 +2,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarHeader,
@@ -23,14 +22,8 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
   currentSection,
   onSectionChange,
 }) => {
-  const navigate = useNavigate();
   const menuItems = usePacienteMenuItems();
-
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userEmail');
-    navigate('/login');
-  };
+  const userEmail = localStorage.getItem('userEmail') || 'Usuário';
 
   return (
     <Sidebar className="bg-[#F2F7FA] text-gray-800 min-w-[240px]">
@@ -57,13 +50,12 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-4 mt-auto border-t border-gray-100">
-        <Button
-          className="w-full"
-          variant="outline"
-          onClick={handleLogout}
-        >
-          Sair
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="bg-hopecann-teal/10 p-2 rounded-full">
+            <User className="h-5 w-5 text-hopecann-teal" />
+          </div>
+          <span className="text-sm text-gray-600 truncate">{userEmail}</span>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
