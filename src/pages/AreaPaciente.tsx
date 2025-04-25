@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import PacienteHeader from "@/components/paciente/PacienteHeader";
 import { PacienteSidebar } from '@/components/area-paciente/PacienteSidebar';
@@ -12,9 +12,20 @@ import PedidosExamePaciente from '@/components/paciente/PedidosExamePaciente';
 import MedicosPaciente from '@/components/paciente/MedicosPaciente';
 import { usePacienteAuth } from '@/hooks/usePacienteAuth';
 
-const AreaPaciente: React.FC = () => {
-  const [currentSection, setCurrentSection] = useState('dashboard');
+interface AreaPacienteProps {
+  initialSection?: string;
+}
+
+const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard' }) => {
+  const [currentSection, setCurrentSection] = useState(initialSection);
   const { paciente, loading } = usePacienteAuth();
+  
+  // When initialSection prop changes, update the currentSection state
+  useEffect(() => {
+    if (initialSection) {
+      setCurrentSection(initialSection);
+    }
+  }, [initialSection]);
 
   if (loading) {
     return (
@@ -43,6 +54,12 @@ const AreaPaciente: React.FC = () => {
         return <PedidosExamePaciente pacienteId={pacienteId} />;
       case 'medicos':
         return <MedicosPaciente pacienteId={pacienteId} />;
+      case 'perfil':
+        return <div className="p-6 bg-white rounded-lg shadow">
+          <h2 className="text-2xl font-bold mb-6 text-hopecann-teal">Meu Perfil</h2>
+          {/* Temporary placeholder for profile section */}
+          <p className="text-gray-600">Esta seção será implementada em breve.</p>
+        </div>;
       default:
         return <PacienteDashboard />;
     }
