@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { usePacienteMenuItems } from '@/hooks/usePacienteMenuItems';
 
 interface PacienteSidebarProps {
@@ -22,8 +23,13 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
   currentSection,
   onSectionChange,
 }) => {
+  const navigate = useNavigate();
   const menuItems = usePacienteMenuItems();
   const userEmail = localStorage.getItem('userEmail') || 'Usuário';
+
+  const handleProfileClick = () => {
+    navigate('/area-paciente/perfil');
+  };
 
   return (
     <Sidebar className="bg-[#F2F7FA] text-gray-800 min-w-[240px]">
@@ -50,12 +56,18 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-4 mt-auto border-t border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="bg-hopecann-teal/10 p-2 rounded-full">
-            <User className="h-5 w-5 text-hopecann-teal" />
-          </div>
+        <button 
+          onClick={handleProfileClick}
+          className="flex items-center gap-3 w-full hover:bg-hopecann-teal/5 p-2 rounded-lg transition-colors"
+        >
+          <Avatar className="h-9 w-9">
+            <AvatarImage src="/placeholder.svg" />
+            <AvatarFallback>
+              <User className="h-5 w-5 text-hopecann-teal" />
+            </AvatarFallback>
+          </Avatar>
           <span className="text-sm text-gray-600 truncate">{userEmail}</span>
-        </div>
+        </button>
       </SidebarFooter>
     </Sidebar>
   );

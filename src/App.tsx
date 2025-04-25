@@ -48,6 +48,14 @@ function App() {
               } 
             />
             <Route 
+              path="/area-paciente/perfil" 
+              element={
+                <ProtectedRoute allowedUserTypes={['paciente']}>
+                  <AreaPaciente initialSection="perfil" />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/area-medico" 
               element={
                 <ProtectedRoute allowedUserTypes={['medico']}>
