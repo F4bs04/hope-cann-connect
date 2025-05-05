@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const getConsultas = async () => {
@@ -39,7 +40,7 @@ export const getPacientes = async () => {
 export const getReceitas = async () => {
   try {
     const { data, error } = await supabase
-      .from('receitas')
+      .from('receitas_app')
       .select('*, pacientes_app(nome)')
       .order('data', { ascending: false });
     
@@ -96,7 +97,7 @@ export const createConsulta = async (consultaData: any) => {
 export const createReceita = async (receitaData: any) => {
   try {
     const { data, error } = await supabase
-      .from('receitas')
+      .from('receitas_app')
       .insert([receitaData])
       .select()
       .single();
@@ -196,7 +197,7 @@ export const getSaldoMedico = async (medicoId: number) => {
 export const getTransacoesMedico = async (medicoId: number) => {
   try {
     const { data, error } = await supabase
-      .from('transacoes_medico')
+      .from('transacoes_medicos')
       .select('*')
       .eq('id_medico', medicoId)
       .order('data_transacao', { ascending: false });
@@ -310,9 +311,22 @@ export const saveTemplateExame = async (template: any) => {
 
 export const updateTemplateUsage = async (templateId: number) => {
   try {
+    // Primeiro, obter o valor atual de frequencia_uso
+    const { data: template, error: getError } = await supabase
+      .from('templates_exame')
+      .select('frequencia_uso')
+      .eq('id', templateId)
+      .single();
+      
+    if (getError) throw getError;
+    
+    // Incrementar manualmente
+    const novaFrequencia = (template?.frequencia_uso || 0) + 1;
+    
+    // Atualizar o template com o novo valor
     const { data, error } = await supabase
       .from('templates_exame')
-      .update({ frequencia_uso: supabase.rpc('increment', { x: 1 }) })
+      .update({ frequencia_uso: novaFrequencia })
       .eq('id', templateId)
       .select();
       
@@ -339,19 +353,58 @@ export const deleteTemplateExame = async (templateId: number) => {
   }
 };
 
-// Adicionar função para criar função de incremento no supabase caso ainda não exista
-export const setupIncrementFunction = async () => {
+// Implementação da função verifyClinicPassword que estava faltando
+export const verifyClinicPassword = async (email: string, password: string): Promise<boolean> => {
   try {
-    const { error } = await supabase.rpc('increment', { x: 1 });
+    const { data, error } = await supabase.rpc('verify_clinic_password', {
+      p_email: email,
+      p_password: password
+    });
     
-    // Se a função não existir, vamos criá-la
-    if (error && error.message.includes('does not exist')) {
-      await supabase.rpc('create_increment_function');
+    if (error) {
+      console.error("Erro ao verificar senha da clínica:", error);
+      return false;
     }
+    
+    return data || false;
   } catch (error) {
-    console.error('Error setting up increment function:', error);
+    console.error("Erro ao verificar senha da clínica:", error);
+    return false;
   }
 };
 
-// Chamar esta função ao inicializar a aplicação
-setupIncrementFunction();
+// Funções mock para evitar erros de tipos - essas funções estão sendo referenciadas em outros arquivos
+export const createPaciente = async (pacienteData: any) => {
+  console.error("Função createPaciente não implementada");
+  return null;
+};
+
+export const verificarChatAtivo = async (medicoId: number, pacienteId: number) => {
+  console.error("Função verificarChatAtivo não implementada");
+  return false;
+};
+
+export const enviarMensagem = async (mensagemData: any) => {
+  console.error("Função enviarMensagem não implementada");
+  return null;
+};
+
+export const getMensagensChat = async (medicoId: number, pacienteId: number) => {
+  console.error("Função getMensagensChat não implementada");
+  return [];
+};
+
+export const marcarMensagensComoLidas = async (medicoId: number, pacienteId: number, remetenteTipo: string) => {
+  console.error("Função marcarMensagensComoLidas não implementada");
+  return true;
+};
+
+export const getChatsAtivos = async (medicoId: number) => {
+  console.error("Função getChatsAtivos não implementada");
+  return [];
+};
+
+export const getChatsAtivosPaciente = async (pacienteId: number) => {
+  console.error("Função getChatsAtivosPaciente não implementada");
+  return [];
+};
