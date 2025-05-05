@@ -7,21 +7,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, FileText, Check } from 'lucide-react';
+import { AlertTriangle, FileText, Check, Save, BookmarkPlus, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { getPacientes, createPedidoExame } from '@/services/supabaseService';
+import { getPacientes, createPedidoExame, getTemplatesExame, updateTemplateUsage } from '@/services/supabaseService';
 import PdfUpload from '@/components/ui/pdf-upload';
+import ExameTemplateItem from './ExameTemplateItem';
+import SaveTemplateDialog from './SaveTemplateDialog';
+import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
 
 const PedidosExame: React.FC = () => {
   const { toast } = useToast();
+  const { userInfo } = useCurrentUserInfo();
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [assinado, setAssinado] = useState(false);
   const [success, setSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState('formulario');
   const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
   const [pdfFilePath, setPdfFilePath] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [templateSearchQuery, setTemplateSearchQuery] = useState('');
 
   // Form state
   const [pacienteId, setPacienteId] = useState('');
@@ -31,21 +39,29 @@ const PedidosExame: React.FC = () => {
   const [instrucoes, setInstrucoes] = useState('');
   
   useEffect(() => {
-    const loadPacientes = async () => {
+    const loadData = async () => {
       setLoading(true);
+      setLoadingTemplates(true);
+      
+      // Carregar pacientes
       const data = await getPacientes();
       setPacientes(data);
       setLoading(false);
+      
+      // Carregar ID do médico do localStorage
+      const userId = userInfo?.medicoId || localStorage.getItem("userId");
+      if (userId) {
+        setMedicoUserId(typeof userId === 'string' ? parseInt(userId) : userId);
+        
+        // Carregar templates
+        const templatesData = await getTemplatesExame(typeof userId === 'string' ? parseInt(userId) : userId);
+        setTemplates(templatesData);
+        setLoadingTemplates(false);
+      }
     };
     
-    loadPacientes();
-    
-    // Carregar ID do médico do localStorage
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      setMedicoUserId(parseInt(userId));
-    }
-  }, []);
+    loadData();
+  }, [userInfo]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,6 +152,47 @@ const PedidosExame: React.FC = () => {
   const handlePdfUploadComplete = (filePath: string) => {
     setPdfFilePath(filePath);
   };
+  
+  const handleSelectTemplate = async (template: any) => {
+    setNomeExame(template.nome_exame);
+    setJustificativa(template.justificativa);
+    setPrioridade(template.prioridade);
+    setInstrucoes(template.instrucoes);
+    
+    // Incrementar contador de uso
+    if (template.id) {
+      await updateTemplateUsage(template.id);
+      // Atualizar a lista de templates
+      if (medicoUserId) {
+        const updatedTemplates = await getTemplatesExame(medicoUserId);
+        setTemplates(updatedTemplates);
+      }
+    }
+    
+    toast({
+      title: "Template aplicado",
+      description: "Os dados do template foram aplicados ao formulário",
+    });
+  };
+  
+  const handleDeleteTemplate = async (id: number) => {
+    // Remover da UI imediatamente
+    setTemplates(templates.filter(t => t.id !== id));
+  };
+  
+  const refreshTemplates = async () => {
+    if (medicoUserId) {
+      setLoadingTemplates(true);
+      const updatedTemplates = await getTemplatesExame(medicoUserId);
+      setTemplates(updatedTemplates);
+      setLoadingTemplates(false);
+    }
+  };
+  
+  const filteredTemplates = templates.filter(template => 
+    template.nome.toLowerCase().includes(templateSearchQuery.toLowerCase()) ||
+    template.nome_exame.toLowerCase().includes(templateSearchQuery.toLowerCase())
+  );
   
   if (success) {
     return (
@@ -368,13 +425,26 @@ const PedidosExame: React.FC = () => {
                   </>
                 )}
                 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  disabled={(activeTab === 'formulario' && !assinado) || (activeTab === 'pdf' && !pdfFilePath)}
-                >
-                  Gerar Pedido de Exame
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-between">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => setTemplateDialogOpen(true)}
+                    disabled={activeTab === 'pdf' || !nomeExame || !justificativa}
+                    className="flex items-center"
+                  >
+                    <BookmarkPlus className="h-4 w-4 mr-2" />
+                    Salvar Template
+                  </Button>
+                
+                  <Button 
+                    type="submit" 
+                    className="bg-green-600 hover:bg-green-700"
+                    disabled={(activeTab === 'formulario' && !assinado) || (activeTab === 'pdf' && !pdfFilePath)}
+                  >
+                    Gerar Pedido de Exame
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
@@ -382,36 +452,52 @@ const PedidosExame: React.FC = () => {
         
         <div>
           <div className="sticky top-4 space-y-4">
-            <Card className="bg-blue-50 border-blue-200">
+            <Card>
               <CardContent className="p-4">
-                <div className="flex items-start">
-                  <FileText className="h-5 w-5 mr-2 text-blue-600 mt-0.5" />
-                  <div>
-                    <h3 className="font-medium text-blue-800">Exames Recentes</h3>
-                    <p className="text-sm text-blue-600 mt-1">Exames solicitados nos últimos 30 dias</p>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-medium">Templates Salvos</h3>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                    <Input
+                      placeholder="Buscar..."
+                      value={templateSearchQuery}
+                      onChange={(e) => setTemplateSearchQuery(e.target.value)}
+                      className="pl-7 h-8 text-sm"
+                    />
                   </div>
                 </div>
                 
-                <div className="mt-4 space-y-3">
-                  <div className="bg-white p-3 rounded-md border border-blue-200">
-                    <p className="font-medium">Raio-X da coluna lombar</p>
-                    <p className="text-sm text-gray-500">Para: Maria Silva Santos</p>
-                    <p className="text-sm text-gray-500 mt-1">Solicitado em: 15/01/2025</p>
+                {loadingTemplates ? (
+                  <div className="text-center py-6 text-gray-500">
+                    Carregando templates...
                   </div>
-                  
-                  <div className="bg-white p-3 rounded-md border border-blue-200">
-                    <p className="font-medium">Hemograma completo</p>
-                    <p className="text-sm text-gray-500">Para: João Oliveira Pereira</p>
-                    <p className="text-sm text-gray-500 mt-1">Solicitado em: 10/01/2025</p>
+                ) : filteredTemplates.length > 0 ? (
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    {filteredTemplates.map(template => (
+                      <ExameTemplateItem
+                        key={template.id}
+                        template={template}
+                        onSelect={handleSelectTemplate}
+                        onDelete={handleDeleteTemplate}
+                      />
+                    ))}
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    {templateSearchQuery ? (
+                      <p>Nenhum template encontrado para "{templateSearchQuery}"</p>
+                    ) : (
+                      <p>Você ainda não tem templates salvos</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
             
             <Card>
               <CardContent className="p-4">
-                <h3 className="font-medium">Exames Frequentes</h3>
-                <div className="mt-3 space-y-2">
+                <h3 className="font-medium mb-3">Exames Frequentes</h3>
+                <div className="space-y-2">
                   <Button variant="outline" className="w-full justify-start text-left" onClick={() => setNomeExame("Hemograma completo")}>
                     Hemograma completo
                   </Button>
@@ -430,6 +516,19 @@ const PedidosExame: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      <SaveTemplateDialog
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        formData={{
+          nomeExame,
+          justificativa,
+          prioridade,
+          instrucoes
+        }}
+        medicoId={medicoUserId}
+        onSuccess={refreshTemplates}
+      />
     </div>
   );
 };

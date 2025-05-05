@@ -1155,6 +1155,42 @@ export type Database = {
         }
         Relationships: []
       }
+      templates_exame: {
+        Row: {
+          data_criacao: string | null
+          frequencia_uso: number | null
+          id: number
+          id_medico: number
+          instrucoes: string | null
+          justificativa: string | null
+          nome: string
+          nome_exame: string
+          prioridade: string | null
+        }
+        Insert: {
+          data_criacao?: string | null
+          frequencia_uso?: number | null
+          id?: number
+          id_medico: number
+          instrucoes?: string | null
+          justificativa?: string | null
+          nome: string
+          nome_exame: string
+          prioridade?: string | null
+        }
+        Update: {
+          data_criacao?: string | null
+          frequencia_uso?: number | null
+          id?: number
+          id_medico?: number
+          instrucoes?: string | null
+          justificativa?: string | null
+          nome?: string
+          nome_exame?: string
+          prioridade?: string | null
+        }
+        Relationships: []
+      }
       transacoes_medicos: {
         Row: {
           data_transacao: string
