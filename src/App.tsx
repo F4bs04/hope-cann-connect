@@ -21,6 +21,7 @@ import CadastroClinica from "./pages/CadastroClinica";
 import React, { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AreaClinica from "./pages/AreaClinica";
+import Notificacoes from "./pages/Notificacoes";
 import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
@@ -153,6 +154,14 @@ function App() {
               element={
                 <ProtectedRoute allowedUserTypes={['admin_clinica']}>
                   <AreaClinica />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/notificacoes" 
+              element={
+                <ProtectedRoute allowedUserTypes={['paciente', 'medico', 'admin_clinica']}>
+                  <Notificacoes />
                 </ProtectedRoute>
               } 
             />

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, LogIn, User, Stethoscope, LogOut } from 'lucide-react';
+import { Menu, X, LogIn, User, Stethoscope, LogOut, BriefcaseMedical, Bell } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,6 +10,7 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [session, setSession] = useState(null);
   const [userType, setUserType] = useState(null);
+  const [hasNotifications, setHasNotifications] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -98,6 +99,24 @@ const Header = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Check for notifications (this is a placeholder - would need to connect to real notification data)
+  useEffect(() => {
+    const checkNotifications = async () => {
+      // This is where you would fetch actual notifications from your database
+      // For now, let's just simulate having notifications for demonstration
+      if (session || localStorage.getItem('isAuthenticated') === 'true') {
+        setHasNotifications(false); // Set to true to show notification indicator
+      }
+    };
+    
+    checkNotifications();
+    
+    // You could set up a polling mechanism or real-time subscription here
+    const notificationInterval = setInterval(checkNotifications, 60000); // Check every minute
+    
+    return () => clearInterval(notificationInterval);
+  }, [session]);
+
   const fetchUserType = async userId => {
     try {
       // First check if user is a doctor
@@ -116,6 +135,21 @@ const Header = () => {
       if (paciente) {
         setUserType('paciente');
         return;
+      }
+
+      // Check if user is a clinic admin (check in clinicas table by email)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        const { data: clinica } = await supabase
+          .from('clinicas')
+          .select('id')
+          .eq('email', user.email)
+          .single();
+        
+        if (clinica) {
+          setUserType('admin_clinica');
+          return;
+        }
       }
 
       // Default to paciente if user type is not determined
@@ -170,6 +204,33 @@ const Header = () => {
     }
   };
 
+  // Function to determine which area link to show based on userType
+  const getUserAreaLink = () => {
+    switch(userType) {
+      case 'medico':
+        return {
+          to: "/area-medico",
+          icon: <Stethoscope size={18} />,
+          text: "Área do Médico"
+        };
+      case 'admin_clinica':
+        return {
+          to: "/admin",
+          icon: <BriefcaseMedical size={18} />,
+          text: "Área da Clínica"
+        };
+      default: // default is paciente
+        return {
+          to: "/area-paciente",
+          icon: <User size={18} />,
+          text: "Área do Paciente"
+        };
+    }
+  };
+
+  const isAuthenticated = session || localStorage.getItem('isAuthenticated') === 'true';
+  const userAreaLink = getUserAreaLink();
+
   return (
     <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-4'}`}>
       <div className="hopecann-container flex justify-between items-center">
@@ -194,19 +255,20 @@ const Header = () => {
             Contato
           </NavLink>
           
-          {session ? (
+          {isAuthenticated ? (
             <div className="flex items-center space-x-2">
-              {userType === 'medico' ? (
-                <Link to="/area-medico" className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm flex items-center gap-2">
-                  <Stethoscope size={18} />
-                  Painel
-                </Link>
-              ) : (
-                <Link to="/area-paciente" className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm flex items-center gap-2">
-                  <User size={18} />
-                  Painel
-                </Link>
-              )}
+              <Link to={userAreaLink.to} className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-2.5 px-6 rounded-full transition-all shadow-sm flex items-center gap-2">
+                {userAreaLink.icon}
+                {userAreaLink.text}
+              </Link>
+              
+              <Link to="/notificacoes" className="relative bg-gray-100 hover:bg-gray-200 p-2.5 rounded-full transition-all">
+                <Bell size={18} className="text-gray-700" />
+                {hasNotifications && (
+                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                )}
+              </Link>
+              
               <button
                 onClick={handleLogout}
                 className="bg-red-500 hover:bg-red-600 text-white font-medium py-2.5 px-4 rounded-full transition-all shadow-sm flex items-center gap-2"
@@ -246,19 +308,21 @@ const Header = () => {
               Contato
             </MobileNavLink>
             
-            {session ? (
+            {isAuthenticated ? (
               <div className="flex flex-col space-y-3">
-                {userType === 'medico' ? (
-                  <Link to="/area-medico" onClick={() => setIsMenuOpen(false)} className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center flex items-center justify-center gap-2">
-                    <Stethoscope size={18} />
-                    Painel
-                  </Link>
-                ) : (
-                  <Link to="/area-paciente" onClick={() => setIsMenuOpen(false)} className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center flex items-center justify-center gap-2">
-                    <User size={18} />
-                    Painel
-                  </Link>
-                )}
+                <Link to={userAreaLink.to} onClick={() => setIsMenuOpen(false)} className="bg-hopecann-green hover:bg-hopecann-teal text-white font-medium py-3 px-6 rounded-full transition-all w-full text-center flex items-center justify-center gap-2">
+                  {userAreaLink.icon}
+                  {userAreaLink.text}
+                </Link>
+                
+                <Link to="/notificacoes" onClick={() => setIsMenuOpen(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-full transition-all w-full text-center flex items-center justify-center gap-2">
+                  <Bell size={18} />
+                  Notificações
+                  {hasNotifications && (
+                    <span className="h-2 w-2 bg-red-500 rounded-full"></span>
+                  )}
+                </Link>
+                
                 <button
                   onClick={() => {
                     handleLogout();
