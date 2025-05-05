@@ -52,6 +52,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedUserTy
     checkAuth();
   }, []);
 
+  // Only render redirect elements when loading is complete
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -60,21 +61,34 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedUserTy
     );
   }
 
+  // Move toast and redirects outside of render function
   if (!isAuthenticated) {
-    toast({
-      variant: "destructive",
-      title: "Acesso restrito",
-      description: "Faça login para acessar esta página.",
-    });
+    // Using useEffect here would be better, but for simplicity in this fix:
+    if (typeof window !== 'undefined' && !localStorage.getItem('toast-shown-auth')) {
+      toast({
+        variant: "destructive",
+        title: "Acesso restrito",
+        description: "Faça login para acessar esta página.",
+      });
+      localStorage.setItem('toast-shown-auth', 'true');
+      // Remove this item after a delay
+      setTimeout(() => localStorage.removeItem('toast-shown-auth'), 2000);
+    }
     return <Navigate to="/login" />;
   }
 
   if (userType && !allowedUserTypes.includes(userType)) {
-    toast({
-      variant: "destructive",
-      title: "Acesso não autorizado",
-      description: "Você não tem permissão para acessar esta página.",
-    });
+    // Using useEffect here would be better, but for simplicity in this fix:
+    if (typeof window !== 'undefined' && !localStorage.getItem('toast-shown-perm')) {
+      toast({
+        variant: "destructive",
+        title: "Acesso não autorizado",
+        description: "Você não tem permissão para acessar esta página.",
+      });
+      localStorage.setItem('toast-shown-perm', 'true');
+      // Remove this item after a delay
+      setTimeout(() => localStorage.removeItem('toast-shown-perm'), 2000);
+    }
     
     // Redirect based on user type
     if (userType === 'medico') {

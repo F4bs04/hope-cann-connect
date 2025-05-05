@@ -77,7 +77,8 @@ function App() {
               setUserType(data.tipo_usuario);
             }
           })
-          .catch(error => {
+          .then(undefined, (error) => {
+            // Proper error handling with a then block for the rejected case
             console.error('Error fetching user type on auth change:', error);
           });
       } else {
