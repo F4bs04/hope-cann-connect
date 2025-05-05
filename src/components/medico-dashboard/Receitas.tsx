@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, FilePlus, FileText, Calendar, Download, Eye } from 'lucide-react';
+import { Search, FilePlus, FileText, Calendar, Download, Eye, FileUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import { getReceitas } from '@/services/supabaseService';
+import { getReceitas, getDocumentUrl, downloadDocument } from '@/services/supabaseService';
+import { supabase } from "@/integrations/supabase/client";
 
 const Receitas: React.FC = () => {
   const { toast } = useToast();
@@ -35,19 +36,48 @@ const Receitas: React.FC = () => {
     (selectedTab === 'todas' || receita.status === selectedTab)
   );
 
-  const handleDownload = (id: number) => {
-    toast({
-      title: "Download iniciado",
-      description: "A receita está sendo preparada para download",
-    });
-    
-    // Simulate download
-    setTimeout(() => {
+  const handleDownload = async (receita: any) => {
+    if (receita.arquivo_pdf) {
+      // Se for um arquivo PDF, fazer download do Storage
       toast({
-        title: "Download concluído",
-        description: "A receita foi baixada com sucesso",
+        title: "Download iniciado",
+        description: "O arquivo PDF está sendo preparado para download",
       });
-    }, 1500);
+      
+      try {
+        // Extrair o nome original do arquivo da path
+        const fileName = receita.arquivo_pdf.split('/').pop() || `receita-${receita.id}.pdf`;
+        const success = await downloadDocument(receita.arquivo_pdf, fileName);
+        
+        if (success) {
+          toast({
+            title: "Download concluído",
+            description: "O PDF foi baixado com sucesso",
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao baixar PDF:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro no download",
+          description: "Não foi possível baixar o arquivo PDF",
+        });
+      }
+    } else {
+      // Receita normal, simular download
+      toast({
+        title: "Download iniciado",
+        description: "A receita está sendo preparada para download",
+      });
+      
+      // Simulate download
+      setTimeout(() => {
+        toast({
+          title: "Download concluído",
+          description: "A receita foi baixada com sucesso",
+        });
+      }, 1500);
+    }
   };
 
   const handleViewPrescription = (id: number) => {
@@ -104,6 +134,7 @@ const Receitas: React.FC = () => {
             const isExpired = receita.status === 'expirada';
             const dataEmissao = new Date(receita.data);
             const dataValidade = new Date(receita.data_validade);
+            const isPdf = !!receita.arquivo_pdf;
             
             return (
               <Card 
@@ -113,15 +144,20 @@ const Receitas: React.FC = () => {
                 <CardContent className="p-0">
                   <div className="flex flex-col md:flex-row">
                     <div className={`${isExpired ? 'bg-gray-500' : 'bg-[#00B3B0]'} p-4 text-white flex items-center justify-center md:w-16`}>
-                      <FileText className="h-8 w-8" />
+                      {isPdf ? <FileUp className="h-8 w-8" /> : <FileText className="h-8 w-8" />}
                     </div>
                     
                     <div className="p-4 flex-1">
                       <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
                         <h3 className="font-medium text-lg">{receita.pacientes_app?.nome}</h3>
-                        {isExpired && (
-                          <span className="text-sm bg-red-100 text-red-600 px-2 py-1 rounded">Expirada</span>
-                        )}
+                        <div className="flex flex-wrap gap-2 mt-1 md:mt-0">
+                          {isPdf && (
+                            <span className="text-sm bg-blue-100 text-blue-600 px-2 py-1 rounded">PDF Anexado</span>
+                          )}
+                          {isExpired && (
+                            <span className="text-sm bg-red-100 text-red-600 px-2 py-1 rounded">Expirada</span>
+                          )}
+                        </div>
                       </div>
                       
                       <p className="text-gray-800 font-medium mb-1">{receita.medicamento}</p>
@@ -151,7 +187,7 @@ const Receitas: React.FC = () => {
                       <Button 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => handleDownload(receita.id)}
+                        onClick={() => handleDownload(receita)}
                       >
                         <Download className="h-4 w-4 mr-2" /> Baixar
                       </Button>

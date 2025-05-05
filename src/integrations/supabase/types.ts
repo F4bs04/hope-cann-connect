@@ -107,6 +107,7 @@ export type Database = {
       }
       atestados: {
         Row: {
+          arquivo_pdf: string | null
           assinado: boolean | null
           cid: string | null
           data_emissao: string | null
@@ -117,6 +118,7 @@ export type Database = {
           unidade_tempo: string | null
         }
         Insert: {
+          arquivo_pdf?: string | null
           assinado?: boolean | null
           cid?: string | null
           data_emissao?: string | null
@@ -127,6 +129,7 @@ export type Database = {
           unidade_tempo?: string | null
         }
         Update: {
+          arquivo_pdf?: string | null
           assinado?: boolean | null
           cid?: string | null
           data_emissao?: string | null
@@ -326,6 +329,7 @@ export type Database = {
       }
       documentos: {
         Row: {
+          arquivo_bucket: string | null
           caminho_arquivo: string
           data_upload: string | null
           descricao: string
@@ -335,6 +339,7 @@ export type Database = {
           tipo: string
         }
         Insert: {
+          arquivo_bucket?: string | null
           caminho_arquivo: string
           data_upload?: string | null
           descricao: string
@@ -344,6 +349,7 @@ export type Database = {
           tipo: string
         }
         Update: {
+          arquivo_bucket?: string | null
           caminho_arquivo?: string
           data_upload?: string | null
           descricao?: string
@@ -441,6 +447,7 @@ export type Database = {
       }
       laudos: {
         Row: {
+          arquivo_pdf: string | null
           assinado: boolean | null
           cid: string | null
           conclusao: string
@@ -453,6 +460,7 @@ export type Database = {
           tipo_laudo: string
         }
         Insert: {
+          arquivo_pdf?: string | null
           assinado?: boolean | null
           cid?: string | null
           conclusao: string
@@ -465,6 +473,7 @@ export type Database = {
           tipo_laudo: string
         }
         Update: {
+          arquivo_pdf?: string | null
           assinado?: boolean | null
           cid?: string | null
           conclusao?: string
@@ -755,6 +764,7 @@ export type Database = {
       }
       pedidos_exame: {
         Row: {
+          arquivo_pdf: string | null
           assinado: boolean | null
           data_solicitacao: string | null
           id: number
@@ -766,6 +776,7 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          arquivo_pdf?: string | null
           assinado?: boolean | null
           data_solicitacao?: string | null
           id?: number
@@ -777,6 +788,7 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          arquivo_pdf?: string | null
           assinado?: boolean | null
           data_solicitacao?: string | null
           id?: number
@@ -820,6 +832,7 @@ export type Database = {
       }
       prescricoes: {
         Row: {
+          arquivo_pdf: string | null
           codigo_verificacao: string
           data_emissao: string | null
           data_validade: string
@@ -836,6 +849,7 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          arquivo_pdf?: string | null
           codigo_verificacao: string
           data_emissao?: string | null
           data_validade: string
@@ -852,6 +866,7 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          arquivo_pdf?: string | null
           codigo_verificacao?: string
           data_emissao?: string | null
           data_validade?: string
@@ -983,6 +998,7 @@ export type Database = {
       }
       receitas_app: {
         Row: {
+          arquivo_pdf: string | null
           data: string | null
           data_validade: string | null
           id: number
@@ -993,6 +1009,7 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          arquivo_pdf?: string | null
           data?: string | null
           data_validade?: string | null
           id?: number
@@ -1003,6 +1020,7 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          arquivo_pdf?: string | null
           data?: string | null
           data_validade?: string | null
           id?: number

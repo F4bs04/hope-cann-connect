@@ -512,3 +512,47 @@ export const verifyClinicPassword = async (email: string, password: string) => {
     return false;
   }
 };
+
+// Funções para upload e download de PDFs
+export const getDocumentUrl = async (filePath: string) => {
+  try {
+    const { data, error } = await supabase.storage
+      .from('documentos_medicos')
+      .createSignedUrl(filePath, 60 * 60); // URL válida por 1 hora
+    
+    if (error) throw error;
+    return data.signedUrl;
+  } catch (error: any) {
+    console.error('Error getting document URL:', error);
+    return null;
+  }
+};
+
+export const downloadDocument = async (filePath: string, fileName: string) => {
+  try {
+    const { data, error } = await supabase.storage
+      .from('documentos_medicos')
+      .download(filePath);
+    
+    if (error) throw error;
+    
+    // Criar URL para download
+    const url = URL.createObjectURL(data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    return true;
+  } catch (error: any) {
+    console.error('Error downloading document:', error);
+    toast({
+      variant: "destructive",
+      title: "Erro ao baixar documento",
+      description: error.message || "Não foi possível baixar o documento",
+    });
+    return false;
+  }
+};

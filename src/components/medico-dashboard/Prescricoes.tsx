@@ -7,15 +7,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Printer, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getPacientes, createReceita } from '@/services/supabaseService';
+import PdfUpload from '@/components/ui/pdf-upload';
 
 const Prescricoes: React.FC = () => {
   const { toast } = useToast();
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState('formulario');
+  const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
+  const [pdfFilePath, setPdfFilePath] = useState<string | null>(null);
 
   // Form state
   const [pacienteId, setPacienteId] = useState('');
@@ -38,12 +43,52 @@ const Prescricoes: React.FC = () => {
     };
     
     loadPacientes();
+    
+    // Carregar ID do médico do localStorage
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      setMedicoUserId(parseInt(userId));
+    }
   }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validations
+    // Se estamos na aba de anexo PDF e temos um arquivo anexado
+    if (activeTab === 'pdf' && pdfFilePath) {
+      if (!pacienteId) {
+        toast({
+          variant: "destructive",
+          title: "Paciente obrigatório",
+          description: "Por favor, selecione um paciente para associar ao PDF",
+        });
+        return;
+      }
+      
+      // Calcular data de validade para PDF (30 dias)
+      const dataValidade = new Date();
+      dataValidade.setDate(dataValidade.getDate() + 30);
+      
+      // Criar receita com referência ao PDF
+      const receitaData = {
+        id_paciente: parseInt(pacienteId),
+        medicamento: "Receita via PDF anexado",
+        posologia: "Ver documento anexo",
+        observacoes: "Documento PDF anexado pelo médico",
+        data_validade: dataValidade.toISOString(),
+        status: 'ativa',
+        arquivo_pdf: pdfFilePath
+      };
+      
+      const newReceita = await createReceita(receitaData);
+      
+      if (newReceita) {
+        setSuccess(true);
+        return;
+      }
+    }
+    
+    // Validações para o formulário normal
     if (!pacienteId) {
       toast({
         variant: "destructive",
@@ -112,6 +157,12 @@ const Prescricoes: React.FC = () => {
     setTipoReceita('simples');
     setObservacoes('');
     setAssinado(false);
+    setPdfFilePath(null);
+    setActiveTab('formulario');
+  };
+  
+  const handlePdfUploadComplete = (filePath: string) => {
+    setPdfFilePath(filePath);
   };
   
   if (success) {
@@ -154,6 +205,13 @@ const Prescricoes: React.FC = () => {
         </p>
       </div>
       
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-2xl mx-auto mb-6">
+        <TabsList className="grid grid-cols-2 w-full">
+          <TabsTrigger value="formulario">Preencher Formulário</TabsTrigger>
+          <TabsTrigger value="pdf">Anexar PDF</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
       <Card className="max-w-2xl mx-auto">
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -175,166 +233,181 @@ const Prescricoes: React.FC = () => {
               </Select>
             </div>
             
-            <div>
-              <Label htmlFor="medicamento" className="font-medium">
-                Nome do Medicamento*
-              </Label>
-              <div className="relative mt-1">
-                <Input
-                  id="medicamento"
-                  placeholder="Digite o nome do medicamento"
-                  value={medicamento}
-                  onChange={(e) => setMedicamento(e.target.value)}
-                  className="pr-8"
-                  required
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="posologia" className="font-medium">
-                Posologia*
-              </Label>
-              <Textarea
-                id="posologia"
-                placeholder="Descreva a posologia"
-                value={posologia}
-                onChange={(e) => setPosologia(e.target.value)}
-                className="mt-1 min-h-[100px]"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tempo-uso" className="font-medium">
-                  Tempo de Uso*
-                </Label>
-                <Input
-                  id="tempo-uso"
-                  type="number"
-                  placeholder="Quantidade"
-                  value={tempoUso}
-                  onChange={(e) => setTempoUso(e.target.value)}
-                  className="mt-1"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="periodo" className="font-medium">
-                  Período
-                </Label>
-                <Select value={periodo} onValueChange={setPeriodo}>
-                  <SelectTrigger id="periodo" className="mt-1">
-                    <SelectValue placeholder="Selecione o período" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dias">Dias</SelectItem>
-                    <SelectItem value="semanas">Semanas</SelectItem>
-                    <SelectItem value="meses">Meses</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div>
-              <Label className="font-medium">
-                Permite Substituições?
-              </Label>
-              <RadioGroup
-                value={permiteSubstituicao}
-                onValueChange={setPermiteSubstituicao}
-                className="flex space-x-6 mt-1"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="sim" id="sim" />
-                  <Label htmlFor="sim">Sim</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="não" id="nao" />
-                  <Label htmlFor="nao">Não</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <div>
-              <Label htmlFor="cid" className="font-medium">
-                CID (Opcional)
-              </Label>
-              <Input
-                id="cid"
-                placeholder="Digite o CID"
-                value={cid}
-                onChange={(e) => setCid(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="tipo-receita" className="font-medium">
-                Tipo de Receita*
-              </Label>
-              <Select value={tipoReceita} onValueChange={setTipoReceita}>
-                <SelectTrigger id="tipo-receita" className="mt-1">
-                  <SelectValue placeholder="Selecione o tipo de receita" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="simples">Simples</SelectItem>
-                  <SelectItem value="controlada">Controlada</SelectItem>
-                  <SelectItem value="antimicrobiano">Antimicrobiano</SelectItem>
-                  <SelectItem value="especial">Especial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="observacoes" className="font-medium">
-                Observações
-              </Label>
-              <Textarea
-                id="observacoes"
-                placeholder="Observações adicionais"
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            
-            <div>
-              <Label className="font-medium">
-                Assinatura Digital*
-              </Label>
-              <div 
-                className={`border-2 ${assinado ? 'border' : 'border-dashed'} rounded-md p-8 mt-1 flex flex-col items-center justify-center text-center ${assinado ? 'bg-green-50 border-green-200' : 'text-gray-500 hover:bg-gray-50'} cursor-pointer`}
-                onClick={() => setAssinado(!assinado)}
-              >
-                {assinado ? (
-                  <>
-                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
-                      <Check className="h-6 w-6 text-green-600" />
+            {activeTab === 'formulario' ? (
+              <>
+                <div>
+                  <Label htmlFor="medicamento" className="font-medium">
+                    Nome do Medicamento*
+                  </Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="medicamento"
+                      placeholder="Digite o nome do medicamento"
+                      value={medicamento}
+                      onChange={(e) => setMedicamento(e.target.value)}
+                      className="pr-8"
+                      required
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
                     </div>
-                    <span className="text-green-800 font-medium">Documento assinado digitalmente</span>
-                  </>
-                ) : (
-                  <>
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-2 text-gray-400">
-                      <path d="M15.5 8.5C15.5 8.5 15 11 12 11M12 11C9 11 8.5 8.5 8.5 8.5M12 11V15.5M7 16.5H17M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span>Clique para assinar digitalmente</span>
-                  </>
-                )}
-              </div>
-            </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="posologia" className="font-medium">
+                    Posologia*
+                  </Label>
+                  <Textarea
+                    id="posologia"
+                    placeholder="Descreva a posologia"
+                    value={posologia}
+                    onChange={(e) => setPosologia(e.target.value)}
+                    className="mt-1 min-h-[100px]"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="tempo-uso" className="font-medium">
+                      Tempo de Uso*
+                    </Label>
+                    <Input
+                      id="tempo-uso"
+                      type="number"
+                      placeholder="Quantidade"
+                      value={tempoUso}
+                      onChange={(e) => setTempoUso(e.target.value)}
+                      className="mt-1"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="periodo" className="font-medium">
+                      Período
+                    </Label>
+                    <Select value={periodo} onValueChange={setPeriodo}>
+                      <SelectTrigger id="periodo" className="mt-1">
+                        <SelectValue placeholder="Selecione o período" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="dias">Dias</SelectItem>
+                        <SelectItem value="semanas">Semanas</SelectItem>
+                        <SelectItem value="meses">Meses</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="font-medium">
+                    Permite Substituições?
+                  </Label>
+                  <RadioGroup
+                    value={permiteSubstituicao}
+                    onValueChange={setPermiteSubstituicao}
+                    className="flex space-x-6 mt-1"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="sim" id="sim" />
+                      <Label htmlFor="sim">Sim</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="não" id="nao" />
+                      <Label htmlFor="nao">Não</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                <div>
+                  <Label htmlFor="cid" className="font-medium">
+                    CID (Opcional)
+                  </Label>
+                  <Input
+                    id="cid"
+                    placeholder="Digite o CID"
+                    value={cid}
+                    onChange={(e) => setCid(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="tipo-receita" className="font-medium">
+                    Tipo de Receita*
+                  </Label>
+                  <Select value={tipoReceita} onValueChange={setTipoReceita}>
+                    <SelectTrigger id="tipo-receita" className="mt-1">
+                      <SelectValue placeholder="Selecione o tipo de receita" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="simples">Simples</SelectItem>
+                      <SelectItem value="controlada">Controlada</SelectItem>
+                      <SelectItem value="antimicrobiano">Antimicrobiano</SelectItem>
+                      <SelectItem value="especial">Especial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="observacoes" className="font-medium">
+                    Observações
+                  </Label>
+                  <Textarea
+                    id="observacoes"
+                    placeholder="Observações adicionais"
+                    value={observacoes}
+                    onChange={(e) => setObservacoes(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="font-medium">
+                    Assinatura Digital*
+                  </Label>
+                  <div 
+                    className={`border-2 ${assinado ? 'border' : 'border-dashed'} rounded-md p-8 mt-1 flex flex-col items-center justify-center text-center ${assinado ? 'bg-green-50 border-green-200' : 'text-gray-500 hover:bg-gray-50'} cursor-pointer`}
+                    onClick={() => setAssinado(!assinado)}
+                  >
+                    {assinado ? (
+                      <>
+                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
+                          <Check className="h-6 w-6 text-green-600" />
+                        </div>
+                        <span className="text-green-800 font-medium">Documento assinado digitalmente</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-2 text-gray-400">
+                          <path d="M15.5 8.5C15.5 8.5 15 11 12 11M12 11C9 11 8.5 8.5 8.5 8.5M12 11V15.5M7 16.5H17M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <span>Clique para assinar digitalmente</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <PdfUpload 
+                onUploadComplete={handlePdfUploadComplete} 
+                userId={medicoUserId} 
+                pacienteId={pacienteId ? parseInt(pacienteId) : null}
+                docType="receita"
+              />
+            )}
             
             <div className="flex justify-between pt-4">
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto" disabled={!assinado}>
+              <Button 
+                type="submit" 
+                className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto" 
+                disabled={(activeTab === 'formulario' && !assinado) || (activeTab === 'pdf' && !pdfFilePath)}
+              >
                 Gerar Receita
               </Button>
               

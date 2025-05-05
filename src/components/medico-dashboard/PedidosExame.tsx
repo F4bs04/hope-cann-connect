@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, FileText, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getPacientes, createPedidoExame } from '@/services/supabaseService';
+import PdfUpload from '@/components/ui/pdf-upload';
 
 const PedidosExame: React.FC = () => {
   const { toast } = useToast();
@@ -17,6 +19,9 @@ const PedidosExame: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [assinado, setAssinado] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState('formulario');
+  const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
+  const [pdfFilePath, setPdfFilePath] = useState<string | null>(null);
 
   // Form state
   const [pacienteId, setPacienteId] = useState('');
@@ -34,12 +39,48 @@ const PedidosExame: React.FC = () => {
     };
     
     loadPacientes();
+    
+    // Carregar ID do médico do localStorage
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      setMedicoUserId(parseInt(userId));
+    }
   }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validations
+    // Se estamos na aba de anexo PDF e temos um arquivo anexado
+    if (activeTab === 'pdf' && pdfFilePath) {
+      if (!pacienteId) {
+        toast({
+          variant: "destructive",
+          title: "Paciente obrigatório",
+          description: "Por favor, selecione um paciente para associar ao PDF",
+        });
+        return;
+      }
+      
+      const pedidoData = {
+        id_paciente: parseInt(pacienteId),
+        nome_exame: "Pedido de exame via PDF",
+        justificativa: "Ver documento PDF anexado",
+        prioridade: prioridade,
+        instrucoes: instrucoes || "Ver documento anexo",
+        assinado: true,
+        arquivo_pdf: pdfFilePath
+      };
+      
+      const newPedido = await createPedidoExame(pedidoData);
+      
+      if (newPedido) {
+        setSuccess(true);
+      }
+      
+      return;
+    }
+    
+    // Validações para o formulário
     if (!pacienteId) {
       toast({
         variant: "destructive",
@@ -92,6 +133,10 @@ const PedidosExame: React.FC = () => {
     }
   };
   
+  const handlePdfUploadComplete = (filePath: string) => {
+    setPdfFilePath(filePath);
+  };
+  
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -122,6 +167,8 @@ const PedidosExame: React.FC = () => {
               setInstrucoes('');
               setAssinado(false);
               setSuccess(false);
+              setPdfFilePath(null);
+              setActiveTab('formulario');
             }}
           >
             Criar Novo Pedido
@@ -139,6 +186,13 @@ const PedidosExame: React.FC = () => {
           Preencha os dados para solicitar exames para seus pacientes
         </p>
       </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
+        <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
+          <TabsTrigger value="formulario">Preencher Formulário</TabsTrigger>
+          <TabsTrigger value="pdf">Anexar PDF</TabsTrigger>
+        </TabsList>
+      </Tabs>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2">
@@ -163,106 +217,161 @@ const PedidosExame: React.FC = () => {
                   </Select>
                 </div>
                 
-                <div>
-                  <Label htmlFor="nome-exame" className="font-medium">
-                    Nome do Exame
-                  </Label>
-                  <Input
-                    id="nome-exame"
-                    placeholder="Nome do exame"
-                    value={nomeExame}
-                    onChange={(e) => setNomeExame(e.target.value)}
-                    className="mt-1"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="justificativa" className="font-medium">
-                    Justificativa Clínica
-                  </Label>
-                  <Textarea
-                    id="justificativa"
-                    placeholder="Descreva a justificativa clínica para o exame"
-                    value={justificativa}
-                    onChange={(e) => setJustificativa(e.target.value)}
-                    className="mt-1 min-h-[120px]"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label className="font-medium">
-                    Nível de Prioridade
-                  </Label>
-                  <RadioGroup
-                    value={prioridade}
-                    onValueChange={setPrioridade}
-                    className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-4"
-                  >
-                    <div className="flex items-center space-x-2 p-3 border rounded-md bg-red-50 hover:bg-red-100 cursor-pointer">
-                      <RadioGroupItem value="urgente" id="urgente" className="text-red-500" />
-                      <Label htmlFor="urgente" className="cursor-pointer flex items-center">
-                        <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
-                        <span>Urgente</span>
+                {activeTab === 'formulario' ? (
+                  <>
+                    <div>
+                      <Label htmlFor="nome-exame" className="font-medium">
+                        Nome do Exame
                       </Label>
+                      <Input
+                        id="nome-exame"
+                        placeholder="Nome do exame"
+                        value={nomeExame}
+                        onChange={(e) => setNomeExame(e.target.value)}
+                        className="mt-1"
+                        required
+                      />
                     </div>
                     
-                    <div className="flex items-center space-x-2 p-3 border rounded-md bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                      <RadioGroupItem value="rotina" id="rotina" />
-                      <Label htmlFor="rotina" className="cursor-pointer">Rotina</Label>
+                    <div>
+                      <Label htmlFor="justificativa" className="font-medium">
+                        Justificativa Clínica
+                      </Label>
+                      <Textarea
+                        id="justificativa"
+                        placeholder="Descreva a justificativa clínica para o exame"
+                        value={justificativa}
+                        onChange={(e) => setJustificativa(e.target.value)}
+                        className="mt-1 min-h-[120px]"
+                        required
+                      />
                     </div>
                     
-                    <div className="flex items-center space-x-2 p-3 border rounded-md bg-blue-50 hover:bg-blue-100 cursor-pointer">
-                      <RadioGroupItem value="acompanhamento" id="acompanhamento" className="text-blue-500" />
-                      <Label htmlFor="acompanhamento" className="cursor-pointer">Acompanhamento</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                
-                <div>
-                  <Label htmlFor="instrucoes" className="font-medium">
-                    Instruções ao Paciente
-                  </Label>
-                  <Input
-                    id="instrucoes"
-                    placeholder="Digite as instruções..."
-                    value={instrucoes}
-                    onChange={(e) => setInstrucoes(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <Label className="font-medium">
-                    Assinatura Digital
-                  </Label>
-                  <div 
-                    className={`border-2 ${assinado ? 'border' : 'border-dashed'} rounded-md p-8 mt-1 flex flex-col items-center justify-center text-center ${assinado ? 'bg-green-50 border-green-200' : 'text-gray-500 hover:bg-gray-50'} cursor-pointer`}
-                    onClick={() => setAssinado(!assinado)}
-                  >
-                    {assinado ? (
-                      <>
-                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
-                          <Check className="h-6 w-6 text-green-600" />
+                    <div>
+                      <Label className="font-medium">
+                        Nível de Prioridade
+                      </Label>
+                      <RadioGroup
+                        value={prioridade}
+                        onValueChange={setPrioridade}
+                        className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-4"
+                      >
+                        <div className="flex items-center space-x-2 p-3 border rounded-md bg-red-50 hover:bg-red-100 cursor-pointer">
+                          <RadioGroupItem value="urgente" id="urgente" className="text-red-500" />
+                          <Label htmlFor="urgente" className="cursor-pointer flex items-center">
+                            <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
+                            <span>Urgente</span>
+                          </Label>
                         </div>
-                        <span className="text-green-800 font-medium">Documento assinado digitalmente</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-2 text-gray-400">
-                          <path d="M15.5 8.5C15.5 8.5 15 11 12 11M12 11C9 11 8.5 8.5 8.5 8.5M12 11V15.5M7 16.5H17M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        <span>Clique para assinar digitalmente</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+                        
+                        <div className="flex items-center space-x-2 p-3 border rounded-md bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                          <RadioGroupItem value="rotina" id="rotina" />
+                          <Label htmlFor="rotina" className="cursor-pointer">Rotina</Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 p-3 border rounded-md bg-blue-50 hover:bg-blue-100 cursor-pointer">
+                          <RadioGroupItem value="acompanhamento" id="acompanhamento" className="text-blue-500" />
+                          <Label htmlFor="acompanhamento" className="cursor-pointer">Acompanhamento</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="instrucoes" className="font-medium">
+                        Instruções ao Paciente
+                      </Label>
+                      <Input
+                        id="instrucoes"
+                        placeholder="Digite as instruções..."
+                        value={instrucoes}
+                        onChange={(e) => setInstrucoes(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="font-medium">
+                        Assinatura Digital
+                      </Label>
+                      <div 
+                        className={`border-2 ${assinado ? 'border' : 'border-dashed'} rounded-md p-8 mt-1 flex flex-col items-center justify-center text-center ${assinado ? 'bg-green-50 border-green-200' : 'text-gray-500 hover:bg-gray-50'} cursor-pointer`}
+                        onClick={() => setAssinado(!assinado)}
+                      >
+                        {assinado ? (
+                          <>
+                            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
+                              <Check className="h-6 w-6 text-green-600" />
+                            </div>
+                            <span className="text-green-800 font-medium">Documento assinado digitalmente</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-2 text-gray-400">
+                              <path d="M15.5 8.5C15.5 8.5 15 11 12 11M12 11C9 11 8.5 8.5 8.5 8.5M12 11V15.5M7 16.5H17M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <span>Clique para assinar digitalmente</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <Label className="font-medium">
+                        Nível de Prioridade
+                      </Label>
+                      <RadioGroup
+                        value={prioridade}
+                        onValueChange={setPrioridade}
+                        className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-4"
+                      >
+                        <div className="flex items-center space-x-2 p-3 border rounded-md bg-red-50 hover:bg-red-100 cursor-pointer">
+                          <RadioGroupItem value="urgente" id="urgente-pdf" className="text-red-500" />
+                          <Label htmlFor="urgente-pdf" className="cursor-pointer flex items-center">
+                            <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
+                            <span>Urgente</span>
+                          </Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 p-3 border rounded-md bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                          <RadioGroupItem value="rotina" id="rotina-pdf" />
+                          <Label htmlFor="rotina-pdf" className="cursor-pointer">Rotina</Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 p-3 border rounded-md bg-blue-50 hover:bg-blue-100 cursor-pointer">
+                          <RadioGroupItem value="acompanhamento" id="acompanhamento-pdf" className="text-blue-500" />
+                          <Label htmlFor="acompanhamento-pdf" className="cursor-pointer">Acompanhamento</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="instrucoes-pdf" className="font-medium">
+                        Instruções ao Paciente
+                      </Label>
+                      <Input
+                        id="instrucoes-pdf"
+                        placeholder="Digite as instruções..."
+                        value={instrucoes}
+                        onChange={(e) => setInstrucoes(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <PdfUpload 
+                      onUploadComplete={handlePdfUploadComplete} 
+                      userId={medicoUserId} 
+                      pacienteId={pacienteId ? parseInt(pacienteId) : null}
+                      docType="pedido_exame"
+                    />
+                  </>
+                )}
                 
                 <Button 
                   type="submit" 
                   className="w-full bg-green-600 hover:bg-green-700"
-                  disabled={!assinado}
+                  disabled={(activeTab === 'formulario' && !assinado) || (activeTab === 'pdf' && !pdfFilePath)}
                 >
                   Gerar Pedido de Exame
                 </Button>
