@@ -1,8 +1,9 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Tratamentos from "./pages/Tratamentos";
 import Medicos from "./pages/Medicos";
@@ -17,13 +18,86 @@ import CadastroMedico from "./pages/CadastroMedico";
 import NotFound from "./pages/NotFound";
 import CompleteRegistroMedico from "./pages/CompleteRegistroMedico";
 import CadastroClinica from "./pages/CadastroClinica";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AreaClinica from "./pages/AreaClinica";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      if (session) {
+        try {
+          // First check if user is a doctor
+          const { data: userInfo } = await supabase
+            .from('usuarios')
+            .select('tipo_usuario')
+            .eq('email', session.user.email)
+            .maybeSingle();
+            
+          if (userInfo?.tipo_usuario) {
+            setUserType(userInfo.tipo_usuario);
+          } else {
+            setUserType('paciente'); // Default
+          }
+        } catch (error) {
+          console.error('Error fetching user type:', error);
+          setUserType('paciente'); // Default on error
+        }
+      }
+      
+      setLoading(false);
+    };
+    
+    // Check auth on load
+    checkAuth();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      
+      if (session) {
+        // Re-check user type on auth state change
+        supabase
+          .from('usuarios')
+          .select('tipo_usuario')
+          .eq('email', session.user.email)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data?.tipo_usuario) {
+              setUserType(data.tipo_usuario);
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching user type on auth change:', err);
+          });
+      } else {
+        setUserType(null);
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -37,8 +111,18 @@ function App() {
             <Route path="/medico/:id" element={<PerfilMedico />} />
             <Route path="/contato" element={<Contato />} />
             <Route path="/agendar" element={<Agendar />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/cadastro" element={<Cadastro />} />
+            <Route 
+              path="/login" 
+              element={
+                isAuthenticated ? 
+                  (userType === 'medico' ? <Navigate to="/area-medico" /> : <Navigate to="/area-paciente" />) : 
+                  <Login />
+              } 
+            />
+            <Route 
+              path="/cadastro" 
+              element={isAuthenticated ? <Navigate to="/" /> : <Cadastro />} 
+            />
             <Route 
               path="/area-paciente" 
               element={

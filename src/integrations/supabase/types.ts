@@ -255,12 +255,15 @@ export type Database = {
         Row: {
           data_criacao: string | null
           data_hora: string
+          dia_mes: number | null
+          dias_semana: string[] | null
           id: number
           id_clinica: number | null
           id_medico: number | null
           id_paciente: number | null
           motivo: string
           observacoes: string | null
+          repeticao: string | null
           status: string | null
           tipo_consulta: string
           valor_consulta: number | null
@@ -268,12 +271,15 @@ export type Database = {
         Insert: {
           data_criacao?: string | null
           data_hora: string
+          dia_mes?: number | null
+          dias_semana?: string[] | null
           id?: never
           id_clinica?: number | null
           id_medico?: number | null
           id_paciente?: number | null
           motivo: string
           observacoes?: string | null
+          repeticao?: string | null
           status?: string | null
           tipo_consulta: string
           valor_consulta?: number | null
@@ -281,12 +287,15 @@ export type Database = {
         Update: {
           data_criacao?: string | null
           data_hora?: string
+          dia_mes?: number | null
+          dias_semana?: string[] | null
           id?: never
           id_clinica?: number | null
           id_medico?: number | null
           id_paciente?: number | null
           motivo?: string
           observacoes?: string | null
+          repeticao?: string | null
           status?: string | null
           tipo_consulta?: string
           valor_consulta?: number | null

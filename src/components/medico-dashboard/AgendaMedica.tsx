@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
 import AgendaTab from '@/components/medico/AgendaTab';
@@ -6,15 +7,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, AlertCircle } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import AppointmentsList from '@/components/medico/AppointmentsList';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import AgendamentoForm from '@/components/medico/AgendamentoForm';
 
 const AgendaMedica: React.FC = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -26,9 +32,16 @@ const AgendaMedica: React.FC = () => {
       } = await supabase.auth.getSession();
       if (!session) {
         setError("Você precisa estar logado para visualizar sua agenda");
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para acessar esta página."
+        });
+        navigate('/login');
         setLoading(false);
         return;
       }
+      
       const {
         data: userData,
         error: userError
@@ -36,6 +49,7 @@ const AgendaMedica: React.FC = () => {
       if (userError) {
         throw userError;
       }
+      
       const {
         data: doctorData,
         error: doctorError
@@ -53,13 +67,18 @@ const AgendaMedica: React.FC = () => {
           motivo,
           status,
           tipo_consulta,
+          repeticao,
+          dias_semana,
+          dia_mes,
           pacientes_app:id_paciente (id, nome)
         `).eq('id_medico', doctorData.id).order('data_hora', {
         ascending: true
       });
+      
       if (appointmentsError) {
         throw appointmentsError;
       }
+      
       setAppointments(appointmentsData || []);
     } catch (error: any) {
       console.error("Erro ao buscar agendamentos:", error);
@@ -79,6 +98,7 @@ const AgendaMedica: React.FC = () => {
     }, payload => {
       fetchAppointments();
     }).subscribe();
+    
     return () => {
       supabase.removeChannel(appointmentsChannel);
     };
@@ -90,6 +110,7 @@ const AgendaMedica: React.FC = () => {
         <Tabs defaultValue="consultas" className="space-y-4">
           <TabsList>
             <TabsTrigger value="consultas">Consultas</TabsTrigger>
+            <TabsTrigger value="agendamento">Agendar Consulta</TabsTrigger>
             <TabsTrigger value="configurar">Configurar Horários</TabsTrigger>
             <TabsTrigger value="agendamento-rapido">Agendamento Rápido</TabsTrigger>
           </TabsList>
@@ -118,6 +139,20 @@ const AgendaMedica: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="agendamento">
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-hopecann-teal" />
+                Agendar Consulta
+              </h2>
+              <Card>
+                <CardContent className="pt-6">
+                  <AgendamentoForm onSuccess={fetchAppointments} />
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
