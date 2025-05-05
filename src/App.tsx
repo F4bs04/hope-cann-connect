@@ -77,8 +77,8 @@ function App() {
               setUserType(data.tipo_usuario);
             }
           })
-          .catch(err => {
-            console.error('Error fetching user type on auth change:', err);
+          .catch(error => {
+            console.error('Error fetching user type on auth change:', error);
           });
       } else {
         setUserType(null);
