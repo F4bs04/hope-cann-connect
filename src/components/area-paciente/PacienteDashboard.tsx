@@ -3,9 +3,11 @@ import React from 'react';
 import { DashboardSummaryCards } from "./DashboardSummaryCards";
 import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
 import { useReceitasRecentes } from '@/hooks/useReceitasRecentes';
+import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
 
 const PacienteDashboard = () => {
   const { receitas, isLoading } = useReceitasRecentes();
+  const { userInfo } = useCurrentUserInfo();
 
   return (
     <div className="space-y-6">

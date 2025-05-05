@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
 
 export interface ReceitaRecente {
   id: number;
@@ -19,33 +20,32 @@ export function useReceitasRecentes() {
   const [receitas, setReceitas] = useState<ReceitaRecente[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { userInfo, loading: userLoading } = useCurrentUserInfo();
   
   useEffect(() => {
     const fetchReceitas = async () => {
       try {
-        const userEmail = localStorage.getItem('userEmail');
-        if (!userEmail) {
+        // Wait for user info to load
+        if (userLoading) return;
+        
+        // Check if we have a valid patient ID
+        if (!userInfo.pacienteId) {
+          console.error('No patient ID found for current user');
           setIsLoading(false);
           return;
         }
 
-        // Check if receitas_app table has an email_paciente column
+        // Fetch recipes for the current patient
         const { data, error } = await supabase
           .from('receitas_app')
           .select('id, medicamento, data, status, posologia, id_paciente, data_validade, observacoes')
-          .eq('id_paciente', 1) // Using a fixed value temporarily
+          .eq('id_paciente', userInfo.pacienteId)
           .order('data', { ascending: false })
           .limit(3);
         
         if (error) throw error;
         
-        // Add email_paciente to each recipe since it might not exist in the database
-        const receitasWithEmail = data?.map(item => ({
-          ...item,
-          email_paciente: userEmail
-        })) || [];
-        
-        setReceitas(receitasWithEmail);
+        setReceitas(data || []);
       } catch (error) {
         console.error('Error fetching prescriptions:', error);
         toast({
@@ -59,7 +59,7 @@ export function useReceitasRecentes() {
     };
     
     fetchReceitas();
-  }, [toast]);
+  }, [toast, userInfo, userLoading]);
 
   return { receitas, isLoading };
 }

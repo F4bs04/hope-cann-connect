@@ -1,6 +1,26 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+export const getReceitasByPaciente = async (pacienteId: number) => {
+  try {
+    const { data, error } = await supabase
+      .from('receitas_app')
+      .select('*')
+      .eq('id_paciente', pacienteId)
+      .order('data', { ascending: false });
+    
+    if (error) {
+      console.error("Erro ao buscar receitas:", error);
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Erro ao buscar receitas:", error);
+    return [];
+  }
+};
+
 export const getReceitas = async () => {
   try {
     const { data, error } = await supabase
