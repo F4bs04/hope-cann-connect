@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const getSaldoMedico = async (medicoId: number) => {
@@ -100,14 +99,19 @@ export const getTemplatesExame = async (medicoId: number | null) => {
 
 export const saveTemplateExame = async (template: any) => {
   try {
+    console.log('Salvando template:', template);
     const { data, error } = await supabase
       .from('templates_exame')
       .insert([template])
-      .select()
-      .single();
+      .select();
       
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Erro ao salvar template de exame:', error);
+      throw error;
+    }
+    
+    console.log('Template salvo com sucesso:', data);
+    return data[0];
   } catch (error) {
     console.error('Erro ao salvar template de exame:', error);
     throw error;

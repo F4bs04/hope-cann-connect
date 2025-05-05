@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { deleteTemplateExame } from '@/services/supabaseService';
+import { deleteTemplateExame } from '@/services/medicos/medicosService';
 import { useToast } from '@/hooks/use-toast';
 
 interface ExameTemplateItemProps {
@@ -43,6 +43,7 @@ const ExameTemplateItem: React.FC<ExameTemplateItemProps> = ({
   
   const handleDelete = async () => {
     try {
+      console.log('Deletando template:', template.id);
       await deleteTemplateExame(template.id);
       onDelete(template.id);
       toast({
@@ -50,6 +51,7 @@ const ExameTemplateItem: React.FC<ExameTemplateItemProps> = ({
         description: "O template foi removido com sucesso",
       });
     } catch (error) {
+      console.error('Erro ao excluir template:', error);
       toast({
         variant: "destructive",
         title: "Erro ao excluir",
@@ -61,8 +63,8 @@ const ExameTemplateItem: React.FC<ExameTemplateItemProps> = ({
   return (
     <div className="bg-white p-3 rounded-md border hover:border-slate-300 transition-colors">
       <div className="flex justify-between items-start mb-1">
-        <h4 className="font-medium text-slate-800">{template.nome}</h4>
-        <div className="flex items-center space-x-1 text-xs text-gray-500">
+        <h4 className="font-medium text-slate-800 truncate">{template.nome}</h4>
+        <div className="flex items-center space-x-1 text-xs text-gray-500 flex-shrink-0">
           <Clock className="h-3 w-3" />
           <span>{template.frequencia_uso} usos</span>
         </div>

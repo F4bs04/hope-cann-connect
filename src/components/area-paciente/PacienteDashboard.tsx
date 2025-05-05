@@ -21,8 +21,8 @@ const PacienteDashboard = () => {
         {userLoading ? (
           <Card>
             <CardContent className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal" />
-              <span className="ml-2">Carregando informações do paciente...</span>
+              <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal mr-2" />
+              <span>Carregando informações do paciente...</span>
             </CardContent>
           </Card>
         ) : (

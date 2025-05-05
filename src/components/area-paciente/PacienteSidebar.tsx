@@ -35,8 +35,8 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
     <Sidebar className="bg-[#F2F7FA] text-gray-800 min-w-[240px]">
       <SidebarHeader className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <User className="w-7 h-7 text-hopecann-teal" />
-          <h2 className="text-xl font-bold text-hopecann-teal">HopeCann Saúde</h2>
+          <User className="w-7 h-7 text-hopecann-teal flex-shrink-0" />
+          <h2 className="text-xl font-bold text-hopecann-teal truncate">HopeCann Saúde</h2>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -48,7 +48,7 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
                 isActive={currentSection === item.key}
                 className="hover:bg-hopecann-teal/10 text-gray-800 data-[active=true]:bg-hopecann-teal/20"
               >
-                <item.icon className="w-5 h-5 min-w-5 mr-2" />
+                <item.icon className="w-5 h-5 min-w-5 mr-2 flex-shrink-0" />
                 <span className="truncate">{item.label}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>

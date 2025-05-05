@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { saveTemplateExame } from '@/services/supabaseService';
+import { saveTemplateExame } from '@/services/medicos/medicosService';
 import { useToast } from '@/hooks/use-toast';
 
 interface SaveTemplateDialogProps {
@@ -69,6 +69,7 @@ const SaveTemplateDialog: React.FC<SaveTemplateDialogProps> = ({
         instrucoes: formData.instrucoes
       };
       
+      console.log('Enviando dados do template:', templateData);
       await saveTemplateExame(templateData);
       
       toast({
@@ -78,6 +79,7 @@ const SaveTemplateDialog: React.FC<SaveTemplateDialogProps> = ({
       
       onSuccess();
       onOpenChange(false);
+      setNome(''); // Reset the name field
     } catch (error) {
       console.error('Erro ao salvar template:', error);
       toast({
@@ -91,7 +93,10 @@ const SaveTemplateDialog: React.FC<SaveTemplateDialogProps> = ({
   };
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(value) => {
+      if (!value) setNome(''); // Reset name when dialog closes
+      onOpenChange(value);
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Salvar Template</DialogTitle>
@@ -125,7 +130,10 @@ const SaveTemplateDialog: React.FC<SaveTemplateDialogProps> = ({
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => {
+            setNome('');
+            onOpenChange(false);
+          }}>
             Cancelar
           </Button>
           <Button 
