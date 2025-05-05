@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const getConsultas = async () => {
@@ -194,6 +193,25 @@ export const getSaldoMedico = async (medicoId: number) => {
   }
 };
 
+export const getSaldoMedicos = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('saldo_medicos')
+      .select('*, medicos(nome, crm, especialidade, foto_perfil)')
+      .order('saldo_total', { ascending: false });
+    
+    if (error) {
+      console.error("Erro ao buscar saldo dos médicos:", error);
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Erro ao buscar saldo dos médicos:", error);
+    return [];
+  }
+};
+
 export const getTransacoesMedico = async (medicoId: number) => {
   try {
     const { data, error } = await supabase
@@ -210,6 +228,26 @@ export const getTransacoesMedico = async (medicoId: number) => {
     return data;
   } catch (error) {
     console.error("Erro ao buscar transações do médico:", error);
+    return [];
+  }
+};
+
+export const getTransacoesMedicos = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('transacoes_medicos')
+      .select('*, medicos(nome)')
+      .order('data_transacao', { ascending: false })
+      .limit(10);
+    
+    if (error) {
+      console.error("Erro ao buscar transações dos médicos:", error);
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Erro ao buscar transações dos médicos:", error);
     return [];
   }
 };
