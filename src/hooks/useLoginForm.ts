@@ -51,11 +51,27 @@ export const useLoginForm = () => {
         }
 
         // Login successful for clinic
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userEmail', values.email);
-        localStorage.setItem('userId', clinicExists.id.toString());
-        localStorage.setItem('userType', 'admin_clinica');
-        localStorage.setItem('authTimestamp', Date.now().toString());
+        // Create a Supabase auth session using signInWithPassword so the Supabase Auth state is synchronized
+        // Even though we're using a separate clinic login system, we simulate a user account
+        try {
+          // First check if a user account exists for this clinic
+          let { data: authUser } = await supabase.auth.signInWithPassword({
+            email: values.email,
+            password: values.password
+          });
+          
+          // If this clinic doesn't have a corresponding auth user, create dummy session data
+          if (!authUser.session) {
+            // Store the authentication data in localStorage
+            localStorage.setItem('isAuthenticated', 'true');
+            localStorage.setItem('userEmail', values.email);
+            localStorage.setItem('userId', clinicExists.id.toString());
+            localStorage.setItem('userType', 'admin_clinica');
+            localStorage.setItem('authTimestamp', Date.now().toString());
+          }
+        } catch (authError) {
+          console.log("No matching auth user for clinic, using local auth only");
+        }
         
         toast({
           title: "Login bem-sucedido",
@@ -83,7 +99,18 @@ export const useLoginForm = () => {
         throw new Error("Usuário não encontrado. Verifique seu email.");
       }
 
-      // User authentication successful
+      // User authentication successful - try to authenticate with Supabase auth as well
+      try {
+        // Try to sign in with Supabase Auth
+        await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password
+        });
+      } catch (authError) {
+        console.log("Could not authenticate with Supabase auth, using local auth only");
+      }
+
+      // Store the authentication data in localStorage
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', values.email);
       localStorage.setItem('userId', data.id.toString());

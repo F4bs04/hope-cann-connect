@@ -46,9 +46,14 @@ const Login = () => {
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (session?.provider_token) {
         const user = session.user;
         if (user) {
+          // Clear any existing toast flags
+          localStorage.removeItem('toast-shown-auth');
+          localStorage.removeItem('toast-shown-perm');
+          
           setUserAvatar(user.user_metadata.avatar_url);
           const { data: userData, error: userError } = await supabase
             .from('usuarios')
@@ -81,6 +86,7 @@ const Login = () => {
                 email: user.email || ''
               }]);
 
+              // Store auth data in localStorage to maintain compatibility with both auth systems
               localStorage.setItem('isAuthenticated', 'true');
               localStorage.setItem('userEmail', user.email || '');
               localStorage.setItem('userId', newUser.id.toString());
@@ -100,6 +106,7 @@ const Login = () => {
               .update({ ultimo_acesso: new Date().toISOString() })
               .eq('id', userData.id);
 
+            // Store auth data in localStorage to maintain compatibility with both auth systems
             localStorage.setItem('isAuthenticated', 'true');
             localStorage.setItem('userEmail', user.email || '');
             localStorage.setItem('userId', userData.id.toString());
@@ -130,6 +137,46 @@ const Login = () => {
       }
       setGoogleLoading(false);
     };
+
+    // Check if the user is already logged in from localStorage
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    const userType = localStorage.getItem('userType');
+    const authTimestamp = localStorage.getItem('authTimestamp');
+    
+    // Check if the auth is expired (24 hours)
+    if (isAuthenticated && authTimestamp) {
+      const timestamp = parseInt(authTimestamp);
+      const now = Date.now();
+      const authAgeDays = (now - timestamp) / (1000 * 60 * 60 * 24);
+      
+      if (authAgeDays <= 1) { // not expired
+        // Redirect based on user type if already authenticated
+        if (userType) {
+          switch (userType) {
+            case 'medico':
+              navigate('/area-medico');
+              return;
+            case 'paciente':
+              navigate('/area-paciente');
+              return;
+            case 'admin_clinica':
+              navigate('/admin');
+              return;
+            default:
+              navigate('/area-paciente');
+              return;
+          }
+        }
+      } else {
+        // Clear expired authentication
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userType');
+        localStorage.removeItem('authTimestamp');
+        localStorage.removeItem('userAvatar');
+      }
+    }
 
     checkSession();
   }, [navigate, toast]);

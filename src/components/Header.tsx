@@ -42,6 +42,33 @@ const Header = () => {
       setSession(session);
       if (session) {
         fetchUserType(session.user.id);
+      } else {
+        // Check localStorage authentication
+        const isLocallyAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        const localUserType = localStorage.getItem('userType');
+        const authTimestamp = localStorage.getItem('authTimestamp');
+        
+        // Check if auth is expired
+        if (isLocallyAuthenticated && authTimestamp) {
+          const timestamp = parseInt(authTimestamp);
+          const now = Date.now();
+          const authAgeDays = (now - timestamp) / (1000 * 60 * 60 * 24);
+          
+          if (authAgeDays <= 1) { // not expired
+            // Set user type from localStorage
+            if (localUserType) {
+              setUserType(localUserType);
+            }
+          } else {
+            // Clear expired authentication
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('authTimestamp');
+            localStorage.removeItem('userAvatar');
+          }
+        }
       }
     });
 
@@ -55,9 +82,19 @@ const Header = () => {
       if (session) {
         fetchUserType(session.user.id);
       } else {
-        setUserType(null);
+        // Check localStorage on auth change
+        const isLocallyAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        if (isLocallyAuthenticated) {
+          const localUserType = localStorage.getItem('userType');
+          if (localUserType) {
+            setUserType(localUserType);
+          }
+        } else {
+          setUserType(null);
+        }
       }
     });
+    
     return () => subscription.unsubscribe();
   }, []);
 
@@ -92,12 +129,20 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
+      // Sign out from Supabase Auth
       await supabase.auth.signOut();
+      
+      // Clear localStorage auth data
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('userEmail');
       localStorage.removeItem('userId');
       localStorage.removeItem('userType');
       localStorage.removeItem('authTimestamp');
+      localStorage.removeItem('userAvatar');
+      
+      // Also clear toast flags
+      localStorage.removeItem('toast-shown-auth');
+      localStorage.removeItem('toast-shown-perm');
       
       toast({
         title: "Logout realizado com sucesso",
