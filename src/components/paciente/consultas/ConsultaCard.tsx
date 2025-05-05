@@ -26,8 +26,8 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
           <div className="p-4 flex-1">
             <div className="flex justify-between flex-wrap gap-2">
               <div>
-                <h3 className="font-semibold">{consulta.medicos.nome}</h3>
-                <p className="text-sm text-gray-600">{consulta.medicos.especialidade}</p>
+                <h3 className="font-semibold truncate">{consulta.medicos?.nome || 'Médico não especificado'}</h3>
+                <p className="text-sm text-gray-600 truncate">{consulta.medicos?.especialidade || 'Especialidade não especificada'}</p>
               </div>
               <Badge className={
                 consulta.status === 'agendada' ? 'bg-blue-100 text-blue-800' :
@@ -39,13 +39,13 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
             </div>
             
             {consulta.motivo && (
-              <p className="text-sm text-gray-700 mt-2">{consulta.motivo}</p>
+              <p className="text-sm text-gray-700 mt-2 truncate">{consulta.motivo}</p>
             )}
             
             <div className="mt-3 flex items-center text-sm text-gray-500">
-              <Calendar className="h-4 w-4 mr-1" />
-              <span>{format(new Date(consulta.data_hora), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
-              <Clock className="h-4 w-4 ml-3 mr-1" />
+              <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
+              <span className="truncate">{format(new Date(consulta.data_hora), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+              <Clock className="h-4 w-4 ml-3 mr-1 flex-shrink-0" />
               <span>{format(new Date(consulta.data_hora), "HH:mm", { locale: ptBR })}</span>
             </div>
             
@@ -71,8 +71,8 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
             
             {consulta.status === 'realizada' && (
               <div className="mt-3 flex items-center">
-                <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">
+                <CheckCircle className="h-4 w-4 text-green-500 mr-1 flex-shrink-0" />
+                <span className="text-sm text-green-600 truncate">
                   Consulta realizada com sucesso
                 </span>
               </div>
@@ -80,8 +80,8 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
             
             {consulta.status === 'cancelada' && (
               <div className="mt-3 flex items-center">
-                <XCircle className="h-4 w-4 text-red-500 mr-1" />
-                <span className="text-sm text-red-600">
+                <XCircle className="h-4 w-4 text-red-500 mr-1 flex-shrink-0" />
+                <span className="text-sm text-red-600 truncate">
                   Consulta cancelada
                 </span>
               </div>

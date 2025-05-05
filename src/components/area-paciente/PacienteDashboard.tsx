@@ -4,10 +4,12 @@ import { DashboardSummaryCards } from "./DashboardSummaryCards";
 import ReceitasRecentes from "@/components/paciente/ReceitasRecentes";
 import { useReceitasRecentes } from '@/hooks/useReceitasRecentes';
 import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 const PacienteDashboard = () => {
   const { receitas, isLoading } = useReceitasRecentes();
-  const { userInfo } = useCurrentUserInfo();
+  const { userInfo, loading: userLoading } = useCurrentUserInfo();
 
   return (
     <div className="space-y-6">
@@ -16,7 +18,16 @@ const PacienteDashboard = () => {
       </div>
       
       <div className="mt-8">
-        <ReceitasRecentes receitas={receitas} isLoading={isLoading} />
+        {userLoading ? (
+          <Card>
+            <CardContent className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal" />
+              <span className="ml-2">Carregando informações do paciente...</span>
+            </CardContent>
+          </Card>
+        ) : (
+          <ReceitasRecentes receitas={receitas} isLoading={isLoading} />
+        )}
       </div>
     </div>
   );

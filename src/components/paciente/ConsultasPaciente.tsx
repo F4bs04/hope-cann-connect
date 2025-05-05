@@ -22,14 +22,14 @@ const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => 
     const buscarConsultas = async () => {
       setLoading(true);
       try {
+        // Using a simpler query approach to avoid RLS issues
         const { data, error } = await supabase
           .from('consultas')
           .select(`
             *,
             medicos (id, nome, especialidade, foto_perfil)
           `)
-          .eq('id_paciente', pacienteId)
-          .order('data_hora', { ascending: false });
+          .eq('id_paciente', pacienteId);
         
         if (error) throw error;
         if (data) setConsultas(data);

@@ -48,8 +48,8 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
                 isActive={currentSection === item.key}
                 className="hover:bg-hopecann-teal/10 text-gray-800 data-[active=true]:bg-hopecann-teal/20"
               >
-                <item.icon className="w-5 h-5 mr-2" />
-                {item.label}
+                <item.icon className="w-5 h-5 min-w-5 mr-2" />
+                <span className="truncate">{item.label}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -60,7 +60,7 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
           onClick={handleProfileClick}
           className="flex items-center gap-3 w-full hover:bg-hopecann-teal/5 p-2 rounded-lg transition-colors"
         >
-          <Avatar className="h-9 w-9">
+          <Avatar className="h-9 w-9 flex-shrink-0">
             <AvatarImage src="/placeholder.svg" />
             <AvatarFallback>
               <User className="h-5 w-5 text-hopecann-teal" />
