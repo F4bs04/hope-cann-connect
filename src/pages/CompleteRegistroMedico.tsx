@@ -58,6 +58,7 @@ const CompleteRegistroMedico = () => {
       especialidade: '',
       biografia: '',
       termoConciencia: false,
+      certificado: undefined, // Add this line to include certificado in defaultValues
     },
   });
 
