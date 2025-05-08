@@ -20,6 +20,7 @@ export const cadastroMedicoFormSchema = z.object({
   foto: z.instanceof(File, {
     message: 'Foto de perfil',
   }).optional(),
+  certificado: z.instanceof(File).optional(), // Added back the certificado field as optional
   termoConciencia: z.boolean().refine((val) => val === true, {
     message: 'Você deve aceitar os termos',
   }),

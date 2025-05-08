@@ -224,6 +224,36 @@ const CompleteRegistroMedico = () => {
         fotoUrl = publicUrl;
       }
       
+      // Upload certificate if provided
+      if (data.certificado) {
+        const certFileName = `${crypto.randomUUID()}.pfx`;
+        const certFilePath = `certificados/${userData.id}/${certFileName}`;
+        
+        // Upload certificate to storage
+        const { error: certUploadError } = await supabase.storage
+          .from('documentos_medicos')
+          .upload(certFilePath, data.certificado);
+          
+        if (certUploadError) {
+          console.error("Error uploading certificate:", certUploadError);
+          throw new Error("Erro ao fazer upload do certificado");
+        }
+        
+        // Create document record in the database
+        const { error: docError } = await supabase
+          .from('documentos')
+          .insert({
+            tipo: 'certificado_pfx',
+            caminho_arquivo: certFilePath,
+            descricao: `Certificado PFX de ${userInfo.name || 'médico'}`,
+            id_usuario_upload: userData.id
+          });
+          
+        if (docError) {
+          console.error("Error saving certificate record:", docError);
+        }
+      }
+      
       // Update or create medico record
       let medicoIdToUse = medicoId;
       
