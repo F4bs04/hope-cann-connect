@@ -40,12 +40,8 @@ const formSchema = z.object({
   dataNascimento: z.string().min(1, {
     message: 'Data de nascimento obrigatória',
   }),
-  certificado: z.instanceof(File, {
-    message: 'Certificado obrigatório',
-  }).optional(),
-  foto: z.instanceof(File, {
-    message: 'Foto de perfil',
-  }).optional(),
+  certificado: z.instanceof(File).optional(),
+  foto: z.instanceof(File).optional(),
   termoConciencia: z.boolean().refine((val) => val === true, {
     message: 'Você deve aceitar os termos',
   }),
@@ -574,7 +570,7 @@ const CadastroMedico = () => {
                       name="certificado"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Certificado Digital PFX A1</FormLabel>
+                          <FormLabel>Certificado Digital PFX A1 (Opcional)</FormLabel>
                           <FormControl>
                             <div className="flex items-center gap-3">
                               <Button 
@@ -584,7 +580,7 @@ const CadastroMedico = () => {
                                 className="w-full py-8 border-dashed border-2 flex flex-col items-center justify-center gap-2"
                               >
                                 <Upload className="h-6 w-6 text-hopecann-green" />
-                                <span>{certificadoNome || "Clique para enviar certificado"}</span>
+                                <span>{certificadoNome || "Clique para enviar certificado (opcional)"}</span>
                                 <span className="text-xs text-gray-500">Apenas arquivos .pfx</span>
                                 <input
                                   id="certificado"
@@ -599,7 +595,7 @@ const CadastroMedico = () => {
                           <FormDescription>
                             <div className="flex items-start gap-2 text-sm mt-2">
                               <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                              <span>Este certificado é necessário para a assinatura digital de receitas e prontuários.</span>
+                              <span>Este certificado é usado para a assinatura digital de receitas e prontuários, mas não é obrigatório para o cadastro.</span>
                             </div>
                           </FormDescription>
                           <FormMessage />

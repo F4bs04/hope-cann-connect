@@ -17,9 +17,6 @@ export const cadastroMedicoFormSchema = z.object({
     message: 'Especialidade é obrigatória',
   }),
   biografia: z.string().optional(),
-  certificado: z.instanceof(File, {
-    message: 'Certificado obrigatório',
-  }).optional(),
   foto: z.instanceof(File, {
     message: 'Foto de perfil',
   }).optional(),
@@ -32,4 +29,3 @@ export const cadastroMedicoFormSchema = z.object({
 });
 
 export type CadastroMedicoFormValues = z.infer<typeof cadastroMedicoFormSchema>;
-
