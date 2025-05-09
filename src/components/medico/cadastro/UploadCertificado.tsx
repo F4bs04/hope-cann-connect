@@ -14,7 +14,7 @@ import { useFormContext } from 'react-hook-form';
 
 interface UploadCertificadoProps {
   certificadoNome: string | null;
-  setCertificadoNome: React.Dispatch<React.SetStateAction<string | null>>;
+  setCertificadoNome?: React.Dispatch<React.SetStateAction<string | null>>;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, type: 'certificado' | 'foto') => void;
 }
 
