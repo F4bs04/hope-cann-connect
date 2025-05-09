@@ -32,7 +32,6 @@ const Atestados: React.FC = () => {
   const [pacienteId, setPacienteId] = useState('');
   const [nomePaciente, setNomePaciente] = useState('');
   const [dataConsulta, setDataConsulta] = useState<Date | undefined>(new Date());
-  const [cid, setCid] = useState('');
   const [tempoAfastamento, setTempoAfastamento] = useState('');
   const [unidade, setUnidade] = useState('dias');
   const [justificativa, setJustificativa] = useState('');
@@ -85,7 +84,6 @@ const Atestados: React.FC = () => {
         data_emissao: new Date().toISOString(),
         tempo_afastamento: 0, // Valor especial para indicar que o tempo está no PDF
         unidade_tempo: 'pdf',
-        cid: 'Ver documento anexo',
         justificativa: 'Atestado via documento PDF anexado',
         assinado: true,
         arquivo_pdf: pdfFilePath
@@ -136,7 +134,6 @@ const Atestados: React.FC = () => {
       data_emissao: dataConsulta?.toISOString() || new Date().toISOString(),
       tempo_afastamento: parseInt(tempoAfastamento),
       unidade_tempo: unidade,
-      cid,
       justificativa,
       assinado: true
     };
@@ -255,19 +252,6 @@ const Atestados: React.FC = () => {
                       </Popover>
                     </div>
                     
-                    <div>
-                      <Label htmlFor="cid" className="font-medium">
-                        CID (Opcional)
-                      </Label>
-                      <Input
-                        id="cid"
-                        placeholder="Ex: F41.1"
-                        value={cid}
-                        onChange={(e) => setCid(e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
-                    
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="tempo-afastamento" className="font-medium">
@@ -349,7 +333,6 @@ const Atestados: React.FC = () => {
               <div className="mb-6">
                 <p className="font-medium">Paciente: <span className="font-normal">{nomePaciente}</span></p>
                 <p className="font-medium mt-2">Data: <span className="font-normal">{dataConsulta ? format(dataConsulta, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span></p>
-                {cid && <p className="font-medium mt-2">CID: <span className="font-normal">{cid}</span></p>}
               </div>
               
               {activeTab === 'formulario' ? (

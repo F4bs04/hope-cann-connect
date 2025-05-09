@@ -20,7 +20,6 @@ interface Atestado {
   unidade_tempo: string;
   justificativa: string;
   assinado: boolean;
-  cid?: string;
 }
 
 const AtestadosPaciente: React.FC<AtestadosPacienteProps> = ({ pacienteId }) => {

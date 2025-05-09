@@ -149,7 +149,6 @@ const RegistroMedicoForm: React.FC<RegistroMedicoFormProps> = ({
 
         <UploadCertificado 
           certificadoNome={certificadoNome}
-          setCertificadoNome={setCertificadoNome} 
           handleFileChange={handleFileChange}
         />
 

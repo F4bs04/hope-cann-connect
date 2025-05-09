@@ -28,7 +28,6 @@ const Laudos: React.FC = () => {
   const [objetivo, setObjetivo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [conclusao, setConclusao] = useState('');
-  const [cid, setCid] = useState('');
   const [observacoes, setObservacoes] = useState('');
   
   useEffect(() => {
@@ -68,7 +67,6 @@ const Laudos: React.FC = () => {
         objetivo: 'Ver documento PDF anexado',
         descricao: 'Laudo médico via PDF anexado',
         conclusao: 'Ver documento PDF anexado',
-        cid: cid || 'N/A',
         observacoes: observacoes || 'Documento PDF anexado pelo médico',
         assinado: true,
         arquivo_pdf: pdfFilePath
@@ -143,7 +141,6 @@ const Laudos: React.FC = () => {
       objetivo,
       descricao,
       conclusao,
-      cid,
       observacoes,
       assinado: true
     };
@@ -211,7 +208,6 @@ const Laudos: React.FC = () => {
             setObjetivo('');
             setDescricao('');
             setConclusao('');
-            setCid('');
             setObservacoes('');
             setPacienteId('');
             setPdfFilePath(null);
@@ -324,19 +320,6 @@ const Laudos: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="cid" className="font-medium">
-                    CID (Opcional)
-                  </Label>
-                  <Input
-                    id="cid"
-                    placeholder="Ex: F41.1"
-                    value={cid}
-                    onChange={(e) => setCid(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div>
                   <Label htmlFor="observacoes" className="font-medium">
                     Observações
                   </Label>
@@ -385,19 +368,6 @@ const Laudos: React.FC = () => {
               </>
             ) : (
               <>
-                <div>
-                  <Label htmlFor="cid-pdf" className="font-medium">
-                    CID (Opcional)
-                  </Label>
-                  <Input
-                    id="cid-pdf"
-                    placeholder="Ex: F41.1"
-                    value={cid}
-                    onChange={(e) => setCid(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                
                 <div>
                   <Label htmlFor="observacoes-pdf" className="font-medium">
                     Observações
