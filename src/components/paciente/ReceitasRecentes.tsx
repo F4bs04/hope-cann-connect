@@ -5,17 +5,14 @@ import { ptBR } from 'date-fns/locale';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Loader2 } from 'lucide-react';
+import { ReceitaRecente } from '@/hooks/useReceitasRecentes'; // Importar ReceitaRecente
 
-interface Receita {
-  id: number;
-  medicamento: string;
-  data: string;
-  status: string;
-  posologia: string;
-}
+// A interface local Receita não é mais necessária ou pode ser removida se não houver outros usos.
+// Se for mantida por alguma razão, certifique-se de que não entre em conflito.
+// Para este caso, vamos assumir que podemos usar ReceitaRecente diretamente.
 
 interface ReceitasRecentesProps {
-  receitas: Receita[];
+  receitas: ReceitaRecente[]; // Usar ReceitaRecente[] aqui
   isLoading?: boolean;
 }
 
@@ -65,6 +62,8 @@ const ReceitasRecentes: React.FC<ReceitasRecentesProps> = ({ receitas, isLoading
                     <p className="text-sm text-gray-600">
                       Emitida em: {format(new Date(receita.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                     </p>
+                    {/* Se precisar exibir o nome do médico, pode adicionar aqui: */}
+                    {/* receita.medico_nome && <p className="text-xs text-gray-500">Médico: {receita.medico_nome}</p> */}
                   </div>
                 </div>
                 <Button
