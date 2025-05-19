@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,42 +25,65 @@ export const useCurrentUserInfo = () => {
   useEffect(() => {
     const loadUserInfo = async () => {
       console.log('[useCurrentUserInfo] Starting to load user info...');
-      setLoading(true); 
-      setError(null); 
+      setLoading(true);
+      setError(null);
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('[useCurrentUserInfo] Session:', session);
-        if (!session) {
-          setError('No session found');
-          console.warn('[useCurrentUserInfo] No session found.');
+        console.log('[useCurrentUserInfo] Supabase session:', session);
+
+        let userEmailForQuery: string | null = null;
+        let source: string = "";
+
+        if (session?.user?.email) {
+          userEmailForQuery = session.user.email;
+          source = "Supabase session";
+        } else {
+          console.warn('[useCurrentUserInfo] No active Supabase session. Trying localStorage.');
+          userEmailForQuery = localStorage.getItem('userEmail');
+          source = "localStorage";
+        }
+
+        if (!userEmailForQuery) {
+          setError('No user email found in session or localStorage.');
+          console.warn('[useCurrentUserInfo] No user email found in Supabase session or localStorage.');
           setUserInfo(prev => ({ ...prev, id: null, email: null, userType: null, pacienteId: null, medicoId: null, clinicaId: null }));
           setLoading(false);
           return;
         }
+        
+        console.log(`[useCurrentUserInfo] Using email from ${source}:`, userEmailForQuery);
 
-        console.log('[useCurrentUserInfo] Fetching user data from usuarios table for email:', session.user.email);
+        console.log('[useCurrentUserInfo] Fetching user data from usuarios table for email:', userEmailForQuery);
         const { data: userData, error: userError } = await supabase
           .from('usuarios')
           .select('id, email, tipo_usuario')
-          .eq('email', session.user.email)
-          .single(); 
+          .eq('email', userEmailForQuery)
+          .single();
 
         if (userError) {
           console.error('[useCurrentUserInfo] Error fetching user data from usuarios table:', userError);
           setError(userError.message);
-          setUserInfo(prev => ({ ...prev, id: null, email: session.user.email, userType: null, pacienteId: null, medicoId: null, clinicaId: null }));
+          setUserInfo(prev => ({ ...prev, id: null, email: userEmailForQuery, userType: null, pacienteId: null, medicoId: null, clinicaId: null }));
           setLoading(false);
           return;
         }
         
         if (!userData) {
           setError('User data not found in usuarios table.');
-          console.warn('[useCurrentUserInfo] User data not found in usuarios table for email:', session.user.email);
-          setUserInfo(prev => ({ ...prev, id: null, email: session.user.email, userType: null, pacienteId: null, medicoId: null, clinicaId: null }));
+          console.warn('[useCurrentUserInfo] User data not found in usuarios table for email:', userEmailForQuery);
+          setUserInfo(prev => ({ ...prev, id: null, email: userEmailForQuery, userType: null, pacienteId: null, medicoId: null, clinicaId: null }));
           setLoading(false);
           return;
         }
         console.log('[useCurrentUserInfo] UserData from usuarios table:', userData);
+        
+        // Ensure localStorage is updated if Supabase session was the source
+        if (source === "Supabase session" && userData.email && userData.tipo_usuario) {
+            localStorage.setItem('userEmail', userData.email);
+            localStorage.setItem('userType', userData.tipo_usuario);
+            console.log('[useCurrentUserInfo] Updated localStorage with info from Supabase session.');
+        }
+
 
         const info: UserInfo = {
           id: userData.id,
@@ -78,7 +100,7 @@ export const useCurrentUserInfo = () => {
             .from('medicos')
             .select('id')
             .eq('id_usuario', userData.id)
-            .maybeSingle(); 
+            .maybeSingle();
           
           if (medicoFetchError) {
             console.error('[useCurrentUserInfo] Error fetching medicoData:', medicoFetchError);
@@ -104,6 +126,23 @@ export const useCurrentUserInfo = () => {
           } else {
             console.warn(`[useCurrentUserInfo] No paciente record found for id_usuario: ${userData.id}. Paciente ID will be null.`);
           }
+        } else if (userData.tipo_usuario === 'clinica') {
+            console.log('[useCurrentUserInfo] User type is clinica. Fetching clinicaData for id_usuario:', userData.id);
+            // Assuming 'clinicas' table has 'id_usuario' fk or email link. For now, let's assume it is related via email if not 'id_usuario'
+             const { data: clinicaData, error: clinicaFetchError } = await supabase
+              .from('clinicas') // Assuming the table name is 'clinicas'
+              .select('id') 
+              .eq('email', userData.email) // Or .eq('id_usuario', userData.id) if that exists
+              .maybeSingle();
+            
+            if (clinicaFetchError) {
+              console.error('[useCurrentUserInfo] Error fetching clinicaData:', clinicaFetchError);
+            } else if (clinicaData) {
+              info.clinicaId = clinicaData.id;
+              console.log('[useCurrentUserInfo] ClinicaData found. Clinica ID set to:', clinicaData.id);
+            } else {
+              console.warn(`[useCurrentUserInfo] No clinica record found for user email: ${userData.email}. Clinica ID will be null.`);
+            }
         }
 
         console.log('[useCurrentUserInfo] Final userInfo object:', info);
