@@ -20,7 +20,6 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
   const [currentSection, setCurrentSection] = useState(initialSection);
   const { paciente, loading } = usePacienteAuth();
   
-  // When initialSection prop changes, update the currentSection state
   useEffect(() => {
     if (initialSection) {
       setCurrentSection(initialSection);
@@ -35,7 +34,6 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
     );
   }
 
-  // Make sure we have a valid paciente ID to pass to components
   const pacienteId = paciente?.id || 0;
 
   const renderSection = () => {
@@ -57,7 +55,6 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
       case 'perfil':
         return <div className="p-6 bg-white rounded-lg shadow">
           <h2 className="text-2xl font-bold mb-6 text-hopecann-teal">Meu Perfil</h2>
-          {/* Temporary placeholder for profile section */}
           <p className="text-gray-600">Esta seção será implementada em breve.</p>
         </div>;
       default:
@@ -66,22 +63,27 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <PacienteHeader pacienteNome={paciente?.nome} />
-      <div className="flex flex-1">
-        <SidebarProvider>
-          <PacienteSidebar
-            currentSection={currentSection}
-            onSectionChange={setCurrentSection}
-          />
-          <SidebarInset className="bg-gray-50 flex-1">
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full"> {/* Envolve PacienteSidebar e a coluna de conteúdo principal */}
+        
+        <PacienteSidebar
+          currentSection={currentSection}
+          onSectionChange={setCurrentSection}
+        />
+
+        {/* Coluna de conteúdo principal (cabeçalho + área de conteúdo) */}
+        <div className="flex flex-col flex-1 overflow-y-auto"> {/* Adicionado overflow-y-auto */}
+          <PacienteHeader pacienteNome={paciente?.nome} />
+          
+          <SidebarInset className="bg-gray-50 flex-1"> {/* flex-1 para ocupar o espaço restante */}
             <main className="w-full h-full p-6 md:p-8 animate-fade-in">
               {renderSection()}
             </main>
           </SidebarInset>
-        </SidebarProvider>
+        </div>
+
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
