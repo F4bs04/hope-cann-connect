@@ -25,25 +25,29 @@ export const useCurrentUserInfo = () => {
 
   useEffect(() => {
     const loadUserInfo = async () => {
-      setLoading(true); // Ensure loading is true at the start
-      setError(null); // Reset error
+      console.log('[useCurrentUserInfo] Starting to load user info...');
+      setLoading(true); 
+      setError(null); 
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('[useCurrentUserInfo] Session:', session);
         if (!session) {
           setError('No session found');
+          console.warn('[useCurrentUserInfo] No session found.');
           setUserInfo(prev => ({ ...prev, id: null, email: null, userType: null, pacienteId: null, medicoId: null, clinicaId: null }));
           setLoading(false);
           return;
         }
 
+        console.log('[useCurrentUserInfo] Fetching user data from usuarios table for email:', session.user.email);
         const { data: userData, error: userError } = await supabase
           .from('usuarios')
           .select('id, email, tipo_usuario')
           .eq('email', session.user.email)
-          .single(); // Assuming email in usuarios is unique and user must exist if session does
+          .single(); 
 
         if (userError) {
-          console.error('Error fetching user data from usuarios table:', userError);
+          console.error('[useCurrentUserInfo] Error fetching user data from usuarios table:', userError);
           setError(userError.message);
           setUserInfo(prev => ({ ...prev, id: null, email: session.user.email, userType: null, pacienteId: null, medicoId: null, clinicaId: null }));
           setLoading(false);
@@ -52,10 +56,12 @@ export const useCurrentUserInfo = () => {
         
         if (!userData) {
           setError('User data not found in usuarios table.');
+          console.warn('[useCurrentUserInfo] User data not found in usuarios table for email:', session.user.email);
           setUserInfo(prev => ({ ...prev, id: null, email: session.user.email, userType: null, pacienteId: null, medicoId: null, clinicaId: null }));
           setLoading(false);
           return;
         }
+        console.log('[useCurrentUserInfo] UserData from usuarios table:', userData);
 
         const info: UserInfo = {
           id: userData.id,
@@ -67,45 +73,48 @@ export const useCurrentUserInfo = () => {
         };
 
         if (userData.tipo_usuario === 'medico') {
+          console.log('[useCurrentUserInfo] User type is medico. Fetching medicoData for id_usuario:', userData.id);
           const { data: medicoData, error: medicoFetchError } = await supabase
             .from('medicos')
             .select('id')
             .eq('id_usuario', userData.id)
-            .maybeSingle(); // Use maybeSingle for safety
+            .maybeSingle(); 
           
           if (medicoFetchError) {
-            console.error('Error fetching medicoData in useCurrentUserInfo:', medicoFetchError);
-            // Continue, medicoId will remain null
+            console.error('[useCurrentUserInfo] Error fetching medicoData:', medicoFetchError);
           } else if (medicoData) {
             info.medicoId = medicoData.id;
+            console.log('[useCurrentUserInfo] MedicoData found. Medico ID set to:', medicoData.id);
           } else {
-            console.warn(`No medico record found for id_usuario: ${userData.id} in useCurrentUserInfo`);
+            console.warn(`[useCurrentUserInfo] No medico record found for id_usuario: ${userData.id}. Medico ID will be null.`);
           }
         } else if (userData.tipo_usuario === 'paciente') {
+          console.log('[useCurrentUserInfo] User type is paciente. Fetching pacienteData for id_usuario:', userData.id);
           const { data: pacienteData, error: pacienteFetchError } = await supabase
             .from('pacientes')
             .select('id')
             .eq('id_usuario', userData.id)
-            .maybeSingle(); // Changed from .single() to .maybeSingle()
+            .maybeSingle(); 
           
           if (pacienteFetchError) {
-            console.error('Error fetching pacienteData in useCurrentUserInfo:', pacienteFetchError);
-            // An error occurred during fetch, info.pacienteId remains null
+            console.error('[useCurrentUserInfo] Error fetching pacienteData:', pacienteFetchError);
           } else if (pacienteData) {
             info.pacienteId = pacienteData.id;
+            console.log('[useCurrentUserInfo] PacienteData found. Paciente ID set to:', pacienteData.id);
           } else {
-            // No error, but no patient record found for this user's id_usuario
-            console.warn(`No paciente record found for id_usuario: ${userData.id} in useCurrentUserInfo. Paciente ID will be null.`);
+            console.warn(`[useCurrentUserInfo] No paciente record found for id_usuario: ${userData.id}. Paciente ID will be null.`);
           }
         }
 
+        console.log('[useCurrentUserInfo] Final userInfo object:', info);
         setUserInfo(info);
       } catch (error: any) {
-        console.error('Error loading user info in useCurrentUserInfo:', error);
+        console.error('[useCurrentUserInfo] General error loading user info:', error);
         setError(error.message);
          setUserInfo(prev => ({ ...prev, id: null, email: prev.email, userType: null, pacienteId: null, medicoId: null, clinicaId: null }));
       } finally {
         setLoading(false);
+        console.log('[useCurrentUserInfo] Finished loading user info. Loading state:', false);
       }
     };
 

@@ -61,11 +61,13 @@ const AreaMedico: React.FC = () => {
   const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
 
   useEffect(() => {
+    console.log('[AreaMedico] Location or search params changed:', location.search);
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     const pacienteParam = params.get('paciente');
     
     if (tabParam) {
+      console.log('[AreaMedico] Tab param found:', tabParam);
       setCurrentSection(tabParam);
       setActiveTab(tabParam);
       
@@ -82,24 +84,37 @@ const AreaMedico: React.FC = () => {
   useEffect(() => {
     const storedType = localStorage.getItem('userType');
     setUserType(storedType);
+    console.log('[AreaMedico] User type from localStorage:', storedType);
   }, []);
 
   useEffect(() => {
     const fetchUserId = async () => {
       const email = localStorage.getItem("userEmail");
+      console.log('[AreaMedico] Fetching user ID for email:', email);
       if (email) {
         const { data, error } = await supabase
           .from("usuarios")
           .select("id")
           .eq("email", email)
           .maybeSingle();
-        if (data?.id) setMedicoUserId(data.id);
+        if (error) {
+          console.error('[AreaMedico] Error fetching user ID from Supabase:', error);
+        }
+        if (data?.id) {
+          setMedicoUserId(data.id);
+          console.log('[AreaMedico] Medico User ID set from Supabase:', data.id);
+        } else {
+          console.warn('[AreaMedico] No user ID found in Supabase for email:', email);
+        }
+      } else {
+        console.warn('[AreaMedico] No email found in localStorage to fetch user ID.');
       }
     };
     fetchUserId();
   }, []);
 
   const handleTabChange = (value: string) => {
+    console.log('[AreaMedico] handleTabChange called with value:', value);
     setActiveTab(value);
     setCurrentSection(value);
     navigate(`/area-medico?tab=${value}`);
@@ -131,7 +146,9 @@ const AreaMedico: React.FC = () => {
   };
 
   const renderSection = () => {
+    console.log('[AreaMedico] Rendering section:', currentSection);
     if (showProntuarioAba) {
+      console.log('[AreaMedico] Rendering ProntuarioAba for patient ID:', selectedPatientId);
       return <ProntuarioAba onBack={handleBackFromProntuario} />;
     }
     switch (currentSection) {
@@ -140,6 +157,7 @@ const AreaMedico: React.FC = () => {
       case 'dashboard-clinica':
         return <ClinicaDashboard />;
       case 'agenda':
+        console.log('[AreaMedico] Rendering AgendaMedica');
         return <AgendaMedica />;
       case 'prescricoes':
         return <Prescricoes />;
@@ -168,7 +186,10 @@ const AreaMedico: React.FC = () => {
   };
 
   const navigateToSection = (section: string) => {
+    console.log('[AreaMedico] navigateToSection called with section:', section);
     setCurrentSection(section);
+    // setShowProntuarioAba(false); // Reset prontuario view when navigating directly
+    // setSelectedPatientId(null);
     navigate(`/area-medico?tab=${section}`);
   };
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
@@ -13,6 +14,7 @@ interface AgendaTabProps {
 }
 
 const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
+  console.log('[AgendaTab] Component rendered/re-rendered. isQuickMode:', isQuickMode);
   const {
     viewMode,
     setViewMode,
@@ -36,8 +38,13 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
   const [consultasMock, setConsultasMock] = useState<any[]>([]);
 
   React.useEffect(() => {
+    console.log('[AgendaTab] useEffect for fetchConsultas triggered. userInfo:', userInfo, 'loadingUserInfo:', loadingUserInfo);
     const fetchConsultas = async () => {
-      if (!userInfo.medicoId) return;
+      if (!userInfo.medicoId) {
+        console.warn('[AgendaTab] fetchConsultas: userInfo.medicoId is missing. userInfo:', userInfo);
+        return;
+      }
+      console.log('[AgendaTab] fetchConsultas: Fetching consultations for medicoId:', userInfo.medicoId);
       
       try {
         const { data, error } = await supabase
@@ -52,33 +59,53 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
           `)
           .eq('id_medico', userInfo.medicoId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('[AgendaTab] fetchConsultas: Error fetching consultations:', error);
+          throw error;
+        }
+        console.log('[AgendaTab] fetchConsultas: Consultations data fetched:', data);
         setConsultasMock(data || []);
       } catch (error) {
-        console.error('Error fetching consultations:', error);
+        console.error('[AgendaTab] fetchConsultas: Catch block error:', error);
       }
     };
 
-    if (userInfo.medicoId) {
+    if (userInfo.medicoId && !loadingUserInfo) { // Ensure not loading and medicoId is present
       fetchConsultas();
+    } else if (!loadingUserInfo && !userInfo.medicoId) {
+        console.warn('[AgendaTab] useEffect for fetchConsultas: Not fetching because medicoId is missing and not loading. userInfo:', userInfo);
     }
-  }, [userInfo.medicoId]);
+  }, [userInfo, loadingUserInfo]); // Depend on the whole userInfo object and loading state
 
   if (loadingUserInfo) {
-    return <div>Carregando...</div>;
+    console.log('[AgendaTab] Rendering: Loading user info...');
+    return <div>Carregando informações do médico...</div>;
   }
 
-  if (userError || !userInfo.medicoId) {
+  if (userError) {
+    console.error('[AgendaTab] Rendering: User info error:', userError);
+     return (
+      <Alert variant="destructive">
+        <AlertDescription>
+          Erro ao carregar informações do médico: {userError}. Por favor, tente novamente mais tarde.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  if (!userInfo.medicoId) {
+    console.warn('[AgendaTab] Rendering: userInfo.medicoId is missing. Cannot display agenda contents effectively. userInfo:', userInfo);
     return (
       <Alert variant="destructive">
         <AlertDescription>
-          Erro ao carregar informações do médico. Por favor, tente novamente mais tarde.
+          Não foi possível identificar o médico. Verifique seu login e tente novamente.
         </AlertDescription>
       </Alert>
     );
   }
 
   if (selectedConsultaId) {
+    console.log('[AgendaTab] Rendering: ConsultaView for consultaId:', selectedConsultaId);
     return (
       <ConsultaView 
         consultaId={selectedConsultaId} 
@@ -88,9 +115,10 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
   }
   
   if (chatWithPatient) {
+    console.log('[AgendaTab] Rendering: ChatMedico with patient:', chatWithPatient);
     return (
       <ChatMedico
-        medicoId={userInfo.medicoId}
+        medicoId={userInfo.medicoId} // medicoId should be available here
         pacienteId={chatWithPatient.pacientes_app.id}
         pacienteNome={chatWithPatient.pacientes_app.nome}
         motivoConsulta={chatWithPatient.motivo}
@@ -100,6 +128,7 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
     );
   }
 
+  console.log('[AgendaTab] Rendering: Main agenda content. ConsultasMock:', consultasMock);
   return (
     <div>
       {!isQuickMode && (
