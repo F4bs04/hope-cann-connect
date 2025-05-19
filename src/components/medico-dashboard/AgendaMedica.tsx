@@ -14,7 +14,7 @@ import AppointmentsList from '@/components/medico/AppointmentsList';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import AgendamentoForm from '@/components/medico/AgendamentoForm';
-import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo'; // Importar o hook
+import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
 
 const AgendaMedica: React.FC = () => {
   console.log('[AgendaMedica] Component rendered/re-rendered.');
@@ -23,7 +23,7 @@ const AgendaMedica: React.FC = () => {
   const [appointmentsError, setAppointmentsError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { userInfo, loading: loadingUserInfo, error: userError } = useCurrentUserInfo(); // Usar o hook
+  const { userInfo, loading: loadingUserInfo, error: userError } = useCurrentUserInfo();
 
   const fetchAppointments = async (medicoId: number) => {
     console.log('[AgendaMedica] fetchAppointments called for medicoId:', medicoId);
@@ -70,44 +70,51 @@ const AgendaMedica: React.FC = () => {
         setAppointmentsError(`Erro ao carregar dados do usuário: ${userError}`);
         setLoadingAppointments(false);
       } else if (userInfo.medicoId) {
+        console.log('[AgendaMedica] MedicoId encontrado no userInfo:', userInfo.medicoId);
         fetchAppointments(userInfo.medicoId);
-      } else if (userInfo.userType && userInfo.userType !== 'medico') {
-        setAppointmentsError("Usuário não é um médico. Acesso à agenda negado.");
-        setLoadingAppointments(false);
-        console.warn('[AgendaMedica] User is not a medico. Type:', userInfo.userType);
-      } else if (!userInfo.id && !userInfo.email) {
-         // This case implies neither Supabase session nor localStorage email was found by useCurrentUserInfo
-        setAppointmentsError("Informações do usuário não encontradas. Por favor, faça login.");
-        setLoadingAppointments(false);
-        toast({
-          variant: "destructive",
-          title: "Erro de autenticação",
-          description: "Você precisa estar logado para acessar esta página."
-        });
-        // Consider redirecting if absolutely no user info after useCurrentUserInfo has tried all sources
-        // navigate('/login'); 
       } else {
-        // This case could be userInfo.id exists, but userInfo.medicoId is null (e.g. user exists but no corresponding medico record)
-        setAppointmentsError("Não foi possível identificar o perfil de médico. Verifique seu cadastro.");
-        setLoadingAppointments(false);
-        console.warn('[AgendaMedica] Medico ID not found in userInfo, though user info might exist:', userInfo);
+        // Verificar se temos medicoId no localStorage como fallback
+        const medicoIdFromLocalStorage = localStorage.getItem('medicoId');
+        if (medicoIdFromLocalStorage) {
+          console.log('[AgendaMedica] Usando medicoId do localStorage:', medicoIdFromLocalStorage);
+          fetchAppointments(Number(medicoIdFromLocalStorage));
+        } else if (userInfo.userType && userInfo.userType !== 'medico') {
+          setAppointmentsError("Usuário não é um médico. Acesso à agenda negado.");
+          setLoadingAppointments(false);
+          console.warn('[AgendaMedica] User is not a medico. Type:', userInfo.userType);
+        } else if (!userInfo.id && !userInfo.email) {
+          setAppointmentsError("Informações do usuário não encontradas. Por favor, faça login.");
+          setLoadingAppointments(false);
+          toast({
+            variant: "destructive",
+            title: "Erro de autenticação",
+            description: "Você precisa estar logado para acessar esta página."
+          });
+        } else {
+          setAppointmentsError("Não foi possível identificar o perfil de médico. Verifique seu cadastro.");
+          setLoadingAppointments(false);
+          console.warn('[AgendaMedica] Medico ID not found in userInfo or localStorage, though user info might exist:', userInfo);
+        }
       }
     }
   }, [userInfo, loadingUserInfo, userError, navigate, toast]);
 
   useEffect(() => {
+    // Get medicoId from userInfo or localStorage
+    const medicoId = userInfo.medicoId || (localStorage.getItem('medicoId') ? Number(localStorage.getItem('medicoId')) : null);
+    
     // Only subscribe if we have a medicoId
-    if (!userInfo.medicoId) return;
+    if (!medicoId) return;
 
     const appointmentsChannel = supabase
       .channel('custom-all-channel_agenda_medica_consultas')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'consultas', filter: `id_medico=eq.${userInfo.medicoId}` },
+        { event: '*', schema: 'public', table: 'consultas', filter: `id_medico=eq.${medicoId}` },
         (payload) => {
           console.log('[AgendaMedica] Supabase realtime change detected on consultas table:', payload);
-          if (userInfo.medicoId) { // Re-check medicoId before fetching
-            fetchAppointments(userInfo.medicoId);
+          if (medicoId) { // Re-check medicoId before fetching
+            fetchAppointments(medicoId);
           }
         }
       )
@@ -179,7 +186,9 @@ const AgendaMedica: React.FC = () => {
                 <CardContent className="pt-6">
                   <AgendamentoForm 
                     onSuccess={() => {
-                      if (userInfo.medicoId) fetchAppointments(userInfo.medicoId);
+                      // Get medicoId from userInfo or localStorage
+                      const medicoId = userInfo.medicoId || (localStorage.getItem('medicoId') ? Number(localStorage.getItem('medicoId')) : null);
+                      if (medicoId) fetchAppointments(medicoId);
                     }} 
                   />
                 </CardContent>
@@ -205,7 +214,9 @@ const AgendaMedica: React.FC = () => {
                     onAgendamentoRapido={async (data) => {
                       try {
                         console.log('[AgendaMedica] Agendamento rápido concluído, atualizando consultas...');
-                        if (userInfo.medicoId) await fetchAppointments(userInfo.medicoId);
+                        // Get medicoId from userInfo or localStorage
+                        const medicoId = userInfo.medicoId || (localStorage.getItem('medicoId') ? Number(localStorage.getItem('medicoId')) : null);
+                        if (medicoId) await fetchAppointments(medicoId);
                       } catch (error) {
                         console.error('[AgendaMedica] Error refreshing appointments after fast agendamento:', error);
                       }

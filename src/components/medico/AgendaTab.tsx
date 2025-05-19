@@ -40,11 +40,14 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
   React.useEffect(() => {
     console.log('[AgendaTab] useEffect for fetchConsultas triggered. userInfo:', userInfo, 'loadingUserInfo:', loadingUserInfo);
     const fetchConsultas = async () => {
-      if (!userInfo.medicoId) {
-        console.warn('[AgendaTab] fetchConsultas: userInfo.medicoId is missing. userInfo:', userInfo);
+      // Get medicoId from userInfo or localStorage
+      const medicoId = userInfo.medicoId || (localStorage.getItem('medicoId') ? Number(localStorage.getItem('medicoId')) : null);
+      
+      if (!medicoId) {
+        console.warn('[AgendaTab] fetchConsultas: medicoId is missing. userInfo:', userInfo);
         return;
       }
-      console.log('[AgendaTab] fetchConsultas: Fetching consultations for medicoId:', userInfo.medicoId);
+      console.log('[AgendaTab] fetchConsultas: Fetching consultations for medicoId:', medicoId);
       
       try {
         const { data, error } = await supabase
@@ -57,7 +60,7 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
             tipo_consulta,
             pacientes_app (id, nome)
           `)
-          .eq('id_medico', userInfo.medicoId);
+          .eq('id_medico', medicoId);
 
         if (error) {
           console.error('[AgendaTab] fetchConsultas: Error fetching consultations:', error);
@@ -70,10 +73,15 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
       }
     };
 
-    if (userInfo.medicoId && !loadingUserInfo) { // Ensure not loading and medicoId is present
-      fetchConsultas();
-    } else if (!loadingUserInfo && !userInfo.medicoId) {
+    if (!loadingUserInfo) {
+      // Get medicoId from userInfo or localStorage
+      const medicoId = userInfo.medicoId || (localStorage.getItem('medicoId') ? Number(localStorage.getItem('medicoId')) : null);
+      
+      if (medicoId) {
+        fetchConsultas();
+      } else {
         console.warn('[AgendaTab] useEffect for fetchConsultas: Not fetching because medicoId is missing and not loading. userInfo:', userInfo);
+      }
     }
   }, [userInfo, loadingUserInfo]); // Depend on the whole userInfo object and loading state
 
@@ -93,8 +101,11 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
     );
   }
   
-  if (!userInfo.medicoId) {
-    console.warn('[AgendaTab] Rendering: userInfo.medicoId is missing. Cannot display agenda contents effectively. userInfo:', userInfo);
+  // Get medicoId from userInfo or localStorage
+  const medicoId = userInfo.medicoId || (localStorage.getItem('medicoId') ? Number(localStorage.getItem('medicoId')) : null);
+  
+  if (!medicoId) {
+    console.warn('[AgendaTab] Rendering: medicoId is missing. Cannot display agenda contents effectively. userInfo:', userInfo);
     return (
       <Alert variant="destructive">
         <AlertDescription>
@@ -118,7 +129,7 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
     console.log('[AgendaTab] Rendering: ChatMedico with patient:', chatWithPatient);
     return (
       <ChatMedico
-        medicoId={userInfo.medicoId} // medicoId should be available here
+        medicoId={medicoId} // medicoId should be available here
         pacienteId={chatWithPatient.pacientes_app.id}
         pacienteNome={chatWithPatient.pacientes_app.nome}
         motivoConsulta={chatWithPatient.motivo}
