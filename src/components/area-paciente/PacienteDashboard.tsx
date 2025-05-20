@@ -13,16 +13,19 @@ const PacienteDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-3 mb-2">
+      {/* The DashboardSummaryCards component is internally responsive (grid-cols-1 sm:grid-cols-3) */}
+      {/* We can ensure its container adapts well. */}
+      <div className="w-full">
+        {/* The title for DashboardSummaryCards is inside its own component, we'll leave it as is */}
         <DashboardSummaryCards />
       </div>
       
-      <div className="mt-8">
+      <div className="mt-6 md:mt-8">
         {userLoading ? (
           <Card>
-            <CardContent className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal mr-2" />
-              <span>Carregando informações do paciente...</span>
+            <CardContent className="flex items-center justify-center p-6 sm:p-8">
+              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-hopecann-teal mr-2" />
+              <span className="text-sm sm:text-base">Carregando informações do paciente...</span>
             </CardContent>
           </Card>
         ) : (
