@@ -16,6 +16,7 @@ import PrescriptionPreview from './PrescriptionPreview';
 import { PrescriptionData } from '@/types/prescription';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import PrescriptionPrintTemplate from './PrescriptionPrintTemplate';
 
 const Prescricoes: React.FC = () => {
   const { toast } = useToast();
@@ -42,6 +43,7 @@ const Prescricoes: React.FC = () => {
   // State for detailed prescription
   const [detailedPrescriptionData, setDetailedPrescriptionData] = useState<PrescriptionData | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const printTemplateRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadPacientes = async () => {
@@ -63,7 +65,7 @@ const Prescricoes: React.FC = () => {
     e.preventDefault();
     
     // Se estamos na aba de anexo PDF e temos um arquivo anexado
-    if (activeTab === 'pdf' && pdfFilePath) {
+    if (activeTab === 'pdf' && pdfFilePath && mainActiveTab === 'simples') {
       if (!pacienteId) {
         toast({
           variant: "destructive",
@@ -78,7 +80,7 @@ const Prescricoes: React.FC = () => {
       
       const receitaData = {
         id_paciente: parseInt(pacienteId),
-        medicamento: "Receita via PDF anexado",
+        medicamento: "Receita via PDF anexado (Simples)",
         posologia: "Ver documento anexo",
         observacoes: "Documento PDF anexado pelo médico",
         data_validade: dataValidade.toISOString(),
@@ -90,65 +92,93 @@ const Prescricoes: React.FC = () => {
       
       if (newReceita) {
         setSuccess(true);
+        resetSimpleForm();
+        return;
+      }
+    } else if (mainActiveTab === 'pdf' && pdfFilePath) {
+      if (!pacienteId) {
+        toast({
+          variant: "destructive",
+          title: "Paciente obrigatório",
+          description: "Por favor, selecione um paciente para associar ao PDF",
+        });
+        return;
+      }
+      const dataValidade = new Date();
+      dataValidade.setDate(dataValidade.getDate() + 30);
+      const receitaData = {
+        id_paciente: parseInt(pacienteId),
+        medicamento: "Receita via PDF Externo",
+        posologia: "Ver documento anexo",
+        observacoes: "Documento PDF externo anexado pelo médico",
+        data_validade: dataValidade.toISOString(),
+        status: 'ativa',
+        arquivo_pdf: pdfFilePath
+      };
+      const newReceita = await createReceita(receitaData);
+      if (newReceita) {
+        setSuccess(true);
+        resetSimpleForm();
         return;
       }
     }
     
-    // Validações para o formulário normal
-    if (!pacienteId) {
-      toast({
-        variant: "destructive",
-        title: "Paciente obrigatório",
-        description: "Por favor, selecione um paciente",
-      });
-      return;
-    }
-    
-    if (!medicamento) {
-      toast({
-        variant: "destructive",
-        title: "Medicamento obrigatório",
-        description: "Por favor, insira um medicamento",
-      });
-      return;
-    }
-    
-    if (!posologia) {
-      toast({
-        variant: "destructive",
-        title: "Posologia obrigatória",
-        description: "Por favor, insira a posologia",
-      });
-      return;
-    }
-    
-    if (!assinado) {
-      toast({
-        variant: "destructive",
-        title: "Assinatura obrigatória",
-        description: "Por favor, assine digitalmente a prescrição",
-      });
-      return;
-    }
-    
-    // Calculate validity date (30 days)
-    const dataValidade = new Date();
-    dataValidade.setDate(dataValidade.getDate() + 30);
-    
-    const receitaData = {
-      id_paciente: parseInt(pacienteId),
-      medicamento,
-      posologia,
-      observacoes: `Tempo de uso: ${tempoUso} ${periodo}. ${permiteSubstituicao === 'sim' ? 'Permite substituição. ' : 'Não permite substituição. '}${observacoes ? observacoes : ''}`,
-      data_validade: dataValidade.toISOString(),
-      status: 'ativa'
-    };
-    
-    const newReceita = await createReceita(receitaData);
-    
-    if (newReceita) {
-      setSuccess(true);
-      resetSimpleForm();
+    if (mainActiveTab === 'simples' && activeTab === 'formulario') {
+      if (!pacienteId) {
+        toast({
+          variant: "destructive",
+          title: "Paciente obrigatório",
+          description: "Por favor, selecione um paciente",
+        });
+        return;
+      }
+      
+      if (!medicamento) {
+        toast({
+          variant: "destructive",
+          title: "Medicamento obrigatório",
+          description: "Por favor, insira um medicamento",
+        });
+        return;
+      }
+      
+      if (!posologia) {
+        toast({
+          variant: "destructive",
+          title: "Posologia obrigatória",
+          description: "Por favor, insira a posologia",
+        });
+        return;
+      }
+      
+      if (!assinado) {
+        toast({
+          variant: "destructive",
+          title: "Assinatura obrigatória",
+          description: "Por favor, assine digitalmente a prescrição",
+        });
+        return;
+      }
+      
+      const dataValidade = new Date();
+      dataValidade.setDate(dataValidade.getDate() + 30);
+      
+      const receitaData = {
+        id_paciente: parseInt(pacienteId),
+        medicamento,
+        posologia,
+        observacoes: `Tempo de uso: ${tempoUso} ${periodo}. ${permiteSubstituicao === 'sim' ? 'Permite substituição. ' : 'Não permite substituição. '}${cid ? `CID: ${cid}. ` : ''}${observacoes ? observacoes : ''}`,
+        data_validade: dataValidade.toISOString(),
+        status: 'ativa',
+        tipo_receita: tipoReceita,
+      };
+      
+      const newReceita = await createReceita(receitaData);
+      
+      if (newReceita) {
+        setSuccess(true);
+        resetSimpleForm();
+      }
     }
   };
   
@@ -164,7 +194,6 @@ const Prescricoes: React.FC = () => {
     setObservacoes('');
     setAssinado(false);
     setPdfFilePath(null);
-    setActiveTab('formulario');
   };
   
   const handlePdfUploadComplete = (filePath: string) => {
@@ -175,39 +204,50 @@ const Prescricoes: React.FC = () => {
     setDetailedPrescriptionData(data);
     toast({
       title: "Preview Gerado",
-      description: "O preview da receita detalhada está pronto. Verifique abaixo e gere o PDF.",
+      description: "O preview da receita detalhada está pronto. Verifique abaixo e gere o PDF ou imprima.",
     });
   };
 
-  const generatePdfFromPreview = async () => {
-    if (!previewRef.current || !detailedPrescriptionData) {
-      toast({ variant: "destructive", title: "Erro", description: "Preview não disponível para gerar PDF." });
+  const generatePdfFromDetailed = async () => {
+    if (!printTemplateRef.current || !detailedPrescriptionData) {
+      toast({ variant: "destructive", title: "Erro", description: "Template de impressão não disponível para gerar PDF." });
       return;
     }
 
-    const canvas = await html2canvas(previewRef.current, { scale: 2 });
+    const originalDisplay = printTemplateRef.current.style.display;
+    printTemplateRef.current.style.display = 'block';
+
+    const canvas = await html2canvas(printTemplateRef.current, { 
+      scale: 2,
+      useCORS: true,
+      logging: true,
+      onclone: (documentClone) => {
+        const printArea = documentClone.querySelector('.printable-prescription');
+        if(printArea){
+          Object.assign((printArea as HTMLElement).style, {
+            position: 'absolute', left: '0', top: '0', width: '210mm',
+            visibility: 'visible', display: 'block'
+          });
+        }
+      }
+    });
+    
+    printTemplateRef.current.style.display = originalDisplay;
+
     const imgData = canvas.toDataURL('image/png');
     
     const pdf = new jsPDF({
-      orientation: 'p', // portrait
-      unit: 'mm', // millimeters
-      format: 'a4', // A4 size
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4',
     });
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
     const imgProps = pdf.getImageProperties(imgData);
-    const imgWidth = pdfWidth - 20; // Margin of 10mm on each side
+    const imgWidth = pdfWidth; 
     const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
     
-    let position = 10; // Top margin
-    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-    
-    // Handle content that might overflow one page (basic example, needs refinement for complex cases)
-    if (imgHeight > pdfHeight - 20) { // Check if image height exceeds page height with margins
-      // This is a simplified handling. For true multi-page, you'd need to split the canvas or content.
-      console.warn("Conteúdo da prescrição pode exceder uma página. Funcionalidade de múltiplas páginas não totalmente implementada.");
-    }
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
 
     pdf.save(`receita-${detailedPrescriptionData.prescriptionNumber}-${Date.now()}.pdf`);
     toast({ title: "PDF Gerado", description: "O PDF da receita foi baixado." });
@@ -228,14 +268,16 @@ const Prescricoes: React.FC = () => {
             variant="outline" 
             size="lg"
             className="flex items-center"
-            onClick={() => window.print()}
+            onClick={() => {
+              window.print(); 
+            }}
           >
             <Printer className="mr-2 h-5 w-5" />
             Imprimir Receita
           </Button>
           <Button 
             size="lg"
-            onClick={() => { setSuccess(false); resetSimpleForm(); }}
+            onClick={() => { setSuccess(false); resetSimpleForm(); setDetailedPrescriptionData(null); }}
           >
             Criar Nova Receita
           </Button>
@@ -246,14 +288,14 @@ const Prescricoes: React.FC = () => {
   
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-8 no-print">
         <h1 className="text-3xl font-bold mb-2">Prescrição Digital</h1>
         <p className="text-gray-600">
           Gere receitas simples, anexe PDFs ou crie receitas detalhadas.
         </p>
       </div>
       
-      <Tabs value={mainActiveTab} onValueChange={setMainActiveTab} className="w-full mb-6">
+      <Tabs value={mainActiveTab} onValueChange={setMainActiveTab} className="w-full mb-6 no-print">
         <TabsList className="grid grid-cols-1 md:grid-cols-3 w-full md:w-auto">
           <TabsTrigger value="simples">Receita Simples</TabsTrigger>
           <TabsTrigger value="pdf">Anexar PDF de Receita</TabsTrigger>
@@ -261,7 +303,7 @@ const Prescricoes: React.FC = () => {
         </TabsList>
         
         <TabsContent value="simples">
-          <Card className="max-w-2xl mx-auto">
+          <Card className="max-w-2xl mx-auto no-print">
             <CardHeader>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid grid-cols-2 w-full">
@@ -272,7 +314,6 @@ const Prescricoes: React.FC = () => {
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={handleSimpleSubmit} className="space-y-6">
-                {/* Paciente Select for simple/pdf forms */}
                 <div>
                   <Label htmlFor="pacienteSimple" className="font-medium">
                     Paciente*
@@ -456,7 +497,7 @@ const Prescricoes: React.FC = () => {
                     onUploadComplete={handlePdfUploadComplete} 
                     userId={medicoUserId} 
                     pacienteId={pacienteId ? parseInt(pacienteId) : null}
-                    docType="receita" // Changed from "receita_externa"
+                    docType="receita"
                   />
                 )}
                 
@@ -479,7 +520,7 @@ const Prescricoes: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="pdf">
-          <Card className="max-w-2xl mx-auto">
+          <Card className="max-w-2xl mx-auto no-print">
             <CardHeader><CardTitle>Anexar PDF de Receita Externa</CardTitle></CardHeader>
             <CardContent className="p-6 space-y-6">
               <div>
@@ -503,11 +544,11 @@ const Prescricoes: React.FC = () => {
                 onUploadComplete={handlePdfUploadComplete} 
                 userId={medicoUserId} 
                 pacienteId={pacienteId ? parseInt(pacienteId) : null}
-                docType="receita" // Changed from "receita_externa"
+                docType="receita"
               />
               <Button 
                 type="button" 
-                onClick={handleSimpleSubmit} // Reuse submit logic, ensure activeTab is set correctly or make a new handler
+                onClick={handleSimpleSubmit} 
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 disabled={!pdfFilePath || !pacienteId}
               >
@@ -519,25 +560,28 @@ const Prescricoes: React.FC = () => {
 
         <TabsContent value="detalhada">
           <Card className="w-full">
-            <CardHeader><CardTitle>Gerar Receita Médica Detalhada</CardTitle></CardHeader>
+            <CardHeader className="no-print"><CardTitle>Gerar Receita Médica Detalhada</CardTitle></CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
+                <div className="no-print">
                   <h3 className="text-xl font-semibold mb-4">Formulário da Receita</h3>
                   <PrescriptionForm onSubmit={handleDetailedPrescriptionSubmit} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-4">Preview da Receita</h3>
+                  <h3 className="text-xl font-semibold mb-4">Preview da Receita (Tela)</h3>
                   <div ref={previewRef}>
                     <PrescriptionPreview data={detailedPrescriptionData} />
                   </div>
+                  <div ref={printTemplateRef} className="print-only-container">
+                    {detailedPrescriptionData && <PrescriptionPrintTemplate data={detailedPrescriptionData} />}
+                  </div>
                   {detailedPrescriptionData && (
-                    <div className="mt-6 flex gap-4 justify-end">
-                       <Button onClick={generatePdfFromPreview} variant="default" size="lg">
+                    <div className="mt-6 flex gap-4 justify-end no-print">
+                      <Button onClick={generatePdfFromDetailed} variant="default" size="lg">
                         <Download className="mr-2 h-4 w-4" /> Baixar PDF
                       </Button>
                       <Button onClick={() => window.print()} variant="outline" size="lg">
-                        <Printer className="mr-2 h-4 w-4" /> Imprimir Preview
+                        <Printer className="mr-2 h-4 w-4" /> Imprimir Receita
                       </Button>
                     </div>
                   )}
@@ -548,7 +592,7 @@ const Prescricoes: React.FC = () => {
         </TabsContent>
       </Tabs>
       
-      <div className="mt-8 text-center text-sm text-gray-500">
+      <div className="mt-8 text-center text-sm text-gray-500 no-print">
         <p>Este sistema está em conformidade com as regulamentações da ANVISA</p>
         <p>© 2025 Sistema de Prescrição Digital. Todos os direitos reservados.</p>
       </div>
