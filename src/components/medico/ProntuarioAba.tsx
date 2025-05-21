@@ -10,9 +10,10 @@ import { useToast } from '@/components/ui/use-toast';
 
 interface ProntuarioAbaProps {
   onBack: () => void;
+  pacienteId?: number; // Added pacienteId prop
 }
 
-const ProntuarioAba: React.FC<ProntuarioAbaProps> = ({ onBack }) => {
+const ProntuarioAba: React.FC<ProntuarioAbaProps> = ({ onBack, pacienteId }) => {
   const { toast } = useToast();
   const { selectedPaciente, handleSaveProntuario, historicoPaciente } = useDoctorSchedule();
 
