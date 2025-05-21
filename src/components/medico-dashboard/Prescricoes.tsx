@@ -85,7 +85,8 @@ const Prescricoes: React.FC = () => {
         observacoes: "Documento PDF anexado pelo médico",
         data_validade: dataValidade.toISOString(),
         status: 'ativa',
-        arquivo_pdf: pdfFilePath
+        arquivo_pdf: pdfFilePath,
+        tipo_receita: 'simples_pdf', // Adicionando um tipo para PDFs simples
       };
       
       const newReceita = await createReceita(receitaData);
@@ -113,7 +114,8 @@ const Prescricoes: React.FC = () => {
         observacoes: "Documento PDF externo anexado pelo médico",
         data_validade: dataValidade.toISOString(),
         status: 'ativa',
-        arquivo_pdf: pdfFilePath
+        arquivo_pdf: pdfFilePath,
+        tipo_receita: 'externo_pdf', // Adicionando um tipo para PDFs externos
       };
       const newReceita = await createReceita(receitaData);
       if (newReceita) {
@@ -202,6 +204,37 @@ const Prescricoes: React.FC = () => {
 
   const handleDetailedPrescriptionSubmit = (data: PrescriptionData) => {
     setDetailedPrescriptionData(data);
+    // Simulate saving to database and getting a prescription number
+    const simulatedPrescriptionNumber = `HC-${Date.now().toString().slice(-6)}`;
+    const dataToSave : PrescriptionData = {
+      ...data,
+      prescriptionNumber: data.prescriptionNumber || simulatedPrescriptionNumber,
+    };
+    setDetailedPrescriptionData(dataToSave);
+
+    // Example of how you might save detailed prescription to backend:
+    /*
+    const receitaData = {
+      id_paciente: parseInt(data.patient.id), // Assuming patient object has an ID
+      medicamento: data.medications.map(m => m.name).join(', ') || "Múltiplos medicamentos",
+      posologia: "Ver detalhes na prescrição completa",
+      observacoes: data.generalInstructions || "Receita detalhada gerada pelo sistema.",
+      data_validade: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(), // Default 30 days validity
+      status: 'ativa',
+      tipo_receita: 'detalhada', // New type for these prescriptions
+      // You might want to store the full JSON of detailedPrescriptionData in a jsonb column
+      // dados_completos: dataToSave 
+    };
+    createReceita(receitaData).then(newReceita => {
+      if (newReceita) {
+         toast({
+          title: "Receita Detalhada Salva (Simulado)",
+          description: "A receita detalhada foi registrada no sistema (simulação).",
+        });
+      }
+    });
+    */
+
     toast({
       title: "Preview Gerado",
       description: "O preview da receita detalhada está pronto. Verifique abaixo e gere o PDF ou imprima.",
@@ -209,48 +242,128 @@ const Prescricoes: React.FC = () => {
   };
 
   const generatePdfFromDetailed = async () => {
-    if (!printTemplateRef.current || !detailedPrescriptionData) {
+    const printNode = printTemplateRef.current;
+    if (!printNode || !detailedPrescriptionData) {
       toast({ variant: "destructive", title: "Erro", description: "Template de impressão não disponível para gerar PDF." });
       return;
     }
 
-    const originalDisplay = printTemplateRef.current.style.display;
-    printTemplateRef.current.style.display = 'block';
+    const originalStyles = {
+      display: printNode.style.display,
+      position: printNode.style.position,
+      left: printNode.style.left,
+      top: printNode.style.top,
+      width: printNode.style.width,
+      height: printNode.style.height,
+      minHeight: printNode.style.minHeight,
+      backgroundColor: printNode.style.backgroundColor,
+      padding: printNode.style.padding,
+      margin: printNode.style.margin,
+      zIndex: printNode.style.zIndex,
+    };
 
-    const canvas = await html2canvas(printTemplateRef.current, { 
-      scale: 2,
-      useCORS: true,
-      logging: true,
-      onclone: (documentClone) => {
-        const printArea = documentClone.querySelector('.printable-prescription');
-        if(printArea){
-          Object.assign((printArea as HTMLElement).style, {
-            position: 'absolute', left: '0', top: '0', width: '210mm',
-            visibility: 'visible', display: 'block'
-          });
+    // Temporarily apply styles for html2canvas capture
+    printNode.style.display = 'block';
+    printNode.style.position = 'absolute';
+    printNode.style.left = '-9999px'; // Position off-screen
+    printNode.style.top = '-9999px';
+    printNode.style.width = '210mm';    // A4 width for the container
+    printNode.style.minHeight = '297mm'; // A4 min height for the container
+    printNode.style.height = 'auto';   // Allow content to dictate height
+    printNode.style.backgroundColor = 'white'; // Ensure background
+    printNode.style.padding = '0'; // Container itself should not have padding
+    printNode.style.margin = '0'; // Or A4-like margins if .printable-prescription inside doesn't handle it
+    printNode.style.zIndex = '10000'; // Ensure it's on top layer if needed for rendering fonts
+
+    const prescriptionElement = printNode.querySelector('.printable-prescription') as HTMLElement;
+    if (!prescriptionElement) {
+        toast({ variant: "destructive", title: "Erro", description: "Elemento interno da prescrição não encontrado." });
+        // Restore styles before returning
+        Object.assign(printNode.style, originalStyles);
+        return;
+    }
+    
+    // Ensure the child .printable-prescription takes up the necessary space within the styled printNode
+    // Its styles are mostly defined in @media print but we need them for html2canvas too
+    // The onclone method handles styling the *cloned* element, which is preferred.
+
+    try {
+      const canvas = await html2canvas(printNode, { // Capture the container
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        logging: true, // Enable logging for debugging
+        backgroundColor: '#ffffff', // Explicit white background for the canvas
+        onclone: (documentClone) => {
+          const clonedPrintNode = documentClone.documentElement.querySelector('.print-only-container');
+          if (clonedPrintNode) {
+            // Style the container in the clone
+             Object.assign((clonedPrintNode as HTMLElement).style, {
+                display: 'block',
+                width: '210mm',
+                minHeight: '297mm',
+                height: 'auto',
+                padding: '0', // No padding on container for clone
+                margin: '0',
+                backgroundColor: 'white',
+             });
+          }
+          const printArea = documentClone.documentElement.querySelector('.printable-prescription');
+          if (printArea) {
+            Object.assign((printArea as HTMLElement).style, {
+              display: 'block',
+              visibility: 'visible',
+              position: 'relative', // Changed from absolute to be within the sized container
+              width: '210mm',
+              minHeight: '297mm',
+              height: 'auto',
+              margin: '0 auto', // Centering or explicit positioning
+              padding: '15mm', // Actual content margins
+              boxSizing: 'border-box',
+              backgroundColor: 'white',
+              color: 'black',
+              fontFamily: "'Times New Roman', Times, serif",
+              fontSize: '12pt',
+              border: 'none',
+              boxShadow: 'none',
+            });
+          }
         }
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth(); // A4 width in mm (210)
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // A4 height in mm (297)
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const aspectRatio = imgProps.width / imgProps.height;
+
+      let imgHeight = pdfHeight;
+      let imgWidth = imgHeight * aspectRatio;
+
+      if (imgWidth > pdfWidth) {
+        imgWidth = pdfWidth;
+        imgHeight = imgWidth / aspectRatio;
       }
-    });
-    
-    printTemplateRef.current.style.display = originalDisplay;
+      
+      // If content is taller than one page, html2canvas captures it as one long image.
+      // We add it to the PDF, and jsPDF will handle multi-page if the image height exceeds page height.
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight); // Use pdfWidth for full width image
+      pdf.save(`receita-${detailedPrescriptionData.prescriptionNumber}-${Date.now()}.pdf`);
+      toast({ title: "PDF Gerado", description: "O PDF da receita foi baixado." });
 
-    const imgData = canvas.toDataURL('image/png');
-    
-    const pdf = new jsPDF({
-      orientation: 'p',
-      unit: 'mm',
-      format: 'a4',
-    });
-
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const imgProps = pdf.getImageProperties(imgData);
-    const imgWidth = pdfWidth; 
-    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-
-    pdf.save(`receita-${detailedPrescriptionData.prescriptionNumber}-${Date.now()}.pdf`);
-    toast({ title: "PDF Gerado", description: "O PDF da receita foi baixado." });
+    } catch (error) {
+      console.error("Erro ao gerar PDF com html2canvas:", error);
+      toast({ variant: "destructive", title: "Erro ao Gerar PDF", description: "Ocorreu um problema ao tentar gerar o PDF." });
+    } finally {
+      // Restore original styles
+      Object.assign(printNode.style, originalStyles);
+    }
   };
 
   if (success) {
@@ -287,15 +400,15 @@ const Prescricoes: React.FC = () => {
   }
   
   return (
-    <div>
-      <div className="mb-8 no-print">
+    <div className="no-print">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Prescrição Digital</h1>
         <p className="text-gray-600">
           Gere receitas simples, anexe PDFs ou crie receitas detalhadas.
         </p>
       </div>
       
-      <Tabs value={mainActiveTab} onValueChange={setMainActiveTab} className="w-full mb-6 no-print">
+      <Tabs value={mainActiveTab} onValueChange={setMainActiveTab} className="w-full mb-6">
         <TabsList className="grid grid-cols-1 md:grid-cols-3 w-full md:w-auto">
           <TabsTrigger value="simples">Receita Simples</TabsTrigger>
           <TabsTrigger value="pdf">Anexar PDF de Receita</TabsTrigger>
@@ -303,7 +416,7 @@ const Prescricoes: React.FC = () => {
         </TabsList>
         
         <TabsContent value="simples">
-          <Card className="max-w-2xl mx-auto no-print">
+          <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid grid-cols-2 w-full">
@@ -520,7 +633,7 @@ const Prescricoes: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="pdf">
-          <Card className="max-w-2xl mx-auto no-print">
+          <Card className="max-w-2xl mx-auto">
             <CardHeader><CardTitle>Anexar PDF de Receita Externa</CardTitle></CardHeader>
             <CardContent className="p-6 space-y-6">
               <div>
@@ -568,10 +681,11 @@ const Prescricoes: React.FC = () => {
                   <PrescriptionForm onSubmit={handleDetailedPrescriptionSubmit} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-4">Preview da Receita (Tela)</h3>
-                  <div ref={previewRef}>
+                  <h3 className="text-xl font-semibold mb-4 no-print">Preview da Receita (Tela)</h3>
+                  <div ref={previewRef} className="no-print">
                     <PrescriptionPreview data={detailedPrescriptionData} />
                   </div>
+                  {/* This container is specifically for printing/PDF generation */}
                   <div ref={printTemplateRef} className="print-only-container">
                     {detailedPrescriptionData && <PrescriptionPrintTemplate data={detailedPrescriptionData} />}
                   </div>

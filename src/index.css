@@ -4,6 +4,7 @@
 @tailwind utilities;
  
 @layer base {
+  /* ... keep existing code (:root and .dark styles) */
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -88,65 +89,95 @@
 
 /* Print specific styles */
 .print-only-container {
-  display: none; /* Hidden on screen by default */
+  display: none !important; /* Hidden on screen by default */
 }
 
 @media print {
-  body * {
-    visibility: hidden !important;
+  body {
     margin: 0 !important;
     padding: 0 !important;
-    box-sizing: border-box !important;
-    -webkit-print-color-adjust: exact !important; /* Ensures background colors and images are printed */
-    print-color-adjust: exact !important;
+    background-color: white !important; /* Ensure body background is white for print */
   }
 
-  .no-print, .no-print * { /* Ensure elements marked as no-print (and their children) are definitely not shown */
+  /* Hide all direct children of body initially */
+  body > *:not(.print-only-container) {
     display: none !important;
     visibility: hidden !important;
   }
   
-  /* The .print-only-container itself will be hidden by body *, but its child .printable-prescription is made visible */
-  .printable-prescription, .printable-prescription * {
-    visibility: visible !important;
-    background-color: white !important; /* Force white background for print */
-    color: black !important; /* Force black text for print */
-  }
-
-  .printable-prescription {
-    position: absolute !important; /* Changed to absolute as fixed can have issues with multi-page */
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important; /* Use 100% width and let @page handle A4 sizing */
-    min-height: 277mm !important; /* A4 height minus some margin, helps with page breaking */
-    height: auto !important;
-    margin: 0 !important;
-    padding: 15mm !important; /* Standard A4 margins */
-    font-family: 'Times New Roman', Times, serif !important; /* Common prescription font */
-    font-size: 12pt !important;
-    border: none !important;
-    box-shadow: none !important;
-    overflow: visible !important; /* Ensure all content is visible */
+  /* Also hide elements specifically marked as .no-print */
+  .no-print, .no-print * {
+    display: none !important;
+    visibility: hidden !important;
   }
   
+  /* Make the print container visible and take up the whole page */
+  .print-only-container {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important; /* Adjust based on content */
+    min-height: 100vh !important; /* Ensure it covers at least viewport height */
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: white !important; /* Container background */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* The .printable-prescription is inside .print-only-container */
+  /* It defines the actual A4 content area */
+  .printable-prescription {
+    visibility: visible !important;
+    display: block !important; /* Ensure it's block */
+    background-color: white !important;
+    color: black !important;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 12pt !important;
+    
+    width: 210mm !important; /* A4 width */
+    min-height: 297mm !important; /* A4 height for at least one page */
+    height: auto !important; /* Allow content to flow to multiple pages */
+    margin: 0 auto !important; /* Center the A4 page on the print sheet */
+    padding: 15mm !important; /* Margins for the content within the A4 page */
+    
+    border: none !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+    overflow: visible !important; /* Ensure all content is visible for printing */
+  }
+  
+  .printable-prescription *,
+  .printable-prescription *:before,
+  .printable-prescription *:after {
+    visibility: visible !important; /* Ensure all children are visible */
+    background-color: transparent !important; /* Avoid unexpected background colors from children */
+    color: black !important; /* Ensure text color is black for all children */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .printable-prescription header,
   .printable-prescription section,
   .printable-prescription footer {
-    border-color: #333 !important; /* Ensure borders are visible */
+    border-color: #333 !important;
   }
 
   .printable-prescription .medication-item {
      border-color: #ccc !important;
-     page-break-inside: avoid !important; /* Try to keep medication items on one page */
+     page-break-inside: avoid !important;
   }
 
   .printable-prescription footer {
-    page-break-before: auto !important; /* Avoid breaking page right before footer if possible */
+    page-break-before: auto !important;
   }
-
 
   @page {
     size: A4 portrait;
-    margin: 0mm; /* Let padding on .printable-prescription handle content margins */
+    margin: 0mm; /* Margins are handled by .printable-prescription's padding */
   }
 }
+
