@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { DoctorInfo } from '@/types/prescription'; // Precisamos do tipo DoctorInfo
 
 export const getSaldoMedico = async (medicoId: number) => {
   try {
@@ -159,5 +160,56 @@ export const deleteTemplateExame = async (templateId: number) => {
   } catch (error) {
     console.error('Erro ao excluir template de exame:', error);
     return false;
+  }
+};
+
+export const getMedicoDetailsById = async (medicoId: number): Promise<DoctorInfo | null> => {
+  try {
+    const { data: medicoData, error: medicoError } = await supabase
+      .from('medicos')
+      .select(`
+        nome,
+        crm,
+        especialidade,
+        telefone,
+        foto_perfil,
+        id_clinica,
+        clinicas (
+          nome,
+          endereco
+        )
+      `)
+      .eq('id', medicoId)
+      .single();
+
+    if (medicoError) {
+      console.error("Erro ao buscar detalhes do médico:", medicoError);
+      return null;
+    }
+
+    if (!medicoData) {
+      console.error("Médico não encontrado:", medicoId);
+      return null;
+    }
+    
+    // Ajustar para o formato DoctorInfo
+    // @ts-ignore
+    const clinica = medicoData.clinicas; // Supabase retorna a relação como um objeto ou array
+
+    return {
+      name: medicoData.nome || 'Nome Indisponível',
+      crm: medicoData.crm || 'CRM Indisponível',
+      specialty: medicoData.especialidade || 'Especialidade Indisponível',
+      // @ts-ignore
+      clinicName: clinica?.nome || 'Clínica Desconhecida',
+      // @ts-ignore
+      clinicAddress: clinica?.endereco || '',
+      phone: medicoData.telefone || '',
+      clinicLogoUrl: medicoData.foto_perfil || '', // Usando foto_perfil como logo placeholder
+    };
+
+  } catch (error) {
+    console.error("Erro ao buscar detalhes do médico:", error);
+    return null;
   }
 };
