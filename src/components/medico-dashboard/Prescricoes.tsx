@@ -456,7 +456,7 @@ const Prescricoes: React.FC = () => {
                     onUploadComplete={handlePdfUploadComplete} 
                     userId={medicoUserId} 
                     pacienteId={pacienteId ? parseInt(pacienteId) : null}
-                    docType="receita"
+                    docType="receita" // Changed from "receita_externa"
                   />
                 )}
                 
@@ -503,7 +503,7 @@ const Prescricoes: React.FC = () => {
                 onUploadComplete={handlePdfUploadComplete} 
                 userId={medicoUserId} 
                 pacienteId={pacienteId ? parseInt(pacienteId) : null}
-                docType="receita_externa" // Differentiate docType if needed
+                docType="receita" // Changed from "receita_externa"
               />
               <Button 
                 type="button" 
