@@ -87,7 +87,14 @@
   }
 }
 
+@layer components {
+  .page-container-wrapper {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
 /* Print specific styles */
+/* ... keep existing code (print styles) */
 .print-only-container {
   display: none !important; /* Hidden on screen by default */
 }
@@ -142,7 +149,7 @@
     min-height: 297mm !important; /* A4 height for at least one page */
     height: auto !important; /* Allow content to flow to multiple pages */
     margin: 0 auto !important; /* Center the A4 page on the print sheet */
-    padding: 15mm !important; /* Margins for the content within the A4 page */
+    padding: 10mm !important; /* Margins for the content within the A4 page, changed from 15mm */
     
     border: none !important;
     box-shadow: none !important;
@@ -180,4 +187,3 @@
     margin: 0mm; /* Margins are handled by .printable-prescription's padding */
   }
 }
-
