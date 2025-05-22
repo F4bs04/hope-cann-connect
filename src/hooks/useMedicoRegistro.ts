@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -5,10 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
 import { CadastroMedicoFormValues, cadastroMedicoFormSchema } from '@/schemas/cadastroMedicoSchema';
-
-// Import utilities from external files
-// formatCPF will be defined locally as src/utils/formatters.ts is not in the editable file list
-import { formatTelefone, formatCRM } from '@/utils/formatters';
 
 // Types
 export interface DiaHorario {
@@ -23,16 +20,6 @@ export interface UserInfo {
   photoUrl?: string;
   userId?: string;
 }
-
-// Local CPF formatter function
-const formatCPF = (value: string) => {
-  return value
-    .replace(/\D/g, '') // Remove all non-digit characters
-    .slice(0, 11) // Ensure it's not longer than 11 digits
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-};
 
 export const useMedicoRegistro = () => {
   const navigate = useNavigate();
@@ -49,13 +36,11 @@ export const useMedicoRegistro = () => {
     resolver: zodResolver(cadastroMedicoFormSchema),
     defaultValues: {
       crm: '',
-      cpf: '', // Added CPF
       telefone: '',
       especialidade: '',
       biografia: '',
       termoConciencia: false,
-      certificado: undefined,
-      foto: undefined,
+      certificado: undefined, // Include certificado in defaultValues
     },
   });
 
@@ -69,14 +54,13 @@ export const useMedicoRegistro = () => {
           title: "Sessão expirada",
           description: "Sua sessão expirou ou você não está autenticado. Redirecionando para a página de login.",
         });
-        // Redirect to main doctor registration page if not authenticated, 
-        // as this hook is for *completing* registration.
-        navigate('/cadastro-medico'); 
+        navigate('/cadastro-medico');
         return;
       }
       
       const user = session.user;
       if (user) {
+        // Get user info from auth
         setUserInfo({
           name: user.user_metadata?.full_name,
           email: user.email,
@@ -84,10 +68,11 @@ export const useMedicoRegistro = () => {
           userId: user.id
         });
         
-        if (user.user_metadata?.avatar_url && !form.getValues('foto')) {
+        if (user.user_metadata?.avatar_url) {
           setFotoPreview(user.user_metadata.avatar_url);
         }
 
+        // Get user ID from our usuarios table
         const { data: userData, error: userError } = await supabase
           .from('usuarios')
           .select('id')
@@ -95,14 +80,11 @@ export const useMedicoRegistro = () => {
           .single();
 
         if (userError) {
-          console.error("Error fetching user data from 'usuarios':", userError);
-          // If user record doesn't exist in 'usuarios' table, it's an issue.
-          // This could happen if Google Sign-In created an auth.user but the trigger/logic to create a 'usuarios' entry failed.
-          // For now, we'll let it proceed, but this part of the flow might need hardening.
-          // A robust solution would create the 'usuarios' record here if missing.
+          console.error("Error fetching user data:", userError);
           return;
         }
 
+        // Get medico data if exists
         if (userData) {
           const { data: medicoData, error: medicoError } = await supabase
             .from('medicos')
@@ -113,18 +95,13 @@ export const useMedicoRegistro = () => {
           if (!medicoError && medicoData) {
             setMedicoId(medicoData.id.toString());
             
-            form.reset({
-              crm: medicoData.crm || '',
-              cpf: medicoData.cpf ? formatCPF(medicoData.cpf) : '', // Format CPF for display
-              telefone: medicoData.telefone ? formatTelefone(medicoData.telefone) : '',
-              especialidade: medicoData.especialidade || '',
-              biografia: medicoData.biografia || '',
-              termoConciencia: form.getValues('termoConciencia'), // Keep existing form state for this
-              certificado: form.getValues('certificado'), // Keep existing file if already staged
-              foto: form.getValues('foto'), // Keep existing file if already staged
-            });
+            // Pre-fill form with existing data
+            form.setValue('crm', medicoData.crm || '');
+            form.setValue('telefone', medicoData.telefone || '');
+            form.setValue('especialidade', medicoData.especialidade || '');
+            form.setValue('biografia', medicoData.biografia || '');
             
-            if (medicoData.foto_perfil && !form.getValues('foto')) {
+            if (medicoData.foto_perfil) {
               setFotoPreview(medicoData.foto_perfil);
             }
           }
@@ -133,7 +110,7 @@ export const useMedicoRegistro = () => {
     };
     
     checkAuth();
-  }, [navigate, toast, form]); // form added to dependency array for reset
+  }, [navigate, toast, form]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'certificado' | 'foto') => {
     const files = e.target.files;
@@ -150,8 +127,6 @@ export const useMedicoRegistro = () => {
             title: "Arquivo inválido",
             description: "Apenas certificados PFX são aceitos",
           });
-          form.setValue('certificado', undefined); // Clear invalid file
-          setCertificadoNome(null);
         }
       } else if (type === 'foto') {
         if (file.type.startsWith('image/')) {
@@ -163,8 +138,6 @@ export const useMedicoRegistro = () => {
             title: "Arquivo inválido",
             description: "Apenas imagens são aceitas",
           });
-          form.setValue('foto', undefined); // Clear invalid file
-          setFotoPreview(userInfo?.photoUrl || null); // Revert to original or null
         }
       }
     }
@@ -178,11 +151,6 @@ export const useMedicoRegistro = () => {
   const handleCRMChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formattedValue = formatCRM(e.target.value);
     form.setValue('crm', formattedValue);
-  };
-
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedValue = formatCPF(e.target.value);
-    form.setValue('cpf', formattedValue);
   };
 
   const onSubmit = async (data: CadastroMedicoFormValues) => {
@@ -201,27 +169,28 @@ export const useMedicoRegistro = () => {
     
     try {
       if (!userInfo?.email) {
-        throw new Error("Informações de usuário não encontradas. Faça login novamente.");
+        throw new Error("Informações de usuário não encontradas");
       }
       
+      // Get user ID from usuarios table
       const { data: userData, error: userError } = await supabase
         .from('usuarios')
         .select('id')
         .eq('email', userInfo.email)
         .single();
       
-      if (userError || !userData) {
-        console.error("User not found in 'usuarios' table during submit:", userError);
-        throw new Error("Usuário não encontrado no sistema. Por favor, contate o suporte.");
+      if (userError) {
+        throw userError;
       }
       
-      let fotoUrl = fotoPreview; // Use existing preview if no new photo uploaded
-      if (data.foto instanceof File) { // Check if data.foto is a File object
+      // Upload profile photo if provided
+      let fotoUrl = fotoPreview;
+      if (data.foto) {
         const fileExt = data.foto.name.split('.').pop();
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
         const filePath = `medicos/${fileName}`;
         
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError, data: uploadData } = await supabase.storage
           .from('profiles')
           .upload(filePath, data.foto);
           
@@ -230,6 +199,7 @@ export const useMedicoRegistro = () => {
           throw new Error("Erro ao fazer upload da foto");
         }
         
+        // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('profiles')
           .getPublicUrl(filePath);
@@ -237,10 +207,12 @@ export const useMedicoRegistro = () => {
         fotoUrl = publicUrl;
       }
       
-      if (data.certificado instanceof File) { // Check if data.certificado is a File object
+      // Upload certificate if provided
+      if (data.certificado) {
         const certFileName = `${crypto.randomUUID()}.pfx`;
         const certFilePath = `certificados/${userData.id}/${certFileName}`;
         
+        // Upload certificate to storage
         const { error: certUploadError } = await supabase.storage
           .from('documentos_medicos')
           .upload(certFilePath, data.certificado);
@@ -250,6 +222,7 @@ export const useMedicoRegistro = () => {
           throw new Error("Erro ao fazer upload do certificado");
         }
         
+        // Create document record in the database
         const { error: docError } = await supabase
           .from('documentos')
           .insert({
@@ -261,77 +234,61 @@ export const useMedicoRegistro = () => {
           
         if (docError) {
           console.error("Error saving certificate record:", docError);
-          // Non-fatal, continue
         }
       }
       
-      const formattedCpf = data.cpf.replace(/\D/g, '');
+      // Update or create medico record
       let medicoIdToUse = medicoId;
       
-      if (!medicoIdToUse) {
+      if (!medicoId) {
+        // Create new record if doesn't exist
         const { data: newMedico, error: createError } = await supabase
           .from('medicos')
           .insert({
             id_usuario: userData.id,
-            nome: userInfo.name || data.crm, // Fallback to CRM if name somehow missing
+            nome: userInfo.name || '',
             crm: data.crm,
-            cpf: formattedCpf, // Use formatted CPF
+            cpf: '', // Required field in the database
             especialidade: data.especialidade,
             biografia: data.biografia || null,
             telefone: data.telefone,
             foto_perfil: fotoUrl,
-            status_disponibilidade: true,
-            // aprovado defaults to false in DB
+            status_disponibilidade: true // Now active
           })
-          .select('id') // Select id
+          .select()
           .single();
           
         if (createError) {
-          console.error("Error creating medico record:", createError);
           throw createError;
         }
         
         medicoIdToUse = newMedico.id.toString();
       } else {
+        // Update existing record
         const { error: updateError } = await supabase
           .from('medicos')
           .update({
             crm: data.crm,
-            cpf: formattedCpf, // Use formatted CPF
             especialidade: data.especialidade,
             biografia: data.biografia || null,
             telefone: data.telefone,
             foto_perfil: fotoUrl,
-            status_disponibilidade: true,
-            // aprovado is not changed here, managed by admin
+            status_disponibilidade: true // Now active
           })
-          .eq('id', parseInt(medicoIdToUse));
+          .eq('id', parseInt(medicoId));
           
         if (updateError) {
-          console.error("Error updating medico record:", updateError);
           throw updateError;
         }
       }
       
-      // Clear existing horarios for this medico before inserting new ones to avoid duplicates
-      // This assumes that schedules are fully replaced each time.
-      if (medicoIdToUse) {
-          const { error: deleteHorariosError } = await supabase
-              .from('horarios_disponiveis')
-              .delete()
-              .eq('id_medico', parseInt(medicoIdToUse));
-
-          if (deleteHorariosError) {
-              console.error("Error clearing existing schedule:", deleteHorariosError);
-              // Potentially non-fatal, but could lead to duplicate schedules
-          }
-      }
-      
+      // Save schedule information
       for (const horario of horarios) {
+        // Use raw query to insert into the horarios_disponiveis table
         const { error: horariosError } = await supabase
           .from('horarios_disponiveis')
           .insert({
-            id_medico: medicoIdToUse ? parseInt(medicoIdToUse) : null, // Should always have medicoIdToUse here
+            id_medico: medicoIdToUse ? parseInt(medicoIdToUse) : null,
             dia_semana: horario.dia,
             hora_inicio: horario.horaInicio,
             hora_fim: horario.horaFim
@@ -339,27 +296,28 @@ export const useMedicoRegistro = () => {
           
         if (horariosError) {
           console.error("Error saving schedule:", horariosError);
-          // Potentially non-fatal, but worth logging.
+          throw horariosError;
         }
       }
       
+      // Update usuario status to active
       const { error: statusError } = await supabase
         .from('usuarios')
         .update({
-          status: true // Mark user as active in 'usuarios' table
+          status: true
         })
         .eq('id', userData.id);
         
       if (statusError) {
-        console.error("Error updating usuario status:", statusError);
-        // Non-fatal
+        throw statusError;
       }
       
       toast({
-        title: "Cadastro atualizado!",
-        description: "Seus dados foram enviados com sucesso! Seu perfil aguarda aprovação administrativa para ser listado publicamente e você poder atender consultas.",
+        title: "Cadastro concluído com sucesso!",
+        description: "Você já pode começar a atender pacientes na plataforma.",
       });
       
+      // Redirect to doctor dashboard
       navigate('/area-medico');
       
     } catch (error: any) {
@@ -385,10 +343,12 @@ export const useMedicoRegistro = () => {
     handleFileChange,
     handleTelefoneChange,
     handleCRMChange,
-    handleCPFChange,
     onSubmit,
     setHorarios,
     setTermoDialogOpen,
     setCertificadoNome,
   };
 };
+
+// Import utilities from external files
+import { formatTelefone, formatCRM } from '@/utils/formatters';

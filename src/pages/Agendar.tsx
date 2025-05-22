@@ -29,16 +29,16 @@ const Agendar = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow py-8 sm:py-12">
+      <main className="flex-grow py-12">
         <div className="hopecann-container max-w-4xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 text-center">Agende sua Consulta</h1>
-          <p className="text-base sm:text-lg text-center text-gray-600 mb-6 sm:mb-10">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-center">Agende sua Consulta</h1>
+          <p className="text-lg text-center text-gray-600 mb-10">
             Preencha os dados abaixo para agendar sua consulta com um de nossos especialistas
           </p>
           
           <StepsIndicator currentStep={step} />
           
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 md:p-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
             {step === 1 && (
               <DoctorSelection 
                 selectedDoctor={selectedDoctor} 

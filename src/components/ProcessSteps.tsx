@@ -1,7 +1,6 @@
 import React from 'react';
 import { CalendarClock, UserCircle, ClipboardCheck, Video, FileText, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
 const steps = [{
   number: "01",
   icon: ClipboardCheck,
@@ -28,14 +27,12 @@ const steps = [{
   title: "Tratamento",
   description: "Receba seu plano personalizado e acompanhamento contínuo."
 }];
-
 const ProcessSteps = () => {
-  return (
-    <section id="como-funciona" className="bg-gradient-to-r from-white to-green-50/50 py-20 bg-green-100">
-      <div className="page-container-wrapper">
+  return <section id="como-funciona" className="hopecann-section bg-gradient-to-r from-white to-green-50/50 py-20 bg-green-100">
+      <div className="hopecann-container">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-hopecann-green tracking-tight sm:text-4xl">Como funciona</h2>
-          <p className="mt-4 text-lg leading-8 text-gray-600">
+          <h2 className="hopecann-section-title text-hopecann-green">Como funciona</h2>
+          <p className="hopecann-section-subtitle">
             Um processo simples e humanizado para iniciar seu tratamento
           </p>
         </div>
@@ -75,7 +72,6 @@ const ProcessSteps = () => {
           </Link>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
 export default ProcessSteps;

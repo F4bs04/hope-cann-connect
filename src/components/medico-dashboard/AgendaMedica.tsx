@@ -14,26 +14,54 @@ import AppointmentsList from '@/components/medico/AppointmentsList';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import AgendamentoForm from '@/components/medico/AgendamentoForm';
-import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
 
 const AgendaMedica: React.FC = () => {
-  console.log('[AgendaMedica] Component rendered/re-rendered.');
   const [appointments, setAppointments] = useState<any[]>([]);
-  const [loadingAppointments, setLoadingAppointments] = useState(true);
-  const [appointmentsError, setAppointmentsError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { userInfo, loading: loadingUserInfo, error: userError } = useCurrentUserInfo();
 
-  const fetchAppointments = async (medicoId: number) => {
-    console.log('[AgendaMedica] fetchAppointments called for medicoId:', medicoId);
-    setLoadingAppointments(true);
-    setAppointmentsError(null);
+  const fetchAppointments = async () => {
+    setLoading(true);
     try {
-      console.log('[AgendaMedica] Fetching appointmentsData for id_medico:', medicoId);
-      const { data: appointmentsData, error: appointmentsFetchError } = await supabase
-        .from('consultas')
-        .select(`
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setError("Você precisa estar logado para visualizar sua agenda");
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para acessar esta página."
+        });
+        navigate('/login');
+        setLoading(false);
+        return;
+      }
+      
+      const {
+        data: userData,
+        error: userError
+      } = await supabase.from('usuarios').select('id').eq('email', session.user.email).single();
+      if (userError) {
+        throw userError;
+      }
+      
+      const {
+        data: doctorData,
+        error: doctorError
+      } = await supabase.from('medicos').select('id').eq('id_usuario', userData.id).single();
+      if (doctorError) {
+        throw doctorError;
+      }
+
+      const {
+        data: appointmentsData,
+        error: appointmentsError
+      } = await supabase.from('consultas').select(`
           id,
           data_hora,
           motivo,
@@ -43,94 +71,40 @@ const AgendaMedica: React.FC = () => {
           dias_semana,
           dia_mes,
           pacientes_app:id_paciente (id, nome)
-        `)
-        .eq('id_medico', medicoId)
-        .order('data_hora', { ascending: true });
+        `).eq('id_medico', doctorData.id).order('data_hora', {
+        ascending: true
+      });
       
-      if (appointmentsFetchError) {
-        console.error('[AgendaMedica] Error fetching appointmentsData:', appointmentsFetchError);
-        throw appointmentsFetchError;
+      if (appointmentsError) {
+        throw appointmentsError;
       }
       
-      console.log('[AgendaMedica] AppointmentsData fetched:', appointmentsData);
       setAppointments(appointmentsData || []);
     } catch (error: any) {
-      console.error("[AgendaMedica] Erro ao buscar agendamentos:", error);
-      setAppointmentsError(error.message || "Ocorreu um erro ao buscar seus agendamentos");
+      console.error("Erro ao buscar agendamentos:", error);
+      setError("Ocorreu um erro ao buscar seus agendamentos");
     } finally {
-      setLoadingAppointments(false);
-      console.log('[AgendaMedica] fetchAppointments finished. LoadingAppointments:', false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!loadingUserInfo) {
-      if (userError) {
-        console.error('[AgendaMedica] User info error:', userError);
-        setAppointmentsError(`Erro ao carregar dados do usuário: ${userError}`);
-        setLoadingAppointments(false);
-      } else if (userInfo.medicoId) {
-        console.log('[AgendaMedica] MedicoId encontrado no userInfo:', userInfo.medicoId);
-        fetchAppointments(userInfo.medicoId);
-      } else {
-        // Verificar se temos medicoId no localStorage como fallback
-        const medicoIdFromLocalStorage = localStorage.getItem('medicoId');
-        if (medicoIdFromLocalStorage) {
-          console.log('[AgendaMedica] Usando medicoId do localStorage:', medicoIdFromLocalStorage);
-          fetchAppointments(Number(medicoIdFromLocalStorage));
-        } else if (userInfo.userType && userInfo.userType !== 'medico') {
-          setAppointmentsError("Usuário não é um médico. Acesso à agenda negado.");
-          setLoadingAppointments(false);
-          console.warn('[AgendaMedica] User is not a medico. Type:', userInfo.userType);
-        } else if (!userInfo.id && !userInfo.email) {
-          setAppointmentsError("Informações do usuário não encontradas. Por favor, faça login.");
-          setLoadingAppointments(false);
-          toast({
-            variant: "destructive",
-            title: "Erro de autenticação",
-            description: "Você precisa estar logado para acessar esta página."
-          });
-        } else {
-          setAppointmentsError("Não foi possível identificar o perfil de médico. Verifique seu cadastro.");
-          setLoadingAppointments(false);
-          console.warn('[AgendaMedica] Medico ID not found in userInfo or localStorage, though user info might exist:', userInfo);
-        }
-      }
-    }
-  }, [userInfo, loadingUserInfo, userError, navigate, toast]);
+    fetchAppointments();
 
-  useEffect(() => {
-    // Get medicoId from userInfo or localStorage
-    const medicoId = userInfo.medicoId || (localStorage.getItem('medicoId') ? Number(localStorage.getItem('medicoId')) : null);
-    
-    // Only subscribe if we have a medicoId
-    if (!medicoId) return;
-
-    const appointmentsChannel = supabase
-      .channel('custom-all-channel_agenda_medica_consultas')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'consultas', filter: `id_medico=eq.${medicoId}` },
-        (payload) => {
-          console.log('[AgendaMedica] Supabase realtime change detected on consultas table:', payload);
-          if (medicoId) { // Re-check medicoId before fetching
-            fetchAppointments(medicoId);
-          }
-        }
-      )
-      .subscribe();
+    const appointmentsChannel = supabase.channel('appointments-changes').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'consultas'
+    }, payload => {
+      fetchAppointments();
+    }).subscribe();
     
     return () => {
       supabase.removeChannel(appointmentsChannel);
     };
-  }, [userInfo.medicoId]); // Depend on medicoId to re-subscribe if it changes
+  }, []);
 
-  if (loadingUserInfo) {
-    return <div className="py-8 text-center text-gray-500">Carregando informações do usuário...</div>;
-  }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <h1 className="text-2xl font-bold">Agenda Médica</h1>
       <DoctorScheduleProvider>
         <Tabs defaultValue="consultas" className="space-y-4">
@@ -148,20 +122,13 @@ const AgendaMedica: React.FC = () => {
                 Minhas Consultas
               </h2>
               
-              {appointmentsError && (
-                <Alert variant="destructive">
+              {error && <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Erro</AlertTitle>
-                  <AlertDescription>{appointmentsError}</AlertDescription>
-                </Alert>
-              )}
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>}
               
-              {loadingAppointments ? (
-                <div className="py-8 text-center text-gray-500">Carregando agendamentos...</div>
-              ) : !appointmentsError && appointments.length > 0 ? (
-                <AppointmentsList appointments={appointments} />
-              ) : !appointmentsError ? (
-                <Card>
+              {loading ? <div className="py-8 text-center text-gray-500">Carregando agendamentos...</div> : appointments.length > 0 ? <AppointmentsList appointments={appointments} /> : <Card>
                   <CardContent className="py-8 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Clock className="h-12 w-12 text-gray-300 mb-4" />
@@ -171,8 +138,7 @@ const AgendaMedica: React.FC = () => {
                       </p>
                     </div>
                   </CardContent>
-                </Card>
-              ) : null}
+                </Card>}
             </div>
           </TabsContent>
 
@@ -184,13 +150,7 @@ const AgendaMedica: React.FC = () => {
               </h2>
               <Card>
                 <CardContent className="pt-6">
-                  <AgendamentoForm 
-                    onSuccess={() => {
-                      // Get medicoId from userInfo or localStorage
-                      const medicoId = userInfo.medicoId || (localStorage.getItem('medicoId') ? Number(localStorage.getItem('medicoId')) : null);
-                      if (medicoId) fetchAppointments(medicoId);
-                    }} 
-                  />
+                  <AgendamentoForm onSuccess={fetchAppointments} />
                 </CardContent>
               </Card>
             </div>
@@ -213,12 +173,9 @@ const AgendaMedica: React.FC = () => {
                     fullWidth={true}
                     onAgendamentoRapido={async (data) => {
                       try {
-                        console.log('[AgendaMedica] Agendamento rápido concluído, atualizando consultas...');
-                        // Get medicoId from userInfo or localStorage
-                        const medicoId = userInfo.medicoId || (localStorage.getItem('medicoId') ? Number(localStorage.getItem('medicoId')) : null);
-                        if (medicoId) await fetchAppointments(medicoId);
+                        await fetchAppointments();
                       } catch (error) {
-                        console.error('[AgendaMedica] Error refreshing appointments after fast agendamento:', error);
+                        console.error('Error refreshing appointments:', error);
                       }
                     }}
                   />
@@ -228,8 +185,7 @@ const AgendaMedica: React.FC = () => {
           </TabsContent>
         </Tabs>
       </DoctorScheduleProvider>
-    </div>
-  );
+    </div>;
 };
 
 export default AgendaMedica;

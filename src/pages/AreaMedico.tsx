@@ -22,8 +22,7 @@ import {
   FileSignature,
   FileCheck,
   Plus,
-  User,
-  MessageSquare
+  User
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from '@/components/ui/button';
@@ -47,9 +46,6 @@ import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
 import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
 import EditProfileDialog from '@/components/medico/EditProfileDialog';
 import MedicoHeader from '@/components/medico/MedicoHeader';
-import ChatsList from '@/components/medico/ChatsList';
-import ChatMedico from '@/components/medico/ChatMedico';
-import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
 
 const AreaMedico: React.FC = () => {
   const { toast } = useToast();
@@ -62,21 +58,14 @@ const AreaMedico: React.FC = () => {
   const [showProntuarioAba, setShowProntuarioAba] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const [medicoUsuarioId, setMedicoUsuarioId] = useState<number | null>(null);
-  const [selectedMedicoChat, setSelectedMedicoChat] = useState<any | null>(null);
-
-  const { userInfo, loading: userInfoLoading } = useCurrentUserInfo();
-  const medicoIdFromHook = userInfo.medicoId;
+  const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
 
   useEffect(() => {
-    console.log('[AreaMedico] Location or search params changed:', location.search);
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     const pacienteParam = params.get('paciente');
-    const chatIdParam = params.get('chatId');
-
+    
     if (tabParam) {
-      console.log('[AreaMedico] Tab param found:', tabParam);
       setCurrentSection(tabParam);
       setActiveTab(tabParam);
       
@@ -87,51 +76,32 @@ const AreaMedico: React.FC = () => {
           setShowProntuarioAba(true);
         }
       }
-      if (tabParam === 'chat' && chatIdParam) {
-        console.log('[AreaMedico] Deep link to chat ID:', chatIdParam);
-      }
     }
   }, [location]);
 
   useEffect(() => {
     const storedType = localStorage.getItem('userType');
     setUserType(storedType);
-    console.log('[AreaMedico] User type from localStorage:', storedType);
   }, []);
 
   useEffect(() => {
-    const fetchUsuarioId = async () => {
+    const fetchUserId = async () => {
       const email = localStorage.getItem("userEmail");
-      console.log('[AreaMedico] Fetching user ID for email:', email);
       if (email) {
         const { data, error } = await supabase
           .from("usuarios")
           .select("id")
           .eq("email", email)
           .maybeSingle();
-        if (error) {
-          console.error('[AreaMedico] Error fetching user ID from Supabase:', error);
-        }
-        if (data?.id) {
-          setMedicoUsuarioId(data.id);
-          console.log('[AreaMedico] Medico Usuario ID set from Supabase:', data.id);
-        } else {
-          console.warn('[AreaMedico] No user ID found in Supabase for email:', email);
-        }
-      } else {
-        console.warn('[AreaMedico] No email found in localStorage to fetch user ID.');
+        if (data?.id) setMedicoUserId(data.id);
       }
     };
-    fetchUsuarioId();
+    fetchUserId();
   }, []);
 
   const handleTabChange = (value: string) => {
-    console.log('[AreaMedico] handleTabChange called with value:', value);
     setActiveTab(value);
     setCurrentSection(value);
-    setSelectedMedicoChat(null);
-    setShowProntuarioAba(false);
-    setSelectedPatientId(null);
     navigate(`/area-medico?tab=${value}`);
   };
 
@@ -140,7 +110,7 @@ const AreaMedico: React.FC = () => {
     setCurrentSection('consulta');
   };
 
-  const handleOpenPatient = async (patientId: number) => {
+  const handleOpenPatient = (patientId: number) => {
     setSelectedPatientId(patientId);
     setShowProntuarioAba(true);
     setCurrentSection('prontuario');
@@ -157,23 +127,12 @@ const AreaMedico: React.FC = () => {
   const handleBackToSection = (section: string) => {
     setCurrentSection(section);
     setSelectedConsultaId(null);
-    setSelectedMedicoChat(null);
-    setShowProntuarioAba(false);
     navigate(`/area-medico?tab=${section}`);
   };
 
-  const handleSelectMedicoChat = (chatData: any) => {
-    setSelectedMedicoChat(chatData);
-  };
-
-  const handleBackFromMedicoChat = () => {
-    setSelectedMedicoChat(null);
-  };
-
   const renderSection = () => {
-    console.log('[AreaMedico] Rendering section:', currentSection, "Selected Medico Chat:", selectedMedicoChat, "Medico ID from hook:", medicoIdFromHook);
-    if (showProntuarioAba && selectedPatientId) {
-      return <ProntuarioAba onBack={handleBackFromProntuario} pacienteId={selectedPatientId} />;
+    if (showProntuarioAba) {
+      return <ProntuarioAba onBack={handleBackFromProntuario} />;
     }
     switch (currentSection) {
       case 'dashboard':
@@ -181,7 +140,6 @@ const AreaMedico: React.FC = () => {
       case 'dashboard-clinica':
         return <ClinicaDashboard />;
       case 'agenda':
-        console.log('[AreaMedico] Rendering AgendaMedica');
         return <AgendaMedica />;
       case 'prescricoes':
         return <Prescricoes />;
@@ -203,41 +161,14 @@ const AreaMedico: React.FC = () => {
             consultaId={selectedConsultaId} 
             onBack={() => handleBackToSection('dashboard')} 
           />
-        ) : <p>Selecione uma consulta para visualizar.</p>;
-      case 'chat':
-        if (userInfoLoading) return <p>Carregando informações do usuário...</p>;
-        if (!medicoIdFromHook) return <p>ID do médico não encontrado. Verifique seu perfil.</p>;
-        
-        if (selectedMedicoChat) {
-          return (
-            <ChatMedico
-              medicoId={medicoIdFromHook}
-              pacienteId={selectedMedicoChat.pacientes_app?.id || selectedMedicoChat.id_paciente}
-              pacienteNome={selectedMedicoChat.pacientes_app?.nome || 'Paciente'}
-              motivoConsulta={selectedMedicoChat.consultas?.motivo}
-              dataConsulta={selectedMedicoChat.data_inicio}
-              onBack={handleBackFromMedicoChat}
-            />
-          );
-        }
-        return (
-          <ChatsList 
-            medicoId={medicoIdFromHook} 
-            onSelectChat={handleSelectMedicoChat} 
-          />
-        );
+        ) : null;
       default:
         return <DashboardHome onOpenConsulta={handleOpenConsulta} />;
     }
   };
 
   const navigateToSection = (section: string) => {
-    console.log('[AreaMedico] navigateToSection called with section:', section);
     setCurrentSection(section);
-    setSelectedMedicoChat(null);
-    setShowProntuarioAba(false);
-    setSelectedPatientId(null);
-    setSelectedConsultaId(null);
     navigate(`/area-medico?tab=${section}`);
   };
 
@@ -270,7 +201,9 @@ const AreaMedico: React.FC = () => {
                       className="text-white hover:bg-[#009E9B]"
                     >
                       <span className="mr-2 inline-flex items-center">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor">
+                          <use href="#lucide-layout-dashboard" />
+                        </svg>
                       </span>
                       Dashboard Clínica
                     </SidebarMenuButton>
@@ -300,20 +233,10 @@ const AreaMedico: React.FC = () => {
                 <SidebarMenuItem>
                   <SidebarMenuButton 
                     onClick={() => navigateToSection('prontuarios')}
-                    isActive={currentSection === 'prontuarios' && !showProntuarioAba}
+                    isActive={currentSection === 'prontuarios'}
                     className="text-white hover:bg-[#009E9B]"
                   >
                     <ClipboardList className="w-5 h-5 mr-2" /> Prontuários
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => navigateToSection('chat')}
-                    isActive={currentSection === 'chat'}
-                    className="text-white hover:bg-[#009E9B]"
-                  >
-                    <MessageSquare className="w-5 h-5 mr-2" /> Chat com Pacientes
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 
@@ -378,12 +301,12 @@ const AreaMedico: React.FC = () => {
           
           <SidebarInset className="bg-gray-50 flex-1">
             <MedicoHeader />
-            <main className="w-full h-full p-6 md:p-8">
+            <main className="w-full h-full p-8">
               {renderSection()}
               <EditProfileDialog 
                 open={showProfileDialog}
                 onOpenChange={setShowProfileDialog}
-                userId={medicoUsuarioId || 0}
+                userId={medicoUserId || 0}
               />
             </main>
           </SidebarInset>

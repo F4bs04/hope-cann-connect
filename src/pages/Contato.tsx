@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -13,12 +14,12 @@ const Contato = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     // Aqui você implementaria a lógica de envio dos dados
     console.log("Form data submitted:", formData);
@@ -97,7 +98,7 @@ const Contato = () => {
       <main className="flex-grow">
         {/* Banner Principal */}
         <section className="bg-hopecann-teal text-white py-16">
-          <div className="page-container-wrapper">
+          <div className="hopecann-container">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">Entre em Contato</h1>
             <p className="text-xl text-center max-w-3xl mx-auto text-white/90">
               Estamos aqui para responder suas dúvidas e ajudá-lo a iniciar seu tratamento canábico
@@ -107,7 +108,7 @@ const Contato = () => {
         
         {/* Informações de Contato */}
         <section className="py-16 bg-white">
-          <div className="page-container-wrapper">
+          <div className="hopecann-container">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {contactInfo.map((info, index) => (
                 <div key={index} className="bg-white shadow-sm rounded-xl p-6 border border-gray-100 hover:shadow-md transition-shadow">
@@ -128,7 +129,7 @@ const Contato = () => {
         
         {/* Formulário de Contato */}
         <section className="py-16 bg-gray-50">
-          <div className="page-container-wrapper">
+          <div className="hopecann-container">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div>
                 <h2 className="text-3xl font-bold mb-6">Envie-nos uma mensagem</h2>

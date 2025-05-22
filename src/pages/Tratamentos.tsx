@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -90,7 +91,7 @@ const Tratamentos = () => {
       <main className="flex-grow">
         {/* Banner Principal */}
         <section className="relative py-20 bg-gradient-to-r from-hopecann-teal to-hopecann-green text-white">
-          <div className="page-container-wrapper">
+          <div className="hopecann-container">
             <div className="max-w-3xl">
               <h1 className="text-4xl md:text-5xl font-bold mb-6">Tratamentos Canábicos Personalizados</h1>
               <p className="text-xl text-white/90 mb-8">
@@ -108,7 +109,7 @@ const Tratamentos = () => {
         
         {/* Informação sobre cannabis medicinal */}
         <section className="py-16 bg-gray-50">
-          <div className="page-container-wrapper">
+          <div className="hopecann-container">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
                 <h2 className="text-3xl font-bold mb-6">O que é a Cannabis Medicinal?</h2>
@@ -149,8 +150,8 @@ const Tratamentos = () => {
         
         {/* Condições tratadas por categoria */}
         <section className="py-20">
-          <div className="page-container-wrapper">
-            <h2 className="text-3xl font-bold text-center mb-16 sm:text-4xl">Condições Médicas Tratadas</h2>
+          <div className="hopecann-container">
+            <h2 className="hopecann-section-title mb-16">Condições Médicas Tratadas</h2>
             
             <div className="space-y-16">
               {conditionCategories.map((category, catIndex) => (

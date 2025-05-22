@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ export const MedicosPendentesAprovacao: React.FC = () => {
   return (
     <Card className="mb-8">
       <CardHeader>
-        <CardTitle className="flex items-center text-base sm:text-lg md:text-xl">
+        <CardTitle className="flex items-center">
           <Users className="w-5 h-5 mr-2 text-[#00B3B0]" />
           Médicos pendentes de aprovação
         </CardTitle>
@@ -96,16 +97,13 @@ export const MedicosPendentesAprovacao: React.FC = () => {
       <CardContent>
         <div className="flex flex-col gap-4">
           {medicosPendentes.map((medico) => (
-            <div 
-              key={medico.id} 
-              className="flex flex-col sm:flex-row items-center sm:items-start gap-4 px-2 py-3 bg-[#FAFAFC] border border-[#E5DEFF] rounded-lg"
-            >
+            <div key={medico.id} className="flex items-center gap-4 px-2 py-3 bg-[#FAFAFC] border border-[#E5DEFF] rounded-lg">
               <img 
                 src={medico.foto_perfil || "/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png"} 
-                className="h-16 w-16 sm:h-14 sm:w-14 rounded-full border-2 border-[#E5DEFF] object-cover shadow flex-shrink-0"
+                className="h-14 w-14 rounded-full border-2 border-[#E5DEFF] object-cover shadow"
                 alt={medico.nome}
               />
-              <div className="flex-1 text-center sm:text-left">
+              <div className="flex-1">
                 <div className="font-bold">{medico.nome}</div>
                 <div className="text-sm text-[#7E69AB]">{medico.especialidade}</div>
                 <div className="text-xs text-gray-500">CRM: {medico.crm} | CPF: {medico.cpf}</div>
@@ -118,7 +116,7 @@ export const MedicosPendentesAprovacao: React.FC = () => {
               </div>
               <Button
                 onClick={() => handleAprovar(medico.id)}
-                className="bg-green-500 hover:bg-green-600 w-full mt-2 sm:mt-0 sm:w-auto"
+                className="bg-green-500 hover:bg-green-600"
               >
                 Aprovar
               </Button>

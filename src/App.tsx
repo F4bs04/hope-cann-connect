@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,7 +18,6 @@ import CadastroMedico from "./pages/CadastroMedico";
 import NotFound from "./pages/NotFound";
 import CompleteRegistroMedico from "./pages/CompleteRegistroMedico";
 import CadastroClinica from "./pages/CadastroClinica";
-import FAQPage from "./pages/FAQ"; // Nova importação
 import React, { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AreaClinica from "./pages/AreaClinica";
@@ -112,7 +112,6 @@ function App() {
             <Route path="/medicos" element={<Medicos />} />
             <Route path="/medico/:id" element={<PerfilMedico />} />
             <Route path="/contato" element={<Contato />} />
-            <Route path="/faq" element={<FAQPage />} /> {/* Nova rota */}
             <Route path="/agendar" element={<Agendar />} />
             <Route 
               path="/login" 

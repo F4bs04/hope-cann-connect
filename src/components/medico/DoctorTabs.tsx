@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
@@ -22,21 +23,20 @@ const DoctorTabs: React.FC = () => {
     prontuarioDialogOpen
   } = useDoctorSchedule();
   
+  // Estados para o sistema de chat
   const [selectedChat, setSelectedChat] = useState<any>(null);
-  const medicoId = Number(localStorage.getItem('medicoId')) || 1; // Fallback to 1 if not found
+  const medicoId = 1; // Em um caso real, seria obtido da autenticação
 
   return (
     <>
-      <Tabs defaultValue="agenda" className="w-full">
-        <div className="overflow-x-auto pb-2">
-          <TabsList className="mb-6 whitespace-nowrap">
-            <TabsTrigger value="agenda">Agenda</TabsTrigger>
-            <TabsTrigger value="pacientes">Pacientes</TabsTrigger>
-            <TabsTrigger value="receitas">Receitas</TabsTrigger>
-            <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
-            <TabsTrigger value="chat">Chat com Pacientes</TabsTrigger>
-          </TabsList>
-        </div>
+      <Tabs defaultValue="agenda">
+        <TabsList className="mb-6">
+          <TabsTrigger value="agenda">Agenda</TabsTrigger>
+          <TabsTrigger value="pacientes">Pacientes</TabsTrigger>
+          <TabsTrigger value="receitas">Receitas</TabsTrigger>
+          <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
+          <TabsTrigger value="chat">Chat com Pacientes</TabsTrigger>
+        </TabsList>
         
         <TabsContent value="agenda">
           <AgendaTab />
@@ -69,8 +69,8 @@ const DoctorTabs: React.FC = () => {
               medicoId={medicoId}
               pacienteId={selectedChat.pacientes_app.id}
               pacienteNome={selectedChat.pacientes_app.nome}
-              motivoConsulta={selectedChat.consultas?.motivo || selectedChat.motivo_consulta}
-              dataConsulta={selectedChat.data_inicio || selectedChat.data_consulta}
+              motivoConsulta={selectedChat.consultas.motivo}
+              dataConsulta={selectedChat.data_inicio}
               onBack={() => setSelectedChat(null)}
             />
           ) : (

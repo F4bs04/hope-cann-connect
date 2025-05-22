@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Card,
@@ -72,44 +73,42 @@ export const DocumentosList = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
+        <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
           Documentos
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Médico</TableHead>
-                <TableHead>Paciente</TableHead>
-                <TableHead>Ação</TableHead>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Nome</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead>Médico</TableHead>
+              <TableHead>Paciente</TableHead>
+              <TableHead>Ação</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {documentos.map((doc) => (
+              <TableRow key={doc.id}>
+                <TableCell>{doc.tipo}</TableCell>
+                <TableCell>{doc.nome}</TableCell>
+                <TableCell>
+                  {format(new Date(doc.data), 'dd/MM/yyyy', { locale: ptBR })}
+                </TableCell>
+                <TableCell>{doc.medico}</TableCell>
+                <TableCell>{doc.paciente}</TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="icon">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {documentos.map((doc) => (
-                <TableRow key={doc.id}>
-                  <TableCell>{doc.tipo}</TableCell>
-                  <TableCell>{doc.nome}</TableCell>
-                  <TableCell>
-                    {format(new Date(doc.data), 'dd/MM/yyyy', { locale: ptBR })}
-                  </TableCell>
-                  <TableCell>{doc.medico}</TableCell>
-                  <TableCell>{doc.paciente}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

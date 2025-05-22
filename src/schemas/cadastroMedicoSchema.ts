@@ -1,19 +1,16 @@
 
 import { z } from "zod";
 
-// Schema for doctor registration form - This is for the *complementary* data step
+// Schema for doctor registration form
 export const cadastroMedicoFormSchema = z.object({
   crm: z.string().min(4, {
     message: 'CRM inválido',
-  }).max(14), // Assuming CRM format like 000000/UF
-  // Senha and confirmarSenha removed as this form is for *completing* registration
-  // Password is set during initial Supabase Auth signup or via Google
-  cpf: z.string().min(14, { // Expects format 000.000.000-00
-    message: 'CPF inválido. Use o formato 000.000.000-00',
-  }).max(14, {
-    message: 'CPF inválido. Use o formato 000.000.000-00',
+  }).max(14),
+  senha: z.string().min(8, {
+    message: 'A senha deve ter pelo menos 8 caracteres',
   }),
-  telefone: z.string().min(10, { // Expects format (00) 00000-0000 or (00) 0000-0000
+  confirmarSenha: z.string(),
+  telefone: z.string().min(10, {
     message: 'Telefone inválido',
   }).max(15),
   especialidade: z.string().min(3, {
@@ -23,11 +20,13 @@ export const cadastroMedicoFormSchema = z.object({
   foto: z.instanceof(File, {
     message: 'Foto de perfil',
   }).optional(),
-  certificado: z.instanceof(File).optional(),
+  certificado: z.instanceof(File).optional(), // Added back the certificado field as optional
   termoConciencia: z.boolean().refine((val) => val === true, {
     message: 'Você deve aceitar os termos',
   }),
+}).refine((data) => data.senha === data.confirmarSenha, {
+  message: "As senhas não correspondem",
+  path: ["confirmarSenha"],
 });
-// .refine for password confirmation removed
 
 export type CadastroMedicoFormValues = z.infer<typeof cadastroMedicoFormSchema>;
