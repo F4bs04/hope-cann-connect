@@ -212,29 +212,6 @@ const Prescricoes: React.FC = () => {
     };
     setDetailedPrescriptionData(dataToSave);
 
-    // Example of how you might save detailed prescription to backend:
-    /*
-    const receitaData = {
-      id_paciente: parseInt(data.patient.id), // Assuming patient object has an ID
-      medicamento: data.medications.map(m => m.name).join(', ') || "Múltiplos medicamentos",
-      posologia: "Ver detalhes na prescrição completa",
-      observacoes: data.generalInstructions || "Receita detalhada gerada pelo sistema.",
-      data_validade: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(), // Default 30 days validity
-      status: 'ativa',
-      tipo_receita: 'detalhada', // New type for these prescriptions
-      // You might want to store the full JSON of detailedPrescriptionData in a jsonb column
-      // dados_completos: dataToSave 
-    };
-    createReceita(receitaData).then(newReceita => {
-      if (newReceita) {
-         toast({
-          title: "Receita Detalhada Salva (Simulado)",
-          description: "A receita detalhada foi registrada no sistema (simulação).",
-        });
-      }
-    });
-    */
-
     toast({
       title: "Preview Gerado",
       description: "O preview da receita detalhada está pronto. Verifique abaixo e gere o PDF ou imprima.",
@@ -248,7 +225,8 @@ const Prescricoes: React.FC = () => {
       return;
     }
 
-    const originalStyles = {
+    // Salvar estilos originais do container printNode (o que fica off-screen)
+    const originalPrintNodeStyles = {
       display: printNode.style.display,
       position: printNode.style.position,
       left: printNode.style.left,
@@ -260,109 +238,145 @@ const Prescricoes: React.FC = () => {
       padding: printNode.style.padding,
       margin: printNode.style.margin,
       zIndex: printNode.style.zIndex,
+      overflow: printNode.style.overflow,
     };
 
-    // Temporarily apply styles for html2canvas capture
+    // Aplicar estilos ao container para torná-lo visível e dimensionado para captura
     printNode.style.display = 'block';
-    printNode.style.position = 'absolute';
-    printNode.style.left = '-9999px'; // Position off-screen
-    printNode.style.top = '-9999px';
-    printNode.style.width = '210mm';    // A4 width for the container
-    printNode.style.minHeight = '297mm'; // A4 min height for the container
-    printNode.style.height = 'auto';   // Allow content to dictate height
-    printNode.style.backgroundColor = 'white'; // Ensure background
-    printNode.style.padding = '0'; // Container itself should not have padding
-    printNode.style.margin = '0'; // Or A4-like margins if .printable-prescription inside doesn't handle it
-    printNode.style.zIndex = '10000'; // Ensure it's on top layer if needed for rendering fonts
+    printNode.style.position = 'fixed'; // Usar fixed para garantir que está no viewport e não é afetado por scroll
+    printNode.style.left = '0px'; // Temporariamente no canto da tela
+    printNode.style.top = '0px';
+    printNode.style.zIndex = '10000'; // Alto z-index para sobrepor
+    printNode.style.width = '210mm'; // A4 width
+    printNode.style.height = 'auto'; // Altura baseada no conteúdo
+    printNode.style.minHeight = '297mm'; // A4 min height para garantir espaço
+    printNode.style.backgroundColor = 'white';
+    printNode.style.overflow = 'visible'; // Garante que nada seja cortado do container
+    printNode.style.padding = '0'; // Sem padding no container em si
+    printNode.style.margin = '0';  // Sem margin no container em si
+
 
     const prescriptionElement = printNode.querySelector('.printable-prescription') as HTMLElement;
     if (!prescriptionElement) {
         toast({ variant: "destructive", title: "Erro", description: "Elemento interno da prescrição não encontrado." });
-        // Restore styles before returning
-        Object.assign(printNode.style, originalStyles);
+        Object.assign(printNode.style, originalPrintNodeStyles); // Restaurar estilos
         return;
     }
     
-    // Ensure the child .printable-prescription takes up the necessary space within the styled printNode
-    // Its styles are mostly defined in @media print but we need them for html2canvas too
-    // The onclone method handles styling the *cloned* element, which is preferred.
+    // Forçar reflow para garantir que os estilos foram aplicados ao printNode e prescriptionElement
+    prescriptionElement.offsetHeight; 
+
+    // Pequeno delay para renderização completa, especialmente de imagens/fontes
+    await new Promise(resolve => setTimeout(resolve, 500)); 
+    console.log("Prescricoes.tsx: Preparado para html2canvas.");
 
     try {
-      const canvas = await html2canvas(printNode, { // Capture the container
-        scale: 2, // Higher scale for better quality
+      console.log("Prescricoes.tsx: Chamando html2canvas em prescriptionElement.");
+      const canvas = await html2canvas(prescriptionElement, { // Alvo é o .printable-prescription
+        scale: 2,
         useCORS: true,
-        logging: true, // Enable logging for debugging
-        backgroundColor: '#ffffff', // Explicit white background for the canvas
+        logging: true,
+        backgroundColor: '#ffffff', // Fundo branco para o canvas
+        scrollX: 0, // Como o elemento está 'fixed' e posicionado, scroll da página principal não deve afetar
+        scrollY: 0,
+        windowWidth: prescriptionElement.scrollWidth, // Usar as dimensões do próprio elemento
+        windowHeight: prescriptionElement.scrollHeight,
         onclone: (documentClone) => {
-          const clonedPrintNode = documentClone.documentElement.querySelector('.print-only-container');
-          if (clonedPrintNode) {
-            // Style the container in the clone
-             Object.assign((clonedPrintNode as HTMLElement).style, {
+            console.log("Prescricoes.tsx: html2canvas onclone. O 'documentClone.documentElement' é o '.printable-prescription' clonado.");
+            const clonedElementRoot = documentClone.documentElement; // Ou documentClone.body
+            Object.assign((clonedElementRoot as HTMLElement).style, {
                 display: 'block',
-                width: '210mm',
-                minHeight: '297mm',
-                height: 'auto',
-                padding: '0', // No padding on container for clone
-                margin: '0',
+                visibility: 'visible',
+                position: 'relative', // Importante para o layout interno
+                width: '210mm',       // Largura A4
+                minHeight: '297mm',   // Altura mínima A4
+                height: 'auto',       // Altura baseada no conteúdo
+                margin: '0',          // Sem margens externas no elemento raiz da captura
+                padding: '15mm',      // Margens internas para o conteúdo da receita
+                boxSizing: 'border-box',
                 backgroundColor: 'white',
-             });
-          }
-          const printArea = documentClone.documentElement.querySelector('.printable-prescription');
-          if (printArea) {
-            Object.assign((printArea as HTMLElement).style, {
-              display: 'block',
-              visibility: 'visible',
-              position: 'relative', // Changed from absolute to be within the sized container
-              width: '210mm',
-              minHeight: '297mm',
-              height: 'auto',
-              margin: '0 auto', // Centering or explicit positioning
-              padding: '15mm', // Actual content margins
-              boxSizing: 'border-box',
-              backgroundColor: 'white',
-              color: 'black',
-              fontFamily: "'Times New Roman', Times, serif",
-              fontSize: '12pt',
-              border: 'none',
-              boxShadow: 'none',
+                color: 'black',
+                fontFamily: "'Times New Roman', Times, serif", // Garante a fonte correta
+                fontSize: '12pt',      // Garante o tamanho da fonte
+                border: 'none',
+                boxShadow: 'none',
             });
           }
-        }
       });
       
+      console.log(`Prescricoes.tsx: html2canvas concluído. Dimensões do Canvas: ${canvas.width}x${canvas.height}`);
+      if (canvas.width === 0 || canvas.height === 0) {
+          console.error("Prescricoes.tsx: Canvas gerado com dimensões zero.");
+          toast({ variant: "destructive", title: "Erro ao Gerar PDF", description: "Falha ao renderizar o conteúdo da receita (canvas vazio)." });
+          Object.assign(printNode.style, originalPrintNodeStyles); // Restaurar estilos
+          return;
+      }
+
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4',
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // A4 width in mm (210)
-      const pdfHeight = pdf.internal.pageSize.getHeight(); // A4 height in mm (297)
+      console.log("Prescricoes.tsx: imgData gerado (primeiros 100 chars):", imgData.substring(0,100));
       
-      const imgProps = pdf.getImageProperties(imgData);
-      const aspectRatio = imgProps.width / imgProps.height;
-
-      let imgHeight = pdfHeight;
-      let imgWidth = imgHeight * aspectRatio;
-
-      if (imgWidth > pdfWidth) {
-        imgWidth = pdfWidth;
-        imgHeight = imgWidth / aspectRatio;
+      if (!imgData || !imgData.startsWith('data:image/png;base64,')) {
+        console.error("Prescricoes.tsx: Formato de imgData inválido a partir do canvas.toDataURL.");
+        toast({ variant: "destructive", title: "Erro ao Gerar PDF", description: "Falha ao converter o conteúdo da receita para imagem." });
+        Object.assign(printNode.style, originalPrintNodeStyles); // Restaurar estilos
+        return;
       }
       
-      // If content is taller than one page, html2canvas captures it as one long image.
-      // We add it to the PDF, and jsPDF will handle multi-page if the image height exceeds page height.
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight); // Use pdfWidth for full width image
-      pdf.save(`receita-${detailedPrescriptionData.prescriptionNumber}-${Date.now()}.pdf`);
+      const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // Tenta obter as propriedades da imagem. Se imgData for inválido, isso pode falhar.
+      let imgProps;
+      try {
+        imgProps = pdf.getImageProperties(imgData);
+        console.log("Prescricoes.tsx: Propriedades da imagem:", imgProps);
+      } catch (e) {
+        console.error("Prescricoes.tsx: Erro ao chamar pdf.getImageProperties(imgData):", e);
+        console.error("Prescricoes.tsx: imgData problemático (primeiros 100 chars):", imgData.substring(0,100));
+        toast({ variant: "destructive", title: "Erro ao Processar Imagem", description: "Não foi possível ler as propriedades da imagem gerada." });
+        Object.assign(printNode.style, originalPrintNodeStyles); // Restaurar estilos
+        return;
+      }
+      
+      const aspectRatio = imgProps.width / imgProps.height;
+      let imgRenderWidth = pdfWidth; 
+      let imgRenderHeight = imgRenderWidth / aspectRatio;
+
+      // Ajusta a altura se exceder a capacidade de uma página, mas mantendo a largura total
+      // jsPDF lida com múltiplas páginas se a altura da imagem for maior que pdfHeight
+      if (imgRenderHeight > pdfHeight && imgRenderWidth === pdfWidth) {
+        // Deixa o jsPDF criar múltiplas páginas se necessário
+        console.log("Prescricoes.tsx: Imagem potencialmente multi-página. Altura renderizada: ", imgRenderHeight);
+      } else if (imgRenderHeight < pdfHeight && imgRenderWidth === pdfWidth) {
+        // Imagem cabe em uma página, renderiza com altura calculada
+      } else { // Caso de proporções muito largas, recalcula baseado na altura (improvável para A4)
+          imgRenderHeight = pdfHeight;
+          imgRenderWidth = imgRenderHeight * aspectRatio;
+      }
+
+
+      console.log(`Prescricoes.tsx: Dimensões para PDF: largura ${imgRenderWidth}, altura ${imgRenderHeight}`);
+      pdf.addImage(imgData, 'PNG', 0, 0, imgRenderWidth, imgRenderHeight);
+      
+      const fileName = `receita-${detailedPrescriptionData.prescriptionNumber || detailedPrescriptionData.patient.name.replace(/\s/g, '_')}-${Date.now()}.pdf`;
+      pdf.save(fileName);
+      console.log(`Prescricoes.tsx: PDF salvo como: ${fileName}`);
       toast({ title: "PDF Gerado", description: "O PDF da receita foi baixado." });
 
     } catch (error) {
-      console.error("Erro ao gerar PDF com html2canvas:", error);
-      toast({ variant: "destructive", title: "Erro ao Gerar PDF", description: "Ocorreu um problema ao tentar gerar o PDF." });
+      console.error("Prescricoes.tsx: Erro ao gerar PDF com html2canvas/jsPDF:", error);
+      toast({ variant: "destructive", title: "Erro ao Gerar PDF", description: `Ocorreu um problema: ${error instanceof Error ? error.message : String(error)}` });
     } finally {
-      // Restore original styles
-      Object.assign(printNode.style, originalStyles);
+      console.log("Prescricoes.tsx: Bloco finally: restaurando estilos e limpando.");
+      // Restaurar estilos originais do container printNode
+      Object.assign(printNode.style, originalPrintNodeStyles);
+      
+      // Garante que o elemento volte para fora da tela após a captura
+      printNode.style.left = '-9999px'; 
+      printNode.style.top = '-9999px';
+      printNode.style.zIndex = '-1'; // E fique por baixo de tudo
+      console.log("Prescricoes.tsx: Geração de PDF (detailed) finalizada.");
     }
   };
 
