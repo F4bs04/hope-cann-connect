@@ -1,0 +1,142 @@
+
+import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedUserTypes: string[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedUserTypes }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // First check Supabase Auth session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Then check localStorage-based authentication
+        const localStorageAuth = localStorage.getItem('isAuthenticated') === 'true';
+        const localStorageUserType = localStorage.getItem('userType');
+        const localStorageAuthTimestamp = localStorage.getItem('authTimestamp');
+        
+        // Check if the local storage auth token is expired (24 hours)
+        let localAuthExpired = false;
+        if (localStorageAuthTimestamp) {
+          const authTimestamp = parseInt(localStorageAuthTimestamp);
+          const now = Date.now();
+          const authAgeDays = (now - authTimestamp) / (1000 * 60 * 60 * 24);
+          localAuthExpired = authAgeDays > 1; // expired after 1 day
+          
+          if (localAuthExpired) {
+            // Clear expired authentication
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('authTimestamp');
+          }
+        }
+        
+        // User is authenticated if either Supabase session exists or localStorage auth is valid
+        const isUserAuthenticated = !!session || (localStorageAuth && !localAuthExpired);
+        setIsAuthenticated(isUserAuthenticated);
+        
+        if (!isUserAuthenticated) {
+          setLoading(false);
+          return;
+        }
+        
+        // Get user type, preferring Supabase session if it exists
+        if (session) {
+          // Get user type from database
+          const { data: userInfo, error } = await supabase
+            .from('usuarios')
+            .select('tipo_usuario')
+            .eq('email', session.user.email)
+            .maybeSingle();
+            
+          if (error) {
+            console.error('Error fetching user type:', error);
+            setUserType(null);
+          } else if (userInfo) {
+            setUserType(userInfo.tipo_usuario);
+          } else if (localStorageUserType) {
+            // Fallback to localStorage user type if no match in usuarios table
+            setUserType(localStorageUserType);
+          }
+        } else if (localStorageUserType) {
+          // If no Supabase session, use localStorage user type
+          setUserType(localStorageUserType);
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkAuth();
+  }, []);
+
+  // Only render redirect elements when loading is complete
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Move toast and redirects outside of render function
+  if (!isAuthenticated) {
+    // Using localStorage to prevent toast showing multiple times
+    if (typeof window !== 'undefined' && !localStorage.getItem('toast-shown-auth')) {
+      toast({
+        variant: "destructive",
+        title: "Acesso restrito",
+        description: "Faça login para acessar esta página.",
+      });
+      localStorage.setItem('toast-shown-auth', 'true');
+      // Remove this item after a delay
+      setTimeout(() => localStorage.removeItem('toast-shown-auth'), 2000);
+    }
+    return <Navigate to="/login" />;
+  }
+
+  if (userType && !allowedUserTypes.includes(userType)) {
+    // Using localStorage to prevent toast showing multiple times
+    if (typeof window !== 'undefined' && !localStorage.getItem('toast-shown-perm')) {
+      toast({
+        variant: "destructive",
+        title: "Acesso não autorizado",
+        description: "Você não tem permissão para acessar esta página.",
+      });
+      localStorage.setItem('toast-shown-perm', 'true');
+      // Remove this item after a delay
+      setTimeout(() => localStorage.removeItem('toast-shown-perm'), 2000);
+    }
+    
+    // Redirect based on user type
+    if (userType === 'medico') {
+      return <Navigate to="/area-medico" />;
+    } else if (userType === 'paciente') {
+      return <Navigate to="/area-paciente" />;
+    } else if (userType === 'admin_clinica') {
+      return <Navigate to="/admin" />;
+    }
+    
+    return <Navigate to="/" />;
+  }
+
+  return <>{children}</>;
+};
+
+export default ProtectedRoute;

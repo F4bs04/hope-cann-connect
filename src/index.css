@@ -1,0 +1,175 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos específicos para impressão */
+@media print {
+  /* Ocultar tudo por padrão */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Apenas exibir o conteúdo do PDF */
+  #pdf-content, #pdf-content * {
+    visibility: visible !important;
+  }
+  
+  /* Posicionar o conteúdo do PDF corretamente */
+  #pdf-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  
+  /* Configurações de página */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  /* Ocultar botões e elementos de UI */
+  button, .ui-element {
+    display: none !important;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 183 96% 37%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 144 58% 34%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 175 77% 31%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 183 96% 37%;
+
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+  }
+}
+
+@layer components {
+  .hopecann-container {
+    @apply container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .hopecann-btn-primary {
+    @apply bg-hopecann-teal hover:bg-hopecann-teal/90 text-white font-medium py-2.5 px-6 rounded-full transition-colors;
+  }
+  
+  .hopecann-btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-hopecann-teal border border-hopecann-teal font-medium py-2.5 px-6 rounded-full transition-colors;
+  }
+  
+  .hopecann-section {
+    @apply py-16 md:py-24;
+  }
+  
+  .hopecann-section-title {
+    @apply text-3xl md:text-4xl font-bold text-center mb-4 md:mb-8;
+  }
+  
+  .hopecann-section-subtitle {
+    @apply text-lg text-gray-600 text-center max-w-3xl mx-auto mb-10 md:mb-16;
+  }
+  
+  .hopecann-card {
+    @apply bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 h-full border border-gray-100;
+  }
+
+  .hopecann-decoration {
+    @apply absolute -z-10 text-hopecann-teal/10 opacity-50;
+  }
+
+  .hopecann-gradient-bg {
+    @apply bg-gradient-to-r from-hopecann-teal to-hopecann-teal/90;
+  }
+  
+  .hopecann-stat-card {
+    @apply bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col;
+  }
+  
+  .hopecann-stat-value {
+    @apply text-3xl font-bold text-hopecann-teal;
+  }
+  
+  .hopecann-stat-label {
+    @apply text-sm text-gray-500 mt-1;
+  }
+  
+  .btn-hover-scale {
+    @apply transform transition-transform duration-200 hover:scale-105;
+  }
+
+  .hopecann-testimonial-card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6 relative;
+  }
+
+  .hopecann-testimonial-card::before {
+    content: "";
+    @apply absolute top-0 left-0 w-full h-1 bg-hopecann-teal rounded-t-xl;
+  }
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
