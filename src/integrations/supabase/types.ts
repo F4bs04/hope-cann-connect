@@ -1276,6 +1276,7 @@ export type Database = {
           email: string
           id: number
           senha: string
+          senha_hash: string | null
           status: boolean | null
           tipo_usuario: string
           token_reset_senha: string | null
@@ -1287,6 +1288,7 @@ export type Database = {
           email: string
           id?: never
           senha: string
+          senha_hash?: string | null
           status?: boolean | null
           tipo_usuario: string
           token_reset_senha?: string | null
@@ -1298,6 +1300,7 @@ export type Database = {
           email?: string
           id?: never
           senha?: string
+          senha_hash?: string | null
           status?: boolean | null
           tipo_usuario?: string
           token_reset_senha?: string | null
@@ -1319,6 +1322,10 @@ export type Database = {
         Returns: undefined
       }
       verify_clinic_password: {
+        Args: { p_email: string; p_password: string }
+        Returns: boolean
+      }
+      verify_user_password: {
         Args: { p_email: string; p_password: string }
         Returns: boolean
       }

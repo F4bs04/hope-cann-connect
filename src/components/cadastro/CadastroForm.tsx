@@ -45,6 +45,11 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
         .eq('email', values.email)
         .single();
       
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine
+        console.error("Error checking existing user:", checkError);
+        throw new Error("Erro ao verificar usuário existente. Tente novamente.");
+      }
+      
       if (existingUser) {
         toast({
           variant: "destructive",
@@ -57,13 +62,14 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
 
       const formattedCpf = values.cpf.replace(/\D/g, '');
       
+      // SignUp with Supabase Auth (handles its own password hashing for auth.users)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
         password: values.senha,
         options: {
           data: {
             full_name: values.nome,
-            tipo_usuario: 'paciente',
+            tipo_usuario: 'paciente', // Custom metadata for auth.users if needed
           }
         }
       });
@@ -71,33 +77,39 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
       if (authError) {
         console.error("Authentication error:", authError);
         if (authError.message?.includes('User already registered')) {
-          throw new Error("Este email já está cadastrado. Tente fazer login ou use outro email.");
+          throw new Error("Este email já está cadastrado no sistema de autenticação. Tente fazer login ou use outro email.");
         }
-        throw new Error(authError.message || "Erro ao cadastrar usuário");
+        throw new Error(authError.message || "Erro ao cadastrar usuário na autenticação");
       }
 
       if (!authData?.user?.id) {
-        throw new Error("Não foi possível obter o ID do usuário");
+        throw new Error("Não foi possível obter o ID do usuário da autenticação");
       }
 
-      console.log("User created successfully, ID:", authData.user.id);
+      console.log("Supabase Auth User created successfully, ID:", authData.user.id);
 
+      // Insert into public.usuarios table
+      // The password will be sent in `senha_hash` field (as plaintext temporarily)
+      // and the database trigger will hash it.
       const { data: userData, error: userError } = await supabase
         .from('usuarios')
         .insert([
           {
             email: values.email,
-            senha: values.senha,
+            senha_hash: values.senha, // Send plaintext password to be hashed by trigger
             tipo_usuario: 'paciente',
             status: true
+            // A coluna 'senha' antiga não é mais populada aqui
           }
         ])
         .select('id')
         .single();
 
       if (userError) {
-        console.error("User creation error:", userError);
-        throw new Error(userError.message || "Erro ao cadastrar usuário");
+        console.error("Public.usuarios creation error:", userError);
+        // Potentially rollback Supabase Auth user if public.usuarios fails
+        // await supabase.auth.admin.deleteUser(authData.user.id) // Requires admin privileges, handle with care
+        throw new Error(userError.message || "Erro ao cadastrar dados do usuário");
       }
 
       const { error: pacienteError } = await supabase
@@ -117,10 +129,14 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
       if (pacienteError) {
         console.error("Patient creation error:", pacienteError);
         
+        // Rollback user from public.usuarios if paciente creation fails
         await supabase
           .from('usuarios')
           .delete()
           .eq('id', userData.id);
+        
+        // Potentially rollback Supabase Auth user as well
+        // await supabase.auth.admin.deleteUser(authData.user.id) // Requires admin privileges
           
         throw new Error(pacienteError.message || "Erro ao cadastrar paciente");
       }
