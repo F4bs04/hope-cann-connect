@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const getConsultas = async () => {
@@ -20,7 +19,7 @@ export const getConsultas = async () => {
 };
 
 export const createConsulta = async (consultaData: any) => {
-  console.log("[createConsulta] Dados recebidos para criar consulta:", consultaData);
+  console.log("[createConsulta] Iniciando criação de consulta com dados:", JSON.stringify(consultaData, null, 2));
   try {
     const { data, error } = await supabase
       .from('consultas')
@@ -29,18 +28,16 @@ export const createConsulta = async (consultaData: any) => {
       .single();
     
     if (error) {
-      console.error("[createConsulta] Erro ao criar consulta no Supabase:", error);
-      // Retornar o erro para que possa ser tratado no frontend, se necessário
-      // ou para que a lógica de toast possa exibir uma mensagem mais específica.
-      // Poderia ser return { data: null, error }; em vez de apenas null para dar mais contexto.
-      return null; 
+      console.error("[createConsulta] Erro detalhado ao criar consulta no Supabase:", JSON.stringify(error, null, 2));
+      // Retornar o erro para que possa ser tratado no frontend
+      return { data: null, error }; 
     }
     
-    console.log("[createConsulta] Consulta criada com sucesso:", data);
-    return data;
-  } catch (error) {
-    console.error("[createConsulta] Exceção ao criar consulta:", error);
-    return null;
+    console.log("[createConsulta] Consulta criada com sucesso no Supabase:", JSON.stringify(data, null, 2));
+    return { data, error: null };
+  } catch (error: any) {
+    console.error("[createConsulta] Exceção ao tentar criar consulta:", JSON.stringify(error, null, 2));
+    // Retornar a exceção como um erro
+    return { data: null, error: { message: error.message, details: error.toString(), code: 'EXCEPTION' } };
   }
 };
-

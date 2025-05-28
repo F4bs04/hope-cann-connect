@@ -83,13 +83,14 @@ const HomeScheduling = () => {
   // handleSubmit remains largely the same but uses state/setters from the hook
   const localHandleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[HomeScheduling] Iniciando handleSubmit...");
+    console.log("[HomeScheduling] Iniciando handleSubmit com dados do formulário:", JSON.stringify(formData, null, 2));
+    console.log("[HomeScheduling] Estado da consulta antes do submit:", { selectedDoctor, selectedDate, selectedTime, selectedConsultType });
     
     const { data: { session } } = await supabase.auth.getSession();
-    console.log("[HomeScheduling] Sessão do usuário:", session);
+    console.log("[HomeScheduling] Sessão do usuário obtida:", session ? session.user?.email : 'Nenhuma sessão ativa');
 
     if (session && session.user) {
-      console.log("[HomeScheduling] Usuário logado:", session.user.email);
+      console.log("[HomeScheduling] Usuário logado. Email:", session.user.email);
       try {
         const { data: usuarioData, error: usuarioError } = await supabase
           .from('usuarios')
@@ -97,36 +98,37 @@ const HomeScheduling = () => {
           .eq('email', session.user.email)
           .single();
 
-        console.log("[HomeScheduling] Dados do usuário (tabela usuarios):", usuarioData, "Erro:", usuarioError);
+        console.log("[HomeScheduling] Dados do usuário (tabela usuarios) buscados:", usuarioData, "Erro ao buscar usuário:", usuarioError);
 
         if (usuarioError || !usuarioData) {
           toast({ title: "Erro de Usuário", description: "Não foi possível verificar seus dados de usuário.", variant: "destructive" });
-          console.error("[HomeScheduling] Erro ao buscar dados do usuário ou usuário não encontrado.");
+          console.error("[HomeScheduling] Erro ao buscar dados do usuário ou usuário não encontrado. Erro:", usuarioError);
           return;
         }
 
         if (usuarioData.tipo_usuario !== 'paciente') {
           toast({ title: "Ação não permitida", description: "Apenas pacientes podem agendar consultas através desta interface.", variant: "destructive" });
-          console.warn("[HomeScheduling] Tentativa de agendamento por usuário não paciente:", usuarioData.tipo_usuario);
+          console.warn("[HomeScheduling] Tentativa de agendamento por usuário não paciente. Tipo:", usuarioData.tipo_usuario);
           return;
         }
         
+        console.log("[HomeScheduling] Buscando ID do paciente para id_usuario:", usuarioData.id);
         const { data: pacienteData, error: pacienteError } = await supabase
           .from('pacientes')
           .select('id')
           .eq('id_usuario', usuarioData.id)
           .single();
 
-        console.log("[HomeScheduling] Dados do paciente (tabela pacientes):", pacienteData, "Erro:", pacienteError);
+        console.log("[HomeScheduling] Dados do paciente (tabela pacientes) buscados:", pacienteData, "Erro ao buscar paciente:", pacienteError);
 
         if (pacienteError || !pacienteData) {
           toast({ title: "Perfil de Paciente Incompleto", description: "Não encontramos seu perfil de paciente. Por favor, complete seu cadastro ou entre em contato com o suporte.", variant: "destructive" });
-          console.error("[HomeScheduling] Erro ao buscar perfil do paciente ou perfil não encontrado para id_usuario:", usuarioData.id);
+          console.error("[HomeScheduling] Erro ao buscar perfil do paciente ou perfil não encontrado para id_usuario:", usuarioData.id, "Erro:", pacienteError);
           return;
         }
 
         const pacienteId = pacienteData.id;
-        console.log("[HomeScheduling] ID do Paciente:", pacienteId);
+        console.log("[HomeScheduling] ID do Paciente confirmado:", pacienteId);
 
         if (!selectedDoctor || !selectedDate || !selectedTime) {
           toast({ title: "Dados Incompletos", description: "Médico, data ou horário não selecionados.", variant: "destructive" });
@@ -137,32 +139,31 @@ const HomeScheduling = () => {
         const dataHora = new Date(selectedDate);
         const [hours, minutes] = selectedTime.split(':').map(Number);
         dataHora.setHours(hours, minutes, 0, 0);
-        console.log("[HomeScheduling] Data e Hora da consulta formatada:", dataHora.toISOString());
+        const dataHoraISO = dataHora.toISOString();
+        console.log("[HomeScheduling] Data e Hora da consulta formatada para ISO:", dataHoraISO);
 
         const consultaParaSalvar = {
           id_medico: selectedDoctor,
           id_paciente: pacienteId,
-          data_hora: dataHora.toISOString(),
-          status: 'agendada', // status inicial padrão
-          tipo_consulta: selectedConsultType, // tipo_consulta padrão
-          motivo: formData.symptoms, // motivo da consulta
-          // observacoes_paciente: formData.previous_treatments || null, // observacoes do paciente (opcional)
+          data_hora: dataHoraISO,
+          status: 'agendada', 
+          tipo_consulta: selectedConsultType,
+          motivo: formData.symptoms,
         };
-        console.log("[HomeScheduling] Objeto consultaParaSalvar:", consultaParaSalvar);
+        console.log("[HomeScheduling] Objeto final consultaParaSalvar antes de enviar para createConsulta:", JSON.stringify(consultaParaSalvar, null, 2));
 
-        const createdConsulta = await createConsulta(consultaParaSalvar);
-        console.log("[HomeScheduling] Resultado de createConsulta:", createdConsulta);
+        const { data: createdConsulta, error: createConsultaError } = await createConsulta(consultaParaSalvar);
+        console.log("[HomeScheduling] Resultado de createConsulta recebido:", { createdConsulta, createConsultaError });
 
-        if (createdConsulta) {
+        if (createdConsulta && !createConsultaError) {
           toast({ title: "Agendamento Concluído!", description: "Sua consulta foi agendada com sucesso." });
           setStep(4); 
         } else {
-          // O log de erro específico já acontece dentro de createConsulta
-          // Podemos adicionar um toast genérico aqui se createConsulta retornar null e não tiver lançado um erro que o toast global pegue
-           toast({ title: "Erro no Agendamento", description: "Não foi possível agendar sua consulta. Verifique os logs do console.", variant: "destructive" });
+           console.error("[HomeScheduling] Falha ao criar consulta. Erro retornado por createConsulta:", JSON.stringify(createConsultaError, null, 2));
+           toast({ title: "Erro no Agendamento", description: createConsultaError?.message || "Não foi possível agendar sua consulta. Verifique os logs.", variant: "destructive" });
         }
       } catch (error: any) {
-        console.error("[HomeScheduling] Erro geral ao agendar consulta (usuário logado):", error);
+        console.error("[HomeScheduling] Erro geral (catch) ao agendar consulta (usuário logado):", error);
         toast({ title: "Erro no Agendamento", description: error.message || "Ocorreu um erro ao tentar agendar sua consulta.", variant: "destructive" });
       }
     } else { 
