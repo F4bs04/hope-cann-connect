@@ -13,12 +13,10 @@ export interface FormData {
 }
 
 export function useConsultationData() {
-  // Removed consultation type step - now we have only 3 steps instead of 4
   const [step, setStep] = useState(1);
-  const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
+  const [selectedDoctor, setSelectedDoctorInternal] = useState<number | null>(null); // Renamed to avoid conflict with exported setSelectedDoctor
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  // Auto-select the first consultation type
   const [selectedConsultType, setSelectedConsultType] = useState("primeira");
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -37,9 +35,9 @@ export function useConsultationData() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleNext = () => {
-    // If we're on step 2 (Date selection), go directly to user data (step 3)
-    if (step === 2) {
+  // Original handleNext from hook, kept for other components that might use it
+  const originalHandleNext = () => {
+    if (step === 2) { // Specific logic for Agendar.tsx which might have different step count or flow
       setStep(3);
     } else {
       setStep(prev => prev + 1);
@@ -50,9 +48,9 @@ export function useConsultationData() {
     setStep(prev => prev - 1);
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  // Original handleSubmit from hook, kept for Agendar.tsx
+  const originalHandleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // After form submission, redirect to the Cadastro page
     navigate('/cadastro');
   };
 
@@ -71,38 +69,43 @@ export function useConsultationData() {
           description: "Não foi possível carregar informações do médico selecionado.",
           variant: "destructive"
         });
+        setDoctorInfo(null); // Clear doctor info on error
         return;
       }
       
-      if (data) {
-        setDoctorInfo(data);
-      }
+      setDoctorInfo(data || null); // Set to null if data is null
     } catch (error) {
       console.error("Error in fetchDoctorInfo:", error);
+      setDoctorInfo(null); // Clear doctor info on error
     }
   };
   
-  const handleDoctorSelection = (doctorId: number) => {
-    setSelectedDoctor(doctorId);
-    fetchDoctorInfo(doctorId);
+  const handleDoctorSelection = (doctorId: number | null) => { // Allow null to deselect
+    setSelectedDoctorInternal(doctorId);
+    if (doctorId) {
+      fetchDoctorInfo(doctorId);
+    } else {
+      setDoctorInfo(null); // Clear doctor info if deselected
+    }
   };
   
   return {
     step,
+    setStep, // Exporting raw setStep
     selectedDoctor,
+    setSelectedDoctor: handleDoctorSelection, // This is the function that also fetches doctor info
     selectedDate,
-    selectedTime,
-    selectedConsultType,
-    formData,
-    doctorInfo,
-    setStep,
-    setSelectedDoctor: handleDoctorSelection,
     setSelectedDate,
+    selectedTime,
     setSelectedTime,
+    selectedConsultType,
     setSelectedConsultType,
-    handleFormChange,
-    handleNext,
+    formData,
+    setFormData, // Exporting raw setFormData
+    doctorInfo,
+    handleFormChange, // Original event-based handler
+    handleNext: originalHandleNext, // Original handler
     handleBack,
-    handleSubmit,
+    handleSubmit: originalHandleSubmit, // Original handler
   };
 }

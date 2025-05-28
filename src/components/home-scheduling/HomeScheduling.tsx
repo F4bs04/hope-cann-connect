@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
@@ -6,43 +7,49 @@ import { DoctorStep } from './DoctorStep';
 import { DateTimeStep } from './DateTimeStep';
 import { UserDataStep } from './UserDataStep';
 import { ConfirmationStep } from './ConfirmationStep';
-import { fetchDoctors } from './utils/doctorUtils';
+import { fetchDoctors } from './utils/doctorUtils'; // This utility is specific to fetching the list
 import { formatTelefone } from '@/utils/formatters';
 import { supabase } from "@/integrations/supabase/client";
 import { createConsulta } from '@/services/consultas/consultasService';
+import { useConsultationData } from '@/hooks/useConsultationData'; // Import the hook
 
 const HomeScheduling = () => {
-  // State management
-  const [step, setStep] = useState(1);
-  const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [selectedConsultType, setSelectedConsultType] = useState("primeira");
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    symptoms: "",
-    previous_treatments: ""
-  });
-  const [selectedDoctorInfo, setSelectedDoctorInfo] = useState<any>(null);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Use state and functions from the hook
+  const {
+    step,
+    setStep,
+    selectedDoctor,
+    setSelectedDoctor, // This is handleDoctorSelection from the hook
+    selectedDate,
+    setSelectedDate,
+    selectedTime,
+    setSelectedTime,
+    selectedConsultType,
+    // setSelectedConsultType, // Not actively changed in this flow
+    formData,
+    setFormData, // Raw setter from the hook
+    doctorInfo, // This replaces selectedDoctorInfo
+    handleBack, // Use handleBack from the hook
+  } = useConsultationData();
+
+  // State managed locally in HomeScheduling
   const [doctors, setDoctors] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // For fetching doctors list
   const [dbStatus, setDbStatus] = useState({
     success: true,
     message: ''
   });
   
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  
-  // Load doctors on mount
+  // Load doctors list on mount - remains specific to this component
   useEffect(() => {
     fetchDoctors({ setDoctors, setIsLoading, setDbStatus, toast });
-  }, [toast]);
+  }, [toast]); // Removed setFormData from deps as it's stable
   
-  // Form handling functions
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Custom form handling for HomeScheduling (includes phone formatting)
+  const localHandleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     let formattedValue = value;
     
@@ -53,8 +60,8 @@ const HomeScheduling = () => {
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
   };
   
-  // Navigation functions
-  const handleNext = () => {
+  // Custom navigation functions for HomeScheduling (includes validation)
+  const localHandleNext = () => {
     if (step === 1 && !selectedDoctor) {
       toast({
         title: "Seleção pendente",
@@ -71,20 +78,16 @@ const HomeScheduling = () => {
       });
       return;
     }
-    setStep(prev => prev + 1);
+    setStep(prev => prev + 1); // Use setStep from hook
   };
   
-  const handleBack = () => {
-    setStep(prev => prev - 1);
-  };
-  
-  // Form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  // handleSubmit remains largely the same but uses state/setters from the hook
+  const localHandleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const { data: { session } } = await supabase.auth.getSession();
 
-    if (session && session.user) { // Usuário está logado
+    if (session && session.user) {
       try {
         const { data: usuarioData, error: usuarioError } = await supabase
           .from('usuarios')
@@ -110,8 +113,6 @@ const HomeScheduling = () => {
 
         if (pacienteError || !pacienteData) {
           toast({ title: "Perfil de Paciente Incompleto", description: "Não encontramos seu perfil de paciente. Por favor, complete seu cadastro ou entre em contato com o suporte.", variant: "destructive" });
-          // Opcional: Redirecionar para completar o perfil
-          // navigate('/area-paciente/perfil', { state: { fromScheduling: true, schedulingAttempt: { selectedDoctor, selectedDate: selectedDate?.toISOString(), selectedTime, selectedConsultType, formData } } });
           return;
         }
 
@@ -140,17 +141,13 @@ const HomeScheduling = () => {
 
         if (createdConsulta) {
           toast({ title: "Agendamento Concluído!", description: "Sua consulta foi agendada com sucesso." });
-          setStep(4); // Avança para a tela de confirmação
-        } else {
-          // Erro já tratado no toast dentro de createConsulta ou pelo catch abaixo
-          // Se createConsulta retornar null sem throw, um toast genérico é necessário aqui.
-          // No entanto, a versão atual do createConsulta lança erro ou retorna dados.
+          setStep(4); 
         }
       } catch (error: any) {
         console.error("Erro ao agendar consulta (usuário logado):", error);
         toast({ title: "Erro no Agendamento", description: error.message || "Ocorreu um erro ao tentar agendar sua consulta.", variant: "destructive" });
       }
-    } else { // Usuário NÃO está logado
+    } else { 
       toast({
         title: "Login Necessário",
         description: "Você será redirecionado para fazer login ou criar uma conta para confirmar seu agendamento.",
@@ -158,11 +155,11 @@ const HomeScheduling = () => {
       
       const schedulingAttempt = {
         selectedDoctor,
-        selectedDate: selectedDate?.toISOString(), // Serializa Date para string
+        selectedDate: selectedDate?.toISOString(), 
         selectedTime,
         selectedConsultType,
         formData,
-        selectedDoctorInfo // Passa informações do médico já carregadas
+        selectedDoctorInfo: doctorInfo // Use doctorInfo from hook
       };
       
       setTimeout(() => {
@@ -171,43 +168,8 @@ const HomeScheduling = () => {
     }
   };
   
-  // Fetch doctor info when selectedDoctor changes
-  useEffect(() => {
-    if (selectedDoctor) {
-      const fetchDoctorInfo = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('medicos')
-            .select('*')
-            .eq('id', selectedDoctor)
-            .single();
-            
-          if (error) {
-            console.error("Error fetching doctor info:", error);
-            toast({
-              title: "Erro",
-              description: "Não foi possível carregar informações do médico selecionado.",
-              variant: "destructive"
-            });
-            return;
-          }
-          
-          if (data) {
-            setSelectedDoctorInfo(data);
-          }
-        } catch (err) {
-          console.error("Error fetching doctor info:", err);
-          toast({
-            title: "Erro de sistema",
-            description: "Ocorreu um erro ao carregar dados do médico. Por favor tente novamente.",
-            variant: "destructive"
-          });
-        }
-      };
-      
-      fetchDoctorInfo();
-    }
-  }, [selectedDoctor, toast]);
+  // The useEffect for fetching selected doctor info is no longer needed here,
+  // as setSelectedDoctor from the hook (handleDoctorSelection) already fetches and sets doctorInfo.
 
   return (
     <section className="py-16 bg-white">
@@ -229,10 +191,10 @@ const HomeScheduling = () => {
           {step === 1 && (
             <DoctorStep 
               doctors={doctors}
-              isLoading={isLoading}
+              isLoading={isLoading} // isLoading for doctor list
               selectedDoctor={selectedDoctor}
-              setSelectedDoctor={setSelectedDoctor}
-              onNext={handleNext}
+              setSelectedDoctor={setSelectedDoctor} // from hook
+              onNext={localHandleNext}
               dbStatus={dbStatus}
             />
           )}
@@ -241,25 +203,25 @@ const HomeScheduling = () => {
             <DateTimeStep 
               selectedDate={selectedDate}
               selectedTime={selectedTime}
-              setSelectedDate={setSelectedDate}
-              setSelectedTime={setSelectedTime}
-              onNext={handleNext}
-              onBack={handleBack}
+              setSelectedDate={setSelectedDate} // from hook
+              setSelectedTime={setSelectedTime} // from hook
+              onNext={localHandleNext}
+              onBack={handleBack} // from hook
             />
           )}
           
           {step === 3 && (
             <UserDataStep 
               formData={formData}
-              handleFormChange={handleFormChange}
-              onSubmit={handleSubmit}
-              onBack={handleBack}
+              handleFormChange={localHandleFormChange}
+              onSubmit={localHandleSubmit}
+              onBack={handleBack} // from hook
             />
           )}
           
           {step === 4 && (
             <ConfirmationStep 
-              selectedDoctorInfo={selectedDoctorInfo}
+              selectedDoctorInfo={doctorInfo} // use doctorInfo from hook
               selectedDate={selectedDate}
               selectedTime={selectedTime}
             />
