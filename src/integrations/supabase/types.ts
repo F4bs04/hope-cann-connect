@@ -1275,7 +1275,7 @@ export type Database = {
           data_expiracao_token: string | null
           email: string
           id: number
-          senha: string
+          senha: string | null
           senha_hash: string | null
           status: boolean | null
           tipo_usuario: string
@@ -1287,7 +1287,7 @@ export type Database = {
           data_expiracao_token?: string | null
           email: string
           id?: never
-          senha: string
+          senha?: string | null
           senha_hash?: string | null
           status?: boolean | null
           tipo_usuario: string
@@ -1299,7 +1299,7 @@ export type Database = {
           data_expiracao_token?: string | null
           email?: string
           id?: never
-          senha?: string
+          senha?: string | null
           senha_hash?: string | null
           status?: boolean | null
           tipo_usuario?: string

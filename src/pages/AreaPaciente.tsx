@@ -10,8 +10,19 @@ import AtestadosPaciente from '@/components/paciente/AtestadosPaciente';
 import LaudosPaciente from '@/components/paciente/LaudosPaciente';
 import PedidosExamePaciente from '@/components/paciente/PedidosExamePaciente';
 import MedicosPaciente from '@/components/paciente/MedicosPaciente';
-import PacientePerfilDetalhes from '@/components/area-paciente/PacientePerfilDetalhes'; // Nova importação
+import PacientePerfilDetalhes from '@/components/area-paciente/PacientePerfilDetalhes';
 import { usePacienteAuth } from '@/hooks/usePacienteAuth';
+
+interface Paciente { // Definindo a interface Paciente aqui também para consistência
+  id: number;
+  nome?: string;
+  email?: string;
+  cpf?: string;
+  data_nascimento?: string;
+  endereco?: string;
+  telefone?: string;
+  genero?: string;
+}
 
 interface AreaPacienteProps {
   initialSection?: string;
@@ -19,7 +30,22 @@ interface AreaPacienteProps {
 
 const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard' }) => {
   const [currentSection, setCurrentSection] = useState(initialSection);
-  const { paciente, loading } = usePacienteAuth();
+  const { paciente: initialPaciente, loading } = usePacienteAuth();
+  const [pacienteData, setPacienteData] = useState<Paciente | null>(null);
+
+  useEffect(() => {
+    if (initialPaciente) {
+      // Certifique-se de que o ID está presente e é um número
+      const idAsNumber = typeof initialPaciente.id === 'string' ? parseInt(initialPaciente.id, 10) : initialPaciente.id;
+      if (isNaN(idAsNumber)) {
+        console.error("ID do paciente inválido:", initialPaciente.id);
+        // Tratar o caso de ID inválido, talvez redirecionar ou mostrar erro
+        setPacienteData(null); // ou alguma forma de estado de erro
+        return;
+      }
+      setPacienteData({ ...initialPaciente, id: idAsNumber });
+    }
+  }, [initialPaciente]);
   
   useEffect(() => {
     if (initialSection) {
@@ -27,7 +53,11 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
     }
   }, [initialSection]);
 
-  if (loading) {
+  const handleUpdatePaciente = (updatedPaciente: Paciente) => {
+    setPacienteData(updatedPaciente);
+  };
+
+  if (loading && !pacienteData) { // Ajustado para considerar pacienteData
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full" />
@@ -35,7 +65,7 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
     );
   }
 
-  const pacienteId = paciente?.id || 0; // Usado por outros componentes
+  const pacienteId = pacienteData?.id || 0;
 
   const renderSection = () => {
     switch (currentSection) {
@@ -54,8 +84,7 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
       case 'medicos':
         return <MedicosPaciente pacienteId={pacienteId} />;
       case 'perfil':
-        // Substituído o placeholder pelo novo componente
-        return <PacientePerfilDetalhes paciente={paciente} />;
+        return <PacientePerfilDetalhes paciente={pacienteData} onUpdatePaciente={handleUpdatePaciente} />;
       default:
         return <PacienteDashboard />;
     }
@@ -63,7 +92,7 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
 
   return (
     <div className="min-h-screen flex flex-col">
-      <PacienteHeader pacienteNome={paciente?.nome} />
+      <PacienteHeader pacienteNome={pacienteData?.nome} />
       <div className="flex flex-1">
         <SidebarProvider>
           <PacienteSidebar
@@ -71,7 +100,7 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
             onSectionChange={setCurrentSection}
           />
           <SidebarInset className="bg-gray-50 flex-1">
-            <main className="w-full h-full p-4 md:p-6 lg:p-8 animate-fade-in"> {/* Ajustado padding */}
+            <main className="w-full h-full p-4 md:p-6 lg:p-8 animate-fade-in">
               {renderSection()}
             </main>
           </SidebarInset>

@@ -62,14 +62,13 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
 
       const formattedCpf = values.cpf.replace(/\D/g, '');
       
-      // SignUp with Supabase Auth (handles its own password hashing for auth.users)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
         password: values.senha,
         options: {
           data: {
             full_name: values.nome,
-            tipo_usuario: 'paciente', // Custom metadata for auth.users if needed
+            tipo_usuario: 'paciente',
           }
         }
       });
@@ -88,27 +87,21 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
 
       console.log("Supabase Auth User created successfully, ID:", authData.user.id);
 
-      // Insert into public.usuarios table
-      // The password will be sent in `senha_hash` field (as plaintext temporarily)
-      // and the database trigger will hash it.
       const { data: userData, error: userError } = await supabase
         .from('usuarios')
-        .insert([
+        .insert( // Corrigido: Removido o array, passando o objeto diretamente
           {
             email: values.email,
-            senha_hash: values.senha, // Send plaintext password to be hashed by trigger
+            senha_hash: values.senha, 
             tipo_usuario: 'paciente',
             status: true
-            // A coluna 'senha' antiga não é mais populada aqui
           }
-        ])
+        )
         .select('id')
         .single();
 
       if (userError) {
         console.error("Public.usuarios creation error:", userError);
-        // Potentially rollback Supabase Auth user if public.usuarios fails
-        // await supabase.auth.admin.deleteUser(authData.user.id) // Requires admin privileges, handle with care
         throw new Error(userError.message || "Erro ao cadastrar dados do usuário");
       }
 
@@ -116,27 +109,23 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
         .from('pacientes')
         .insert([
           {
-            id_usuario: userData.id,
+            id_usuario: userData.id, // Usar o ID retornado da inserção em 'usuarios'
             nome: values.nome,
             cpf: formattedCpf,
             data_nascimento: values.data_nascimento,
             endereco: values.endereco,
             telefone: values.telefone,
-            email: values.email
+            email: values.email // Mantendo o email aqui também por consistência/facilidade de query
           }
         ]);
 
       if (pacienteError) {
         console.error("Patient creation error:", pacienteError);
         
-        // Rollback user from public.usuarios if paciente creation fails
         await supabase
           .from('usuarios')
           .delete()
           .eq('id', userData.id);
-        
-        // Potentially rollback Supabase Auth user as well
-        // await supabase.auth.admin.deleteUser(authData.user.id) // Requires admin privileges
           
         throw new Error(pacienteError.message || "Erro ao cadastrar paciente");
       }
