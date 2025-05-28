@@ -25,27 +25,27 @@ const DeleteAccountSection: React.FC<DeleteAccountSectionProps> = ({ onDeleteAcc
         <AlertDialogTrigger asChild>
           <Button variant="destructive" className="w-full sm:w-auto flex items-center gap-2">
             <Trash2 className="h-4 w-4" />
-            Excluir Conta
+            Excluir Dados do Perfil
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão de Conta</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar Exclusão de Dados</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação é irreversível. Todos os seus dados associados à sua conta de paciente e usuário serão permanentemente excluídos.
-              Você tem certeza que deseja excluir sua conta?
+              Esta ação é irreversível. Seus dados associados ao perfil de paciente serão permanentemente excluídos.
+              Deseja continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={onDeleteAccount} className="bg-red-600 hover:bg-red-700">
-              Sim, Excluir Conta
+              Sim, Excluir Meus Dados
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <p className="mt-2 text-xs text-gray-500 text-center sm:text-left">
-        A exclusão da conta removerá seus dados das tabelas principais da aplicação. A remoção completa do sistema de autenticação pode requerer processamento adicional.
+        A exclusão removerá apenas os dados do seu perfil de paciente. Sua conta de autenticação no sistema permanecerá ativa.
       </p>
     </div>
   );
