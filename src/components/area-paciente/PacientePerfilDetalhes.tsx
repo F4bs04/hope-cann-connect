@@ -1,14 +1,26 @@
-
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Mail, Calendar, MapPin, Phone, ShieldCheck, Edit3 } from 'lucide-react';
-import PacienteForm from '@/components/forms/PacienteForm'; // Importar o formulário
+import { User, Mail, Calendar, MapPin, Phone, ShieldCheck, Edit3, Trash2 } from 'lucide-react';
+import PacienteForm from '@/components/forms/PacienteForm';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useNavigate } from 'react-router-dom';
 
 interface Paciente {
   id: number; // Adicionado id para update
+  id_usuario?: number; // Adicionado para poder deletar o registro em 'usuarios'
   nome?: string;
   email?: string;
   cpf?: string;
@@ -40,6 +52,7 @@ const InfoItem: React.FC<{ icon: React.ElementType, label: string, value?: strin
 const PacientePerfilDetalhes: React.FC<PacientePerfilDetalhesProps> = ({ paciente, onUpdatePaciente }) => {
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   if (!paciente) {
     return <p className="text-gray-600">Não foi possível carregar os dados do perfil.</p>;
@@ -91,13 +104,11 @@ const PacientePerfilDetalhes: React.FC<PacientePerfilDetalhesProps> = ({ pacient
         return;
     }
 
-    // Garantir que data_nascimento está no formato yyyy-MM-dd para o Supabase
     let formattedDataNascimento = data.data_nascimento;
     if (data.data_nascimento && /^\d{2}\/\d{2}\/\d{4}$/.test(data.data_nascimento)) {
         const parts = data.data_nascimento.split('/');
         formattedDataNascimento = `${parts[2]}-${parts[1]}-${parts[0]}`;
     } else if (data.data_nascimento && new Date(data.data_nascimento) instanceof Date && !isNaN(new Date(data.data_nascimento).valueOf())) {
-        // Se for um objeto Date válido, formatar
         const dateObj = new Date(data.data_nascimento);
         const year = dateObj.getFullYear();
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -105,12 +116,10 @@ const PacientePerfilDetalhes: React.FC<PacientePerfilDetalhesProps> = ({ pacient
         formattedDataNascimento = `${year}-${month}-${day}`;
     }
 
-
     const { error } = await supabase
       .from('pacientes')
       .update({
         nome: data.nome,
-        // email: data.email, // Email geralmente não é editável pelo usuário diretamente ou requer verificação
         telefone: data.telefone,
         data_nascimento: formattedDataNascimento,
         endereco: data.endereco,
@@ -119,10 +128,10 @@ const PacientePerfilDetalhes: React.FC<PacientePerfilDetalhesProps> = ({ pacient
       .eq('id', paciente.id);
 
     if (error) {
-      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+      console.error("Erro ao atualizar perfil do paciente:", error); // Log detalhado do erro
+      toast({ title: "Erro ao atualizar", description: `Permissão negada ou outro erro: ${error.message}`, variant: "destructive" });
     } else {
       toast({ title: "Sucesso", description: "Perfil atualizado com sucesso!" });
-      // Chamar o callback para atualizar o estado no componente pai
       onUpdatePaciente({ 
         ...paciente, 
         ...data, 
@@ -132,6 +141,60 @@ const PacientePerfilDetalhes: React.FC<PacientePerfilDetalhesProps> = ({ pacient
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!paciente?.id) {
+      toast({ title: "Erro", description: "ID do paciente não encontrado para exclusão.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      // 1. Deletar da tabela 'pacientes'
+      const { error: pacienteError } = await supabase
+        .from('pacientes')
+        .delete()
+        .eq('id', paciente.id);
+
+      if (pacienteError) {
+        console.error("Erro ao deletar paciente:", pacienteError);
+        throw new Error(`Falha ao deletar dados do paciente: ${pacienteError.message}`);
+      }
+
+      // 2. Deletar da tabela 'usuarios' (se id_usuario existir)
+      if (paciente.id_usuario) {
+        const { error: usuarioError } = await supabase
+          .from('usuarios')
+          .delete()
+          .eq('id', paciente.id_usuario);
+
+        if (usuarioError) {
+          console.error("Erro ao deletar usuário:", usuarioError);
+          // Pode ser um erro parcial, mas o paciente já foi deletado. Continuar com logout.
+          toast({ title: "Atenção", description: `Dados do paciente foram removidos, mas houve um problema ao remover o registro de usuário: ${usuarioError.message}.`, variant: "warning" });
+        }
+      } else {
+        toast({ title: "Atenção", description: "ID de usuário não encontrado para remoção completa. Apenas dados do paciente foram removidos.", variant: "warning" });
+      }
+      
+      // 3. Logout
+      await supabase.auth.signOut();
+
+      // 4. Limpar localStorage
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userType');
+      localStorage.removeItem('authTimestamp');
+      
+      toast({ title: "Conta Excluída", description: "Sua conta foi excluída com sucesso. Você será redirecionado." });
+      
+      // 5. Redirecionar para login
+      navigate('/login');
+
+    } catch (error: any) {
+      console.error("Erro ao excluir conta:", error);
+      toast({ title: "Erro ao Excluir Conta", description: error.message || "Não foi possível excluir sua conta.", variant: "destructive" });
+    }
+  };
 
   if (isEditing) {
     return (
@@ -175,6 +238,35 @@ const PacientePerfilDetalhes: React.FC<PacientePerfilDetalhesProps> = ({ pacient
         <InfoItem icon={MapPin} label="Endereço" value={endereco || 'Não informado'} />
         <InfoItem icon={Phone} label="Telefone" value={formatarTelefone(telefone)} />
         {paciente.genero && <InfoItem icon={User} label="Gênero" value={paciente.genero} />}
+      </div>
+
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" className="w-full sm:w-auto flex items-center gap-2">
+              <Trash2 className="h-4 w-4" />
+              Excluir Conta
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Exclusão de Conta</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação é irreversível. Todos os seus dados associados à sua conta de paciente e usuário serão permanentemente excluídos. 
+                Você tem certeza que deseja excluir sua conta?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-600 hover:bg-red-700">
+                Sim, Excluir Conta
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <p className="mt-2 text-xs text-gray-500 text-center sm:text-left">
+          A exclusão da conta removerá seus dados das tabelas principais da aplicação. A remoção completa do sistema de autenticação pode requerer processamento adicional.
+        </p>
       </div>
     </div>
   );

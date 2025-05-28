@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import PacienteHeader from "@/components/paciente/PacienteHeader";
@@ -16,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Paciente {
   id: number;
+  id_usuario?: number; // Adicionado para consistência com PacientePerfilDetalhes
   nome?: string;
   email?: string;
   cpf?: string;
@@ -65,7 +65,19 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
         setPacienteData(null); // ou alguma forma de estado de erro
         return;
       }
-      setPacienteData({ ...initialPaciente, id: idAsNumber });
+      // Certifique-se de que id_usuario também é um número se existir
+      let idUsuarioAsNumber: number | undefined = undefined;
+      if (initialPaciente.id_usuario !== undefined && initialPaciente.id_usuario !== null) {
+        idUsuarioAsNumber = typeof initialPaciente.id_usuario === 'string' 
+          ? parseInt(initialPaciente.id_usuario, 10) 
+          : initialPaciente.id_usuario;
+        if (isNaN(idUsuarioAsNumber)) {
+          console.warn("ID de usuário do paciente inválido, será tratado como undefined:", initialPaciente.id_usuario);
+          idUsuarioAsNumber = undefined;
+        }
+      }
+      
+      setPacienteData({ ...initialPaciente, id: idAsNumber, id_usuario: idUsuarioAsNumber });
     }
   }, [initialPaciente]);
   
@@ -124,6 +136,7 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
       case 'medicos':
         return <MedicosPaciente pacienteId={pacienteId} />;
       case 'perfil':
+        // Passando o pacienteData que já inclui id e id_usuario corretamente formatados
         return <PacientePerfilDetalhes paciente={pacienteData} onUpdatePaciente={handleUpdatePaciente} />;
       default:
         return <PacienteDashboard />;
