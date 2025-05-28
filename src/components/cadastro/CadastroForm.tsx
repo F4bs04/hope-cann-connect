@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
         .from('usuarios')
         .select('id')
         .eq('email', values.email)
-        .single();
+        .maybeSingle();
       
       if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine
         console.error("Error checking existing user:", checkError);
@@ -68,7 +69,7 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
         options: {
           data: {
             full_name: values.nome,
-            tipo_usuario: 'paciente',
+            tipo_usuario: 'paciente', // Ensure this is set if needed by auth triggers/policies
           }
         }
       });
@@ -87,12 +88,14 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
 
       console.log("Supabase Auth User created successfully, ID:", authData.user.id);
 
+      // The 'senha' column in 'usuarios' table is now nullable.
+      // We pass the plaintext password to 'senha_hash' and the trigger handles hashing.
       const { data: userData, error: userError } = await supabase
         .from('usuarios')
-        .insert( // Corrigido: Removido o array, passando o objeto diretamente
+        .insert(
           {
             email: values.email,
-            senha_hash: values.senha, 
+            senha_hash: values.senha, // Pass plaintext to be hashed by trigger
             tipo_usuario: 'paciente',
             status: true
           }
@@ -102,43 +105,62 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
 
       if (userError) {
         console.error("Public.usuarios creation error:", userError);
+        // Attempt to clean up the auth user if 'usuarios' table insert fails
+        await supabase.auth.admin.deleteUser(authData.user.id); // Requires admin privileges, ensure this is set up if used
         throw new Error(userError.message || "Erro ao cadastrar dados do usuário");
+      }
+      
+      if (!userData?.id) {
+        throw new Error("Não foi possível obter o ID do usuário da tabela 'usuarios'");
       }
 
       const { error: pacienteError } = await supabase
         .from('pacientes')
         .insert([
           {
-            id_usuario: userData.id, // Usar o ID retornado da inserção em 'usuarios'
+            id_usuario: userData.id,
             nome: values.nome,
             cpf: formattedCpf,
             data_nascimento: values.data_nascimento,
             endereco: values.endereco,
             telefone: values.telefone,
-            email: values.email // Mantendo o email aqui também por consistência/facilidade de query
+            email: values.email
           }
         ]);
 
       if (pacienteError) {
         console.error("Patient creation error:", pacienteError);
         
+        // Attempt to clean up 'usuarios' and auth user if 'pacientes' table insert fails
         await supabase
           .from('usuarios')
           .delete()
           .eq('id', userData.id);
+        await supabase.auth.admin.deleteUser(authData.user.id); // Requires admin privileges
           
         throw new Error(pacienteError.message || "Erro ao cadastrar paciente");
       }
 
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Você já pode fazer login no sistema.",
+        description: "Você será redirecionado para sua área.",
       });
+
+      // Set localStorage items for immediate use by ProtectedRoute and other hooks
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userEmail', values.email);
+      localStorage.setItem('userId', userData.id.toString());
+      localStorage.setItem('userType', 'paciente');
+      localStorage.setItem('authTimestamp', Date.now().toString());
+      // Clear any previous toast flags that might cause issues on the next page
+      localStorage.removeItem('toast-shown-auth');
+      localStorage.removeItem('toast-shown-perm');
+
 
       if (fromScheduling) {
         navigate('/agendar');
       } else {
-        navigate('/login');
+        navigate('/area-paciente'); // Navigate directly to the patient area
       }
       
     } catch (error: any) {
