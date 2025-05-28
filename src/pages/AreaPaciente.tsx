@@ -10,6 +10,7 @@ import AtestadosPaciente from '@/components/paciente/AtestadosPaciente';
 import LaudosPaciente from '@/components/paciente/LaudosPaciente';
 import PedidosExamePaciente from '@/components/paciente/PedidosExamePaciente';
 import MedicosPaciente from '@/components/paciente/MedicosPaciente';
+import PacientePerfilDetalhes from '@/components/area-paciente/PacientePerfilDetalhes'; // Nova importação
 import { usePacienteAuth } from '@/hooks/usePacienteAuth';
 
 interface AreaPacienteProps {
@@ -20,7 +21,6 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
   const [currentSection, setCurrentSection] = useState(initialSection);
   const { paciente, loading } = usePacienteAuth();
   
-  // When initialSection prop changes, update the currentSection state
   useEffect(() => {
     if (initialSection) {
       setCurrentSection(initialSection);
@@ -35,8 +35,7 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
     );
   }
 
-  // Make sure we have a valid paciente ID to pass to components
-  const pacienteId = paciente?.id || 0;
+  const pacienteId = paciente?.id || 0; // Usado por outros componentes
 
   const renderSection = () => {
     switch (currentSection) {
@@ -55,11 +54,8 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
       case 'medicos':
         return <MedicosPaciente pacienteId={pacienteId} />;
       case 'perfil':
-        return <div className="p-6 bg-white rounded-lg shadow">
-          <h2 className="text-2xl font-bold mb-6 text-hopecann-teal">Meu Perfil</h2>
-          {/* Temporary placeholder for profile section */}
-          <p className="text-gray-600">Esta seção será implementada em breve.</p>
-        </div>;
+        // Substituído o placeholder pelo novo componente
+        return <PacientePerfilDetalhes paciente={paciente} />;
       default:
         return <PacienteDashboard />;
     }
@@ -75,7 +71,7 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
             onSectionChange={setCurrentSection}
           />
           <SidebarInset className="bg-gray-50 flex-1">
-            <main className="w-full h-full p-6 md:p-8 animate-fade-in">
+            <main className="w-full h-full p-4 md:p-6 lg:p-8 animate-fade-in"> {/* Ajustado padding */}
               {renderSection()}
             </main>
           </SidebarInset>
