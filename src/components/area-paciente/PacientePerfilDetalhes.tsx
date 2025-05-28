@@ -169,10 +169,10 @@ const PacientePerfilDetalhes: React.FC<PacientePerfilDetalhesProps> = ({ pacient
         if (usuarioError) {
           console.error("Erro ao deletar usuário:", usuarioError);
           // Pode ser um erro parcial, mas o paciente já foi deletado. Continuar com logout.
-          toast({ title: "Atenção", description: `Dados do paciente foram removidos, mas houve um problema ao remover o registro de usuário: ${usuarioError.message}.`, variant: "warning" });
+          toast({ title: "Atenção", description: `Dados do paciente foram removidos, mas houve um problema ao remover o registro de usuário: ${usuarioError.message}.`, variant: "destructive" });
         }
       } else {
-        toast({ title: "Atenção", description: "ID de usuário não encontrado para remoção completa. Apenas dados do paciente foram removidos.", variant: "warning" });
+        toast({ title: "Atenção", description: "ID de usuário não encontrado para remoção completa. Apenas dados do paciente foram removidos.", variant: "destructive" });
       }
       
       // 3. Logout
