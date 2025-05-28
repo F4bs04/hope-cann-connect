@@ -13,55 +13,61 @@ export const usePacienteAuth = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Verificar primeiro a sessão do Supabase
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Verificar o localStorage para autenticação baseada em localStorage
         const userEmail = localStorage.getItem('userEmail');
+        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
         
-        if (!userEmail) {
-          toast({
-            title: "Acesso não autorizado",
-            description: "Faça login para acessar a área do paciente.",
-            variant: "destructive"
-          });
-          navigate('/login');
-          return;
+        if (!session && !isAuthenticated) {
+          throw new Error("Usuário não autenticado");
         }
         
-        // First check if the user exists in usuarios table
-        const { data: userData, error: userError } = await supabase
-          .from('usuarios')
-          .select('*')
-          .eq('email', userEmail)
-          .maybeSingle();
-          
-        if (userError) {
-          console.error("Error fetching user data:", userError);
-          throw new Error("Erro ao verificar usuário");
+        // Usar o email da sessão do Supabase ou do localStorage
+        const email = session?.user?.email || userEmail;
+        
+        if (!email) {
+          throw new Error("Email não encontrado");
         }
         
-        if (!userData) {
-          console.error("User not found in usuarios table");
-          throw new Error("Usuário não encontrado");
-        }
-        
-        // Then check if there's a matching paciente record
+        // Buscar dados do paciente
         const { data: pacienteData, error: pacienteError } = await supabase
           .from('pacientes')
           .select('*')
-          .eq('email', userEmail)
+          .eq('email', email)
           .maybeSingle();
         
-        if (pacienteError && pacienteError.code !== 'PGRST116') {
-          console.error("Error fetching patient data:", pacienteError);
+        if (pacienteError && pacienteError.code !== 'PGRST116') { // PGRST116 significa que nenhuma linha foi encontrada
+          console.error("Erro ao buscar dados do paciente:", pacienteError);
           throw new Error("Erro ao verificar paciente");
         }
         
         if (pacienteData) {
+          // Se encontrou o paciente, define os dados
           setPaciente(pacienteData);
         } else {
-          // If no patient record exists, try to create one
-          // based on the user information we have
+          // Se não encontrou o paciente, verifica se há um usuário correspondente
+          const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
+            
+          if (userError) {
+            console.error("Erro ao buscar dados do usuário:", userError);
+            throw new Error("Erro ao verificar usuário");
+          }
+          
+          if (!userData) {
+            console.error("Usuário não encontrado:", email);
+            throw new Error("Usuário não encontrado");
+          }
+          
+          // Tenta criar um perfil de paciente básico se o usuário existe
           const newPaciente = {
             id_usuario: userData.id,
-            email: userEmail,
+            email: email,
             nome: userData.tipo_usuario === 'paciente' ? 'Novo Paciente' : 'Usuário',
             cpf: "",
             data_nascimento: new Date().toISOString().split('T')[0],
@@ -76,20 +82,20 @@ export const usePacienteAuth = () => {
             .single();
             
           if (insertError) {
-            console.error("Error creating patient record:", insertError);
+            console.error("Erro ao criar registro de paciente:", insertError);
             toast({
               title: "Perfil incompleto",
               description: "Por favor, complete seu perfil de paciente.",
               variant: "destructive"
             });
-            // Even with error, allow access but set paciente as minimal data
+            // Mesmo com erro, permite acesso mas define paciente com dados mínimos
             setPaciente({ ...newPaciente, id: null });
           } else {
             setPaciente(insertedPaciente);
           }
         }
       } catch (error: any) {
-        console.error('Authentication error:', error);
+        console.error('Erro de autenticação:', error);
         toast({
           title: "Erro de autenticação",
           description: error.message || "Ocorreu um erro ao verificar suas credenciais. Por favor, faça login novamente.",
@@ -97,6 +103,9 @@ export const usePacienteAuth = () => {
         });
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userType');
+        localStorage.removeItem('authTimestamp');
         navigate('/login');
       } finally {
         setLoading(false);

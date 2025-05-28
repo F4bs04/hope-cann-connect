@@ -12,8 +12,9 @@ import PedidosExamePaciente from '@/components/paciente/PedidosExamePaciente';
 import MedicosPaciente from '@/components/paciente/MedicosPaciente';
 import PacientePerfilDetalhes from '@/components/area-paciente/PacientePerfilDetalhes';
 import { usePacienteAuth } from '@/hooks/usePacienteAuth';
+import { supabase } from "@/integrations/supabase/client";
 
-interface Paciente { // Definindo a interface Paciente aqui também para consistência
+interface Paciente {
   id: number;
   nome?: string;
   email?: string;
@@ -32,6 +33,27 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
   const [currentSection, setCurrentSection] = useState(initialSection);
   const { paciente: initialPaciente, loading } = usePacienteAuth();
   const [pacienteData, setPacienteData] = useState<Paciente | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  
+  // Verificação inicial de autenticação
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      // Verifica sessão do Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Verifica localStorage
+      const isLocalAuth = localStorage.getItem('isAuthenticated') === 'true';
+      const userEmail = localStorage.getItem('userEmail');
+      
+      const isAuthenticated = !!session || (isLocalAuth && userEmail);
+      setAuthChecked(true);
+      
+      // Se não estiver autenticado e a página já carregou completamente,
+      // não é necessário redirecionar aqui pois o hook usePacienteAuth já fará isso
+    };
+    
+    checkAuthentication();
+  }, []);
 
   useEffect(() => {
     if (initialPaciente) {
@@ -57,10 +79,28 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
     setPacienteData(updatedPaciente);
   };
 
-  if (loading && !pacienteData) { // Ajustado para considerar pacienteData
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  
+  // Se a autenticação foi verificada e não temos dados do paciente, mostra uma mensagem melhor
+  if (authChecked && !pacienteData && !loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="text-red-500 text-4xl mb-4">Acesso não autorizado</div>
+        <p className="text-lg text-center mb-6">
+          Não foi possível verificar suas credenciais. Por favor, faça login novamente.
+        </p>
+        <a 
+          href="/login" 
+          className="bg-hopecann-teal hover:bg-hopecann-teal/90 text-white px-6 py-3 rounded-lg font-medium"
+        >
+          Ir para o Login
+        </a>
       </div>
     );
   }

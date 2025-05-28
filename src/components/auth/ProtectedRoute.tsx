@@ -25,6 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedUserTy
         const localStorageAuth = localStorage.getItem('isAuthenticated') === 'true';
         const localStorageUserType = localStorage.getItem('userType');
         const localStorageAuthTimestamp = localStorage.getItem('authTimestamp');
+        const localStorageEmail = localStorage.getItem('userEmail');
         
         // Check if the local storage auth token is expired (24 hours)
         let localAuthExpired = false;
@@ -67,13 +68,39 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedUserTy
             setUserType(null);
           } else if (userInfo) {
             setUserType(userInfo.tipo_usuario);
+            
+            // Atualiza localStorage com os dados mais recentes
+            localStorage.setItem('isAuthenticated', 'true');
+            localStorage.setItem('userEmail', session.user.email || '');
+            localStorage.setItem('userType', userInfo.tipo_usuario);
+            localStorage.setItem('authTimestamp', Date.now().toString());
           } else if (localStorageUserType) {
             // Fallback to localStorage user type if no match in usuarios table
             setUserType(localStorageUserType);
           }
-        } else if (localStorageUserType) {
-          // If no Supabase session, use localStorage user type
-          setUserType(localStorageUserType);
+        } else if (localStorageAuth && localStorageUserType && localStorageEmail) {
+          // Se não tem sessão Supabase, mas tem localStorage válido
+          // Tenta validar o tipo de usuário com base no email armazenado
+          const { data: userInfo, error } = await supabase
+            .from('usuarios')
+            .select('tipo_usuario')
+            .eq('email', localStorageEmail)
+            .maybeSingle();
+            
+          if (error) {
+            console.error('Error validating localStorage user:', error);
+            setUserType(localStorageUserType); // Mantém o tipo armazenado
+          } else if (userInfo) {
+            setUserType(userInfo.tipo_usuario);
+            
+            // Atualiza o tipo de usuário se for diferente
+            if (userInfo.tipo_usuario !== localStorageUserType) {
+              localStorage.setItem('userType', userInfo.tipo_usuario);
+            }
+          } else {
+            // Se não encontrou o usuário, usa o tipo do localStorage
+            setUserType(localStorageUserType);
+          }
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
