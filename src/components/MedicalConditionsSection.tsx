@@ -72,15 +72,15 @@ const MedicalConditionsSection = () => {
               dragFree: true,
               containScroll: "trimSnaps",
               slidesToScroll: 1,
-              duration: 2000
+              duration: 2000 // Note: embla-carousel 'duration' is typically for animation speed, not autoplay delay. Autoplay delay is configured in the plugin.
             }}
             plugins={[
               Autoplay({
                 delay: 5000,
-                stopOnInteraction: false,
-                stopOnMouseEnter: false,
-                rootNode: (emblaRoot) => emblaRoot.parentElement,
-              })
+                stopOnInteraction: false, // Default is true, setting to false to keep autoplaying
+                stopOnMouseEnter: false,  // Default is false, explicit for clarity
+                // rootNode: (emblaRoot) => emblaRoot.parentElement, // This can sometimes cause issues if not needed, let's try without it first or ensure it's correctly used
+              }) as any // Cast to any to resolve TypeScript error
             ]}
             className="w-full"
           >
