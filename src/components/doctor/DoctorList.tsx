@@ -8,9 +8,10 @@ interface DoctorListProps {
   isLoading: boolean;
   onSelectDoctor: (id: number) => void;
   onClearFilters: () => void;
+  selectedDoctor?: number | null;
 }
 
-const DoctorList = ({ doctors, isLoading, onSelectDoctor, onClearFilters }: DoctorListProps) => {
+const DoctorList = ({ doctors, isLoading, onSelectDoctor, onClearFilters, selectedDoctor }: DoctorListProps) => {
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -26,7 +27,12 @@ const DoctorList = ({ doctors, isLoading, onSelectDoctor, onClearFilters }: Doct
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {doctors.map(doctor => (
-        <DoctorCard key={doctor.id} doctor={doctor} onSelect={onSelectDoctor} />
+        <DoctorCard 
+          key={doctor.id} 
+          doctor={doctor} 
+          onSelect={onSelectDoctor}
+          isSelected={selectedDoctor === doctor.id}
+        />
       ))}
     </div>
   );

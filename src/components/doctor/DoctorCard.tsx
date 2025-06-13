@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, Check } from 'lucide-react';
 import { getAvailabilityText, getAvailabilityColor } from "@/utils/doctorUtils";
 
 // Doctor type definition
@@ -16,15 +16,26 @@ export interface Doctor {
 interface DoctorCardProps {
   doctor: Doctor;
   onSelect: (id: number) => void;
+  isSelected?: boolean;
 }
 
-const DoctorCard = ({ doctor, onSelect }: DoctorCardProps) => {
+const DoctorCard = ({ doctor, onSelect, isSelected = false }: DoctorCardProps) => {
   return (
     <div
       key={doctor.id}
-      className="p-4 border rounded-lg cursor-pointer transition-colors border-gray-200 hover:border-hopecann-teal/50"
+      className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 relative ${
+        isSelected 
+          ? 'border-hopecann-teal bg-hopecann-teal/5 shadow-md ring-2 ring-hopecann-teal/20' 
+          : 'border-gray-200 hover:border-hopecann-teal/50 hover:shadow-sm'
+      }`}
       onClick={() => onSelect(doctor.id)}
     >
+      {isSelected && (
+        <div className="absolute top-2 right-2 w-6 h-6 bg-hopecann-teal rounded-full flex items-center justify-center">
+          <Check size={14} className="text-white" />
+        </div>
+      )}
+      
       <div className="flex items-start gap-4">
         <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
           <img 
@@ -39,7 +50,9 @@ const DoctorCard = ({ doctor, onSelect }: DoctorCardProps) => {
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="font-medium">{doctor.name}</h3>
+              <h3 className={`font-medium ${isSelected ? 'text-hopecann-teal' : ''}`}>
+                {doctor.name}
+              </h3>
               <p className="text-sm text-hopecann-teal mb-1">{doctor.specialty}</p>
             </div>
             <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getAvailabilityColor(doctor.availability)}`}>

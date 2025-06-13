@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -11,10 +10,12 @@ import { useDoctors } from '@/hooks/useDoctors';
 
 const Medicos = () => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
   const navigate = useNavigate();
   const { doctors, isLoading, dbStatus } = useDoctors();
   
   const handleSelectDoctor = (id: number) => {
+    setSelectedDoctor(id);
     navigate(`/medico/${id}`);
   };
   
@@ -48,6 +49,7 @@ const Medicos = () => {
                   onSelectDoctor={handleSelectDoctor} 
                   initialDoctors={doctors}
                   isInitialLoading={isLoading}
+                  selectedDoctor={selectedDoctor}
                 />
               </div>
             </div>

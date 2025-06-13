@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,9 +12,10 @@ interface DoctorSearchProps {
   onSelectDoctor: (id: number) => void;
   initialDoctors?: Doctor[];
   isInitialLoading?: boolean;
+  selectedDoctor?: number | null;
 }
 
-const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = false }: DoctorSearchProps) => {
+const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = false, selectedDoctor }: DoctorSearchProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
@@ -187,6 +187,7 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
         isLoading={isLoading} 
         onSelectDoctor={onSelectDoctor}
         onClearFilters={handleClearFilters}
+        selectedDoctor={selectedDoctor}
       />
     </div>
   );

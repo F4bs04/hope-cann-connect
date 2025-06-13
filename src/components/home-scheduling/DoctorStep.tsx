@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, User } from 'lucide-react';
 import DoctorSearch from '../DoctorSearch';
 
 interface DoctorStepProps {
@@ -37,6 +37,7 @@ export const DoctorStep: React.FC<DoctorStepProps> = ({
           onSelectDoctor={handleDoctorSelection}
           initialDoctors={doctors}
           isInitialLoading={isLoading}
+          selectedDoctor={selectedDoctor}
         />
       </div>
       
@@ -52,6 +53,3 @@ export const DoctorStep: React.FC<DoctorStepProps> = ({
     </div>
   );
 };
-
-// Import the User icon to fix the reference above
-import { User } from 'lucide-react';

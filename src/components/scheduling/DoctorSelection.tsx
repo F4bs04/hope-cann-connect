@@ -40,6 +40,7 @@ const DoctorSelection = ({ selectedDoctor, onSelectDoctor, onNext }: DoctorSelec
           onSelectDoctor={handleSelectDoctor}
           initialDoctors={[]}
           isInitialLoading={true}
+          selectedDoctor={selectedDoctor}
         />
       )}
       
