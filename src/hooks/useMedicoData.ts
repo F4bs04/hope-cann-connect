@@ -17,44 +17,57 @@ interface MedicoProfile {
   status_disponibilidade: boolean;
 }
 
+// Interface para updates que exclui o campo id
+interface MedicoProfileUpdate {
+  nome?: string;
+  crm?: string;
+  especialidade?: string;
+  foto_perfil?: string;
+  biografia?: string;
+  valor_por_consulta?: number;
+  telefone?: string;
+  aprovado?: boolean;
+  status_disponibilidade?: boolean;
+}
+
 export function useMedicoData() {
   const [medicoProfile, setMedicoProfile] = useState<MedicoProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { userInfo, loading: userLoading } = useCurrentUserInfo();
   const { toast } = useToast();
 
+  const fetchMedicoData = async () => {
+    try {
+      if (userLoading || !userInfo.medicoId) return;
+
+      setIsLoading(true);
+
+      const { data: medicoData, error } = await supabase
+        .from('medicos')
+        .select('*')
+        .eq('id', userInfo.medicoId)
+        .single();
+
+      if (error) throw error;
+
+      setMedicoProfile(medicoData);
+    } catch (error) {
+      console.error('Erro ao carregar dados do médico:', error);
+      toast({
+        title: "Erro ao carregar perfil",
+        description: "Não foi possível carregar os dados do médico.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchMedicoData = async () => {
-      try {
-        if (userLoading || !userInfo.medicoId) return;
-
-        setIsLoading(true);
-
-        const { data: medicoData, error } = await supabase
-          .from('medicos')
-          .select('*')
-          .eq('id', userInfo.medicoId)
-          .single();
-
-        if (error) throw error;
-
-        setMedicoProfile(medicoData);
-      } catch (error) {
-        console.error('Erro ao carregar dados do médico:', error);
-        toast({
-          title: "Erro ao carregar perfil",
-          description: "Não foi possível carregar os dados do médico.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchMedicoData();
   }, [userInfo, userLoading, toast]);
 
-  const updateMedicoProfile = async (updates: Partial<MedicoProfile>) => {
+  const updateMedicoProfile = async (updates: MedicoProfileUpdate) => {
     try {
       if (!userInfo.medicoId) throw new Error('ID do médico não encontrado');
 
@@ -85,6 +98,6 @@ export function useMedicoData() {
     medicoProfile,
     isLoading,
     updateMedicoProfile,
-    refetch: () => fetchMedicoData()
+    refetch: fetchMedicoData
   };
 }

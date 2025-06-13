@@ -44,154 +44,154 @@ export function useMedicoDashboardData() {
   const { toast } = useToast();
   const { userInfo, loading: userLoading } = useCurrentUserInfo();
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        if (userLoading || !userInfo.medicoId) return;
+  const fetchDashboardData = async () => {
+    try {
+      if (userLoading || !userInfo.medicoId) return;
 
-        setIsLoading(true);
+      setIsLoading(true);
 
-        const hoje = new Date();
-        const inicioSemana = new Date(hoje);
-        inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const hoje = new Date();
+      const inicioSemana = new Date(hoje);
+      inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+      const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
-        // Consultas de hoje
-        const { count: consultasHoje } = await supabase
-          .from('consultas')
-          .select('id', { count: 'exact' })
-          .eq('id_medico', userInfo.medicoId)
-          .gte('data_hora', hoje.toISOString().split('T')[0])
-          .lt('data_hora', new Date(hoje.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+      // Consultas de hoje
+      const { count: consultasHoje } = await supabase
+        .from('consultas')
+        .select('id', { count: 'exact' })
+        .eq('id_medico', userInfo.medicoId)
+        .gte('data_hora', hoje.toISOString().split('T')[0])
+        .lt('data_hora', new Date(hoje.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
-        // Consultas da semana
-        const { count: consultasSemana } = await supabase
-          .from('consultas')
-          .select('id', { count: 'exact' })
-          .eq('id_medico', userInfo.medicoId)
-          .gte('data_hora', inicioSemana.toISOString());
+      // Consultas da semana
+      const { count: consultasSemana } = await supabase
+        .from('consultas')
+        .select('id', { count: 'exact' })
+        .eq('id_medico', userInfo.medicoId)
+        .gte('data_hora', inicioSemana.toISOString());
 
-        // Consultas do mês
-        const { count: consultasMes } = await supabase
-          .from('consultas')
-          .select('id', { count: 'exact' })
-          .eq('id_medico', userInfo.medicoId)
-          .gte('data_hora', inicioMes.toISOString());
+      // Consultas do mês
+      const { count: consultasMes } = await supabase
+        .from('consultas')
+        .select('id', { count: 'exact' })
+        .eq('id_medico', userInfo.medicoId)
+        .gte('data_hora', inicioMes.toISOString());
 
-        // Próxima consulta
-        const { data: proximaConsultaData } = await supabase
-          .from('consultas')
-          .select(`
-            id,
-            data_hora,
-            tipo_consulta,
-            pacientes!inner(nome)
-          `)
-          .eq('id_medico', userInfo.medicoId)
-          .eq('status', 'agendada')
-          .gte('data_hora', new Date().toISOString())
-          .order('data_hora', { ascending: true })
-          .limit(1)
-          .maybeSingle();
+      // Próxima consulta
+      const { data: proximaConsultaData } = await supabase
+        .from('consultas')
+        .select(`
+          id,
+          data_hora,
+          tipo_consulta,
+          pacientes!inner(nome)
+        `)
+        .eq('id_medico', userInfo.medicoId)
+        .eq('status', 'agendada')
+        .gte('data_hora', new Date().toISOString())
+        .order('data_hora', { ascending: true })
+        .limit(1)
+        .maybeSingle();
 
-        // Consultas recentes (últimas 5)
-        const { data: consultasRecentesData } = await supabase
-          .from('consultas')
-          .select(`
-            id,
-            data_hora,
-            tipo_consulta,
-            status,
-            pacientes!inner(nome)
-          `)
-          .eq('id_medico', userInfo.medicoId)
-          .order('data_hora', { ascending: false })
-          .limit(5);
+      // Consultas recentes (últimas 5)
+      const { data: consultasRecentesData } = await supabase
+        .from('consultas')
+        .select(`
+          id,
+          data_hora,
+          tipo_consulta,
+          status,
+          pacientes!inner(nome)
+        `)
+        .eq('id_medico', userInfo.medicoId)
+        .order('data_hora', { ascending: false })
+        .limit(5);
 
-        // Receita gerada (saldo atual do médico)
-        const { data: saldoData } = await supabase
-          .from('saldo_medicos')
-          .select('saldo_total')
-          .eq('id_medico', userInfo.medicoId)
-          .maybeSingle();
+      // Receita gerada (saldo atual do médico)
+      const { data: saldoData } = await supabase
+        .from('saldo_medicos')
+        .select('saldo_total')
+        .eq('id_medico', userInfo.medicoId)
+        .maybeSingle();
 
-        // Pacientes únicos atendidos no mês
-        const { data: pacientesData } = await supabase
-          .from('consultas')
-          .select('id_paciente')
-          .eq('id_medico', userInfo.medicoId)
-          .gte('data_hora', inicioMes.toISOString())
-          .eq('status', 'realizada');
+      // Pacientes únicos atendidos no mês
+      const { data: pacientesData } = await supabase
+        .from('consultas')
+        .select('id_paciente')
+        .eq('id_medico', userInfo.medicoId)
+        .gte('data_hora', inicioMes.toISOString())
+        .eq('status', 'realizada');
 
-        const pacientesUnicos = new Set(pacientesData?.map(p => p.id_paciente) || []);
+      const pacientesUnicos = new Set(pacientesData?.map(p => p.id_paciente) || []);
 
-        // Processar próxima consulta
-        let proximaConsulta = null;
-        if (proximaConsultaData) {
-          const dataConsulta = new Date(proximaConsultaData.data_hora);
-          proximaConsulta = {
-            id: proximaConsultaData.id,
-            paciente: proximaConsultaData.pacientes?.nome || 'Paciente não identificado',
-            data: dataConsulta.toLocaleDateString('pt-BR'),
-            horario: dataConsulta.toLocaleTimeString('pt-BR', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })
-          };
-        }
-
-        // Processar consultas recentes
-        const consultasRecentes = (consultasRecentesData || []).map(consulta => {
-          const dataConsulta = new Date(consulta.data_hora);
-          return {
-            id: consulta.id,
-            paciente: consulta.pacientes?.nome || 'Paciente não identificado',
-            data: dataConsulta.toLocaleDateString('pt-BR'),
-            tipo: consulta.tipo_consulta || 'Consulta padrão',
-            status: consulta.status
-          };
-        });
-
-        // Gerar alertas
-        const alertas = [];
-        if (consultasHoje === 0) {
-          alertas.push({
-            tipo: 'info' as const,
-            mensagem: 'Nenhuma consulta agendada para hoje'
-          });
-        }
-        if (!proximaConsulta) {
-          alertas.push({
-            tipo: 'warning' as const,
-            mensagem: 'Você não possui consultas agendadas'
-          });
-        }
-
-        setData({
-          consultasHoje: consultasHoje || 0,
-          consultasSemana: consultasSemana || 0,
-          consultasMes: consultasMes || 0,
-          receitaGerada: saldoData?.saldo_total || 0,
-          pacientesAtivos: pacientesUnicos.size,
-          proximaConsulta,
-          consultasRecentes,
-          alertas
-        });
-
-      } catch (error) {
-        console.error('Erro ao carregar dados do dashboard médico:', error);
-        toast({
-          title: "Erro ao carregar dados",
-          description: "Não foi possível carregar os dados do dashboard.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
+      // Processar próxima consulta
+      let proximaConsulta = null;
+      if (proximaConsultaData) {
+        const dataConsulta = new Date(proximaConsultaData.data_hora);
+        proximaConsulta = {
+          id: proximaConsultaData.id,
+          paciente: proximaConsultaData.pacientes?.nome || 'Paciente não identificado',
+          data: dataConsulta.toLocaleDateString('pt-BR'),
+          horario: dataConsulta.toLocaleTimeString('pt-BR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })
+        };
       }
-    };
 
+      // Processar consultas recentes
+      const consultasRecentes = (consultasRecentesData || []).map(consulta => {
+        const dataConsulta = new Date(consulta.data_hora);
+        return {
+          id: consulta.id,
+          paciente: consulta.pacientes?.nome || 'Paciente não identificado',
+          data: dataConsulta.toLocaleDateString('pt-BR'),
+          tipo: consulta.tipo_consulta || 'Consulta padrão',
+          status: consulta.status
+        };
+      });
+
+      // Gerar alertas
+      const alertas = [];
+      if (consultasHoje === 0) {
+        alertas.push({
+          tipo: 'info' as const,
+          mensagem: 'Nenhuma consulta agendada para hoje'
+        });
+      }
+      if (!proximaConsulta) {
+        alertas.push({
+          tipo: 'warning' as const,
+          mensagem: 'Você não possui consultas agendadas'
+        });
+      }
+
+      setData({
+        consultasHoje: consultasHoje || 0,
+        consultasSemana: consultasSemana || 0,
+        consultasMes: consultasMes || 0,
+        receitaGerada: saldoData?.saldo_total || 0,
+        pacientesAtivos: pacientesUnicos.size,
+        proximaConsulta,
+        consultasRecentes,
+        alertas
+      });
+
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard médico:', error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar os dados do dashboard.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDashboardData();
   }, [toast, userInfo, userLoading]);
 
-  return { data, isLoading, refetch: () => fetchDashboardData() };
+  return { data, isLoading, refetch: fetchDashboardData };
 }
