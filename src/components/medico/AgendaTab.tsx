@@ -113,25 +113,16 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
     );
   }
 
-  // Helper functions to convert between viewMode types
-  const convertViewModeToCalendar = (mode: 'week' | 'day' | 'calendar'): 'week' | 'day' | 'month' => {
-    return mode === 'calendar' ? 'month' : mode;
-  };
-
-  const convertViewModeFromCalendar = (mode: 'week' | 'day' | 'month'): 'week' | 'day' | 'calendar' => {
-    return mode === 'month' ? 'calendar' : mode;
-  };
-
-  const handleSetViewMode = (mode: 'week' | 'day' | 'month') => {
-    const convertedMode = convertViewModeFromCalendar(mode);
-    setViewMode(convertedMode);
+  // Since CalendarViews expects 'calendar' mode, let's use the viewMode directly
+  const handleSetViewMode = (mode: 'week' | 'day' | 'calendar') => {
+    setViewMode(mode);
   };
 
   return (
     <div>
       {!isQuickMode && (
         <CalendarViews
-          viewMode={convertViewModeToCalendar(viewMode)}
+          viewMode={viewMode}
           setViewMode={handleSetViewMode}
           selectedWeekStart={selectedWeekStart}
           selectedViewDay={selectedViewDay}

@@ -33,14 +33,16 @@ const ProntuarioDialog: React.FC<ProntuarioDialogProps> = ({ open, onOpenChange 
 
   const handleSave = () => {
     if (selectedPaciente) {
+      // Combine all data into a single object for handleSaveProntuario
       handleSaveProntuario({
         ...prontuarioData,
         id_paciente: selectedPaciente.id,
         ultima_atualizacao: new Date().toISOString(),
-      }, {
-        ...acompanhamentoData,
-        id_paciente: selectedPaciente.id,
-        data_registro: new Date().toISOString(),
+        acompanhamento: {
+          ...acompanhamentoData,
+          id_paciente: selectedPaciente.id,
+          data_registro: new Date().toISOString(),
+        }
       });
       onOpenChange(false);
     }

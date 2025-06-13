@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,22 +64,23 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
 
   const handleSave = () => {
     if (selectedPaciente) {
-      const acompanhamentoData = {
-        sintomas: '',
-        efeitos_colaterais: '',
-        eficacia: '',
-        notas_adicionais: '',
-        id_paciente: selectedPaciente.id,
-        data_registro: new Date().toISOString(),
-      };
-
+      // Combine all data into a single object for handleSaveProntuario
       handleSaveProntuario({
         ...prontuarioData,
         id_paciente: selectedPaciente.id,
         ultima_atualizacao: new Date().toISOString(),
         anamnese: anamneseData,
-        soap: soapData
-      }, acompanhamentoData);
+        soap: soapData,
+        // Include acompanhamento data inline
+        acompanhamento: {
+          sintomas: '',
+          efeitos_colaterais: '',
+          eficacia: '',
+          notas_adicionais: '',
+          id_paciente: selectedPaciente.id,
+          data_registro: new Date().toISOString(),
+        }
+      });
       
       setIsEditing(false);
       toast({
@@ -145,7 +145,7 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
           <div>
             <h2 className="text-2xl font-bold">Prontuário de {selectedPaciente.nome}</h2>
             <p className="text-sm text-gray-500">
-              Última atualização: {format(new Date(historicoPaciente.ultima_atualizacao), 'dd/MM/yyyy HH:mm')}
+              Última atualização: {format(new Date(historicoPaciente.ultima_atualizacao || new Date()), 'dd/MM/yyyy HH:mm')}
             </p>
           </div>
         </div>
