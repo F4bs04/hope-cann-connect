@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   SidebarProvider, 
@@ -65,6 +64,16 @@ const AreaMedicoContent: React.FC = () => {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('=== AREA MEDICO DEBUG ===');
+    console.log('authLoading:', authLoading);
+    console.log('isAuthenticated:', isAuthenticated);
+    console.log('isMedico:', isMedico);
+    console.log('isApproved:', isApproved);
+    console.log('currentSection:', currentSection);
+  }, [authLoading, isAuthenticated, isMedico, isApproved, currentSection]);
+
   // Load URL params on mount
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -87,6 +96,7 @@ const AreaMedicoContent: React.FC = () => {
   useEffect(() => {
     const storedType = localStorage.getItem('userType');
     setUserType(storedType);
+    console.log('Stored user type:', storedType);
   }, []);
 
   const handleOpenConsulta = (consultaId: number) => {
@@ -113,20 +123,30 @@ const AreaMedicoContent: React.FC = () => {
 
   // Loading state
   if (authLoading) {
+    console.log('Showing loading state');
     return <DashboardSkeleton />;
   }
 
-  // Authentication check
+  // Authentication check - Allow access even if not approved
   if (!isAuthenticated || !isMedico) {
+    console.log('Access denied - not authenticated or not medico');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Acesso não autorizado</h2>
           <p className="text-gray-600">Você precisa estar logado como médico para acessar esta área.</p>
+          <div className="mt-4 text-sm text-gray-500">
+            <p>Debug info:</p>
+            <p>Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
+            <p>Is Medico: {isMedico ? 'Yes' : 'No'}</p>
+            <p>Is Approved: {isApproved ? 'Yes' : 'No'}</p>
+          </div>
         </div>
       </div>
     );
   }
+
+  console.log('Rendering main content');
 
   const renderSection = () => {
     if (showProntuarioAba) {
