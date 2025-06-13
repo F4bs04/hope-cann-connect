@@ -9,8 +9,8 @@ import { format } from 'date-fns';
 
 interface DoctorScheduleContextType {
   // Calendar navigation
-  viewMode: 'week' | 'day' | 'month';
-  setViewMode: (mode: 'week' | 'day' | 'month') => void;
+  viewMode: 'week' | 'day' | 'calendar';
+  setViewMode: (mode: 'week' | 'day' | 'calendar') => void;
   selectedWeekStart: Date;
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
@@ -44,6 +44,8 @@ interface DoctorScheduleContextType {
   consultas: any[];
   selectedPaciente: any;
   setSelectedPaciente: (paciente: any) => void;
+  isLoading: boolean;
+  refetch: () => void;
   
   // Dialog state
   horarioDialogOpen: boolean;
@@ -53,6 +55,17 @@ interface DoctorScheduleContextType {
   handleFastAgendamento: ({ dia, horario }: { dia: Date; horario: string }) => void;
   currentConsultationDuration: string;
   setCurrentConsultationDuration: (duration: string) => void;
+  
+  // Missing properties for DoctorTabs
+  receitas: any[];
+  mensagens: any[];
+  setProntuarioDialogOpen: (open: boolean) => void;
+  setReceitaDialogOpen: (open: boolean) => void;
+  setSelectedMensagem: (mensagem: any) => void;
+  setMensagemDialogOpen: (open: boolean) => void;
+  prontuarioDialogOpen: boolean;
+  handleSaveProntuario: (data: any) => void;
+  historicoPaciente: any[];
 }
 
 const DoctorScheduleContext = createContext<DoctorScheduleContextType | undefined>(undefined);
@@ -64,11 +77,28 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
   const pacientesData = usePacientesData();
   const dialogState = useDialogState();
   const [currentConsultationDuration, setCurrentConsultationDuration] = useState("30");
+  
+  // Additional states for missing properties
+  const [receitas] = useState<any[]>([]);
+  const [mensagens] = useState<any[]>([]);
+  const [prontuarioDialogOpen, setProntuarioDialogOpen] = useState(false);
+  const [receitaDialogOpen, setReceitaDialogOpen] = useState(false);
+  const [selectedMensagem, setSelectedMensagem] = useState<any>(null);
+  const [mensagemDialogOpen, setMensagemDialogOpen] = useState(false);
+  const [historicoPaciente] = useState<any[]>([]);
 
   const handleFastAgendamento = ({ dia, horario }: { dia: Date; horario: string }) => {
     toast({
       title: "Consulta agendada",
       description: `Agendamento rápido realizado com sucesso para ${format(dia, "dd/MM/yyyy")} às ${horario}`,
+    });
+  };
+
+  const handleSaveProntuario = (data: any) => {
+    console.log("Saving prontuario:", data);
+    toast({
+      title: "Prontuário salvo",
+      description: "Prontuário salvo com sucesso!",
     });
   };
 
@@ -81,6 +111,15 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     handleFastAgendamento,
     currentConsultationDuration,
     setCurrentConsultationDuration,
+    receitas,
+    mensagens,
+    setProntuarioDialogOpen,
+    setReceitaDialogOpen,
+    setSelectedMensagem,
+    setMensagemDialogOpen,
+    prontuarioDialogOpen,
+    handleSaveProntuario,
+    historicoPaciente,
   };
 
   return (

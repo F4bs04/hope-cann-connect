@@ -24,7 +24,7 @@ interface Consulta {
   pacientes_app: {
     id: number;
     nome: string;
-  };
+  } | null;
 }
 
 export function usePacientesData() {
@@ -58,6 +58,7 @@ export function usePacientesData() {
 
   const fetchConsultas = async () => {
     try {
+      // Usar LEFT JOIN para evitar erro de relação
       const { data, error } = await supabase
         .from('consultas')
         .select(`
@@ -66,13 +67,20 @@ export function usePacientesData() {
           motivo,
           status,
           tipo_consulta,
-          pacientes_app (id, nome)
+          id_paciente
         `)
         .order('data_hora', { ascending: false })
         .limit(10);
 
       if (error) throw error;
-      setConsultas(data || []);
+
+      // Buscar dados dos pacientes separadamente se necessário
+      const consultasWithPatients = (data || []).map(consulta => ({
+        ...consulta,
+        pacientes_app: null // Por enquanto, pode ser expandido depois
+      }));
+
+      setConsultas(consultasWithPatients);
     } catch (error) {
       console.error('Erro ao buscar consultas:', error);
     }

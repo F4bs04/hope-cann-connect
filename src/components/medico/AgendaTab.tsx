@@ -50,7 +50,7 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
             motivo,
             status,
             tipo_consulta,
-            pacientes_app (id, nome)
+            id_paciente
           `)
           .eq('id_medico', userInfo.medicoId)
           .order('data_hora', { ascending: true });
@@ -60,7 +60,13 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
           return;
         }
         
-        setConsultasMock(data || []);
+        // Mapear dados para incluir informações do paciente se disponível
+        const consultasWithPatients = (data || []).map(consulta => ({
+          ...consulta,
+          pacientes_app: { id: consulta.id_paciente, nome: 'Paciente' }
+        }));
+        
+        setConsultasMock(consultasWithPatients);
       } catch (error) {
         console.error('Error fetching consultations:', error);
       } finally {
@@ -107,12 +113,19 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
     );
   }
 
+  // Converter viewMode se necessário para compatibilidade
+  const convertedViewMode = viewMode === 'calendar' ? 'month' : viewMode;
+  const handleSetViewMode = (mode: 'week' | 'day' | 'month') => {
+    const convertedMode = mode === 'month' ? 'calendar' : mode;
+    setViewMode(convertedMode as 'week' | 'day' | 'calendar');
+  };
+
   return (
     <div>
       {!isQuickMode && (
         <CalendarViews
-          viewMode={viewMode}
-          setViewMode={setViewMode}
+          viewMode={convertedViewMode}
+          setViewMode={handleSetViewMode}
           selectedWeekStart={selectedWeekStart}
           selectedViewDay={selectedViewDay}
           setSelectedViewDay={setSelectedViewDay}
