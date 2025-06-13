@@ -7,6 +7,28 @@ import { usePacientesData } from '@/hooks/usePacientesData';
 import { useDialogState } from '@/hooks/useDialogState';
 import { format } from 'date-fns';
 
+interface HistoricoPaciente {
+  condicoes_medicas?: string;
+  alergias?: string;
+  medicamentos_atuais?: string;
+  historico_familiar?: string;
+  ultima_atualizacao?: string;
+  anamnese?: {
+    queixa_principal: string;
+    historia_doenca_atual: string;
+    historia_medica_pregressa: string;
+    historia_familiar: string;
+    habitos_vida: string;
+    medicamentos_em_uso: string;
+  };
+  soap?: {
+    subjetivo: string;
+    objetivo: string;
+    avaliacao: string;
+    plano: string;
+  };
+}
+
 interface DoctorScheduleContextType {
   // Calendar navigation
   viewMode: 'week' | 'day' | 'calendar';
@@ -65,7 +87,7 @@ interface DoctorScheduleContextType {
   setMensagemDialogOpen: (open: boolean) => void;
   prontuarioDialogOpen: boolean;
   handleSaveProntuario: (data: any) => void;
-  historicoPaciente: any[];
+  historicoPaciente: HistoricoPaciente | null;
 }
 
 const DoctorScheduleContext = createContext<DoctorScheduleContextType | undefined>(undefined);
@@ -85,7 +107,7 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
   const [receitaDialogOpen, setReceitaDialogOpen] = useState(false);
   const [selectedMensagem, setSelectedMensagem] = useState<any>(null);
   const [mensagemDialogOpen, setMensagemDialogOpen] = useState(false);
-  const [historicoPaciente] = useState<any[]>([]);
+  const [historicoPaciente] = useState<HistoricoPaciente | null>(null);
 
   const handleFastAgendamento = ({ dia, horario }: { dia: Date; horario: string }) => {
     toast({

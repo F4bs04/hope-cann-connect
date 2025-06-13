@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Save, ArrowLeft } from 'lucide-react';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 import { format } from 'date-fns';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProntuarioAbaProps {
   onBack: () => void;
@@ -47,10 +47,11 @@ const ProntuarioAba: React.FC<ProntuarioAbaProps> = ({ onBack }) => {
         ...prontuarioData,
         id_paciente: selectedPaciente.id,
         ultima_atualizacao: new Date().toISOString(),
-      }, {
-        ...acompanhamentoData,
-        id_paciente: selectedPaciente.id,
-        data_registro: new Date().toISOString(),
+        acompanhamento: {
+          ...acompanhamentoData,
+          id_paciente: selectedPaciente.id,
+          data_registro: new Date().toISOString(),
+        }
       });
       
       toast({
