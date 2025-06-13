@@ -1,111 +1,98 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Paciente, 
-  Consulta, 
-  Receita, 
-  Mensagem, 
-  HistoricoPaciente, 
-  AcompanhamentoPaciente 
-} from '@/types/doctorScheduleTypes';
-import { 
-  pacientesMock, 
-  consultasMock, 
-  receitasMock, 
-  mensagensMock,
-  historicosPacientesMock,
-  acompanhamentosPacientesMock
-} from '@/mocks/doctorScheduleMockData';
+
+interface Paciente {
+  id: number;
+  nome: string;
+  email?: string;
+  telefone?: string;
+  idade: number;
+  condicao?: string;
+  data_nascimento?: string;
+  endereco?: string;
+  genero?: string;
+}
+
+interface Consulta {
+  id: number;
+  data_hora: string;
+  motivo: string;
+  status: string;
+  tipo_consulta: string;
+  pacientes_app: {
+    id: number;
+    nome: string;
+  };
+}
 
 export function usePacientesData() {
   const { toast } = useToast();
-  const [consultas, setConsultas] = useState<Consulta[]>(consultasMock);
-  const [mensagens, setMensagens] = useState<Mensagem[]>(mensagensMock);
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
-  const [selectedMensagem, setSelectedMensagem] = useState<Mensagem | null>(null);
-  const [historicos, setHistoricos] = useState<HistoricoPaciente[]>(historicosPacientesMock);
-  const [acompanhamentos, setAcompanhamentos] = useState<AcompanhamentoPaciente[]>(acompanhamentosPacientesMock);
-  
-  // Derived states
-  const historicoPaciente = selectedPaciente 
-    ? historicos.find(h => h.id_paciente === selectedPaciente.id) || null
-    : null;
+  const [isLoading, setIsLoading] = useState(false);
 
-  const acompanhamentosPaciente = selectedPaciente
-    ? acompanhamentos.filter(a => a.id_paciente === selectedPaciente.id)
-    : [];
+  const fetchPacientes = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('pacientes_app')
+        .select('*')
+        .order('nome');
 
-  const handleResponderMensagem = () => {
-    if (selectedMensagem) {
-      const updatedMensagens = mensagens.map(msg => 
-        msg.id === selectedMensagem.id ? { ...msg, lida: true } : msg
-      );
-      setMensagens(updatedMensagens);
-      
+      if (error) throw error;
+      setPacientes(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar pacientes:', error);
       toast({
-        title: "Mensagem enviada",
-        description: `Resposta enviada para ${selectedMensagem.paciente}`,
+        title: "Erro ao carregar pacientes",
+        description: "Não foi possível carregar a lista de pacientes.",
+        variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleCancelarConsulta = (consultaId: number) => {
-    const updatedConsultas = consultas.filter(c => c.id !== consultaId);
-    setConsultas(updatedConsultas);
-    
-    toast({
-      title: "Consulta cancelada",
-      description: "A consulta foi cancelada e o paciente foi notificado",
-    });
+  const fetchConsultas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('consultas')
+        .select(`
+          id,
+          data_hora,
+          motivo,
+          status,
+          tipo_consulta,
+          pacientes_app (id, nome)
+        `)
+        .order('data_hora', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setConsultas(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar consultas:', error);
+    }
   };
 
-  const handleSaveProntuario = (historico: HistoricoPaciente, acompanhamento: AcompanhamentoPaciente) => {
-    const existingHistoricoIndex = historicos.findIndex(h => h.id_paciente === historico.id_paciente);
-    
-    if (existingHistoricoIndex >= 0) {
-      const updatedHistoricos = [...historicos];
-      updatedHistoricos[existingHistoricoIndex] = {
-        ...updatedHistoricos[existingHistoricoIndex],
-        ...historico,
-        ultima_atualizacao: new Date().toISOString()
-      };
-      setHistoricos(updatedHistoricos);
-    } else {
-      setHistoricos([...historicos, {
-        ...historico,
-        id: historicos.length + 1,
-        ultima_atualizacao: new Date().toISOString()
-      }]);
-    }
-    
-    setAcompanhamentos([...acompanhamentos, {
-      ...acompanhamento,
-      id: acompanhamentos.length + 1,
-      data_registro: new Date().toISOString()
-    }]);
-    
-    toast({
-      title: "Prontuário atualizado",
-      description: "As informações do paciente foram salvas com sucesso",
-    });
-  };
+  useEffect(() => {
+    fetchPacientes();
+    fetchConsultas();
+  }, []);
 
   return {
-    pacientes: pacientesMock,
-    receitas: receitasMock,
+    pacientes,
     consultas,
-    mensagens,
     selectedPaciente,
-    selectedMensagem,
-    historicoPaciente,
-    acompanhamentosPaciente,
-    setConsultas,
-    setMensagens,
+    isLoading,
     setSelectedPaciente,
-    setSelectedMensagem,
-    handleResponderMensagem,
-    handleCancelarConsulta,
-    handleSaveProntuario
+    setConsultas,
+    refetch: () => {
+      fetchPacientes();
+      fetchConsultas();
+    }
   };
 }

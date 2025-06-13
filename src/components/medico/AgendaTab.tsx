@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
@@ -7,6 +8,7 @@ import AppointmentsList from './AppointmentsList';
 import ConsultaView from '@/components/medico-dashboard/ConsultaView';
 import ChatMedico from './ChatMedico';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoadingSkeleton } from './LoadingStates';
 
 interface AgendaTabProps {
   isQuickMode?: boolean;
@@ -17,8 +19,6 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
     viewMode,
     setViewMode,
     selectedWeekStart,
-    currentDate,
-    setCurrentDate,
     selectedViewDay,
     setSelectedViewDay,
     prevWeek,
@@ -34,12 +34,14 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
   const [chatWithPatient, setChatWithPatient] = useState<any>(null);
   const { userInfo, loading: loadingUserInfo, error: userError } = useCurrentUserInfo();
   const [consultasMock, setConsultasMock] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   React.useEffect(() => {
     const fetchConsultas = async () => {
-      if (!userInfo.medicoId) return;
+      if (!userInfo.medicoId || loadingUserInfo) return;
       
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from('consultas')
           .select(`
@@ -50,22 +52,27 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
             tipo_consulta,
             pacientes_app (id, nome)
           `)
-          .eq('id_medico', userInfo.medicoId);
+          .eq('id_medico', userInfo.medicoId)
+          .order('data_hora', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching consultations:', error);
+          return;
+        }
+        
         setConsultasMock(data || []);
       } catch (error) {
         console.error('Error fetching consultations:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (userInfo.medicoId) {
-      fetchConsultas();
-    }
-  }, [userInfo.medicoId]);
+    fetchConsultas();
+  }, [userInfo.medicoId, loadingUserInfo]);
 
-  if (loadingUserInfo) {
-    return <div>Carregando...</div>;
+  if (loadingUserInfo || loading) {
+    return <LoadingSkeleton />;
   }
 
   if (userError || !userInfo.medicoId) {

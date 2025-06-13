@@ -7,13 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import AppointmentsList from '@/components/medico/AppointmentsList';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import AgendamentoForm from '@/components/medico/AgendamentoForm';
+import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
 
 const AgendaMedica: React.FC = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -21,47 +20,23 @@ const AgendaMedica: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { userInfo, loading: userLoading } = useCurrentUserInfo();
 
   const fetchAppointments = async () => {
-    setLoading(true);
-    try {
-      const {
-        data: {
-          session
-        }
-      } = await supabase.auth.getSession();
-      if (!session) {
-        setError("Você precisa estar logado para visualizar sua agenda");
-        toast({
-          variant: "destructive",
-          title: "Erro de autenticação",
-          description: "Você precisa estar logado para acessar esta página."
-        });
-        navigate('/login');
-        setLoading(false);
-        return;
-      }
-      
-      const {
-        data: userData,
-        error: userError
-      } = await supabase.from('usuarios').select('id').eq('email', session.user.email).single();
-      if (userError) {
-        throw userError;
-      }
-      
-      const {
-        data: doctorData,
-        error: doctorError
-      } = await supabase.from('medicos').select('id').eq('id_usuario', userData.id).single();
-      if (doctorError) {
-        throw doctorError;
-      }
+    if (userLoading || !userInfo.medicoId) {
+      console.log('Aguardando dados do médico...');
+      return;
+    }
 
-      const {
-        data: appointmentsData,
-        error: appointmentsError
-      } = await supabase.from('consultas').select(`
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Buscando consultas para médico ID:', userInfo.medicoId);
+      
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('consultas')
+        .select(`
           id,
           data_hora,
           motivo,
@@ -71,41 +46,84 @@ const AgendaMedica: React.FC = () => {
           dias_semana,
           dia_mes,
           pacientes_app:id_paciente (id, nome)
-        `).eq('id_medico', doctorData.id).order('data_hora', {
-        ascending: true
-      });
+        `)
+        .eq('id_medico', userInfo.medicoId)
+        .order('data_hora', { ascending: true });
       
       if (appointmentsError) {
+        console.error('Erro ao buscar agendamentos:', appointmentsError);
         throw appointmentsError;
       }
       
+      console.log('Consultas encontradas:', appointmentsData);
       setAppointments(appointmentsData || []);
     } catch (error: any) {
       console.error("Erro ao buscar agendamentos:", error);
-      setError("Ocorreu um erro ao buscar seus agendamentos");
+      setError(`Erro ao carregar agendamentos: ${error.message}`);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar agenda",
+        description: error.message || "Não foi possível carregar os agendamentos."
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAppointments();
-
-    const appointmentsChannel = supabase.channel('appointments-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'consultas'
-    }, payload => {
+    if (!userLoading && userInfo.medicoId) {
       fetchAppointments();
-    }).subscribe();
+    }
+  }, [userInfo.medicoId, userLoading]);
+
+  useEffect(() => {
+    if (!userInfo.medicoId) return;
+
+    const appointmentsChannel = supabase
+      .channel('appointments-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'consultas',
+        filter: `id_medico=eq.${userInfo.medicoId}`
+      }, () => {
+        console.log('Mudança detectada na tabela consultas');
+        fetchAppointments();
+      })
+      .subscribe();
     
     return () => {
       supabase.removeChannel(appointmentsChannel);
     };
-  }, []);
+  }, [userInfo.medicoId]);
 
-  return <div className="space-y-6">
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <Clock className="h-8 w-8 animate-spin mx-auto mb-4 text-hopecann-teal" />
+          <p>Carregando informações do médico...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userInfo.medicoId) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Erro de Acesso</AlertTitle>
+        <AlertDescription>
+          Não foi possível identificar o médico. Faça login novamente.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
       <h1 className="text-2xl font-bold">Agenda Médica</h1>
+      
       <DoctorScheduleProvider>
         <Tabs defaultValue="consultas" className="space-y-4">
           <TabsList>
@@ -122,13 +140,23 @@ const AgendaMedica: React.FC = () => {
                 Minhas Consultas
               </h2>
               
-              {error && <Alert variant="destructive">
+              {error && (
+                <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Erro</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
-                </Alert>}
+                </Alert>
+              )}
               
-              {loading ? <div className="py-8 text-center text-gray-500">Carregando agendamentos...</div> : appointments.length > 0 ? <AppointmentsList appointments={appointments} /> : <Card>
+              {loading ? (
+                <div className="py-8 text-center text-gray-500">
+                  <Clock className="h-8 w-8 animate-spin mx-auto mb-4" />
+                  Carregando agendamentos...
+                </div>
+              ) : appointments.length > 0 ? (
+                <AppointmentsList appointments={appointments} />
+              ) : (
+                <Card>
                   <CardContent className="py-8 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Clock className="h-12 w-12 text-gray-300 mb-4" />
@@ -138,7 +166,8 @@ const AgendaMedica: React.FC = () => {
                       </p>
                     </div>
                   </CardContent>
-                </Card>}
+                </Card>
+              )}
             </div>
           </TabsContent>
 
@@ -185,7 +214,8 @@ const AgendaMedica: React.FC = () => {
           </TabsContent>
         </Tabs>
       </DoctorScheduleProvider>
-    </div>;
+    </div>
+  );
 };
 
 export default AgendaMedica;
