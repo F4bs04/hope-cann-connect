@@ -144,21 +144,21 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <PacienteHeader pacienteNome={pacienteData?.nome} />
-      <div className="flex flex-1">
-        <SidebarProvider>
+    <div className="min-h-screen w-full">
+      <SidebarProvider>
+        <div className="flex w-full min-h-screen">
           <PacienteSidebar
             currentSection={currentSection}
             onSectionChange={setCurrentSection}
           />
           <SidebarInset className="bg-gray-50 flex-1">
+            <PacienteHeader pacienteNome={pacienteData?.nome} />
             <main className="w-full h-full p-4 md:p-6 lg:p-8 animate-fade-in">
               {renderSection()}
             </main>
           </SidebarInset>
-        </SidebarProvider>
-      </div>
+        </div>
+      </SidebarProvider>
     </div>
   );
 };
