@@ -25,8 +25,8 @@ export function AppProvider({ children }: AppProviderProps) {
       <BrowserRouter>
         <AuthProvider>
           {children}
-          <Toaster />
         </AuthProvider>
+        <Toaster />
       </BrowserRouter>
     </QueryClientProvider>
   );
