@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
 import AgendaTab from '@/components/medico/AgendaTab';
 import FastAgendamento from '@/components/medico/FastAgendamento';
+import HorariosDisponiveis from '@/components/medico/HorariosDisponiveis';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Clock, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, Settings } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import AppointmentsList from '@/components/medico/AppointmentsList';
 import { useToast } from '@/hooks/use-toast';
@@ -122,97 +122,52 @@ const AgendaMedica: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Agenda Médica</h1>
-      
       <DoctorScheduleProvider>
-        <Tabs defaultValue="consultas" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="consultas">Consultas</TabsTrigger>
-            <TabsTrigger value="agendamento">Agendar Consulta</TabsTrigger>
-            <TabsTrigger value="configurar">Configurar Horários</TabsTrigger>
-            <TabsTrigger value="agendamento-rapido">Agendamento Rápido</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="consultas">
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-hopecann-teal" />
-                Minhas Consultas
-              </h2>
-              
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Erro</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              {loading ? (
-                <div className="py-8 text-center text-gray-500">
-                  <Clock className="h-8 w-8 animate-spin mx-auto mb-4" />
-                  Carregando agendamentos...
-                </div>
-              ) : appointments.length > 0 ? (
-                <AppointmentsList appointments={appointments} />
-              ) : (
+        <div className="space-y-6">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-6 w-6" />
+            <h1 className="text-2xl font-bold">Agenda Médica</h1>
+          </div>
+          
+          <Tabs defaultValue="agenda" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="agenda" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Agenda
+              </TabsTrigger>
+              <TabsTrigger value="horarios" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Meus Horários
+              </TabsTrigger>
+              <TabsTrigger value="agendamento" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Novo Agendamento
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="agenda" className="mt-6">
+              <AgendaTab />
+            </TabsContent>
+            
+            <TabsContent value="horarios" className="mt-6">
+              <HorariosDisponiveis />
+            </TabsContent>
+            
+            <TabsContent value="agendamento" className="mt-6">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-hopecann-teal" />
+                  Agendar Consulta
+                </h2>
                 <Card>
-                  <CardContent className="py-8 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <Clock className="h-12 w-12 text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium mb-2">Nenhuma consulta agendada</h3>
-                      <p className="text-gray-500 max-w-sm mb-4">
-                        Você não possui consultas agendadas. Configure sua disponibilidade para começar a receber agendamentos.
-                      </p>
-                    </div>
+                  <CardContent className="pt-6">
+                    <AgendamentoForm onSuccess={fetchAppointments} />
                   </CardContent>
                 </Card>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="agendamento">
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-hopecann-teal" />
-                Agendar Consulta
-              </h2>
-              <Card>
-                <CardContent className="pt-6">
-                  <AgendamentoForm onSuccess={fetchAppointments} />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="configurar">
-            <AgendaTab />
-          </TabsContent>
-
-          <TabsContent value="agendamento-rapido">
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Clock className="h-5 w-5 text-hopecann-teal" />
-                Agendamento Rápido
-              </h2>
-              <Card>
-                <CardContent className="pt-6">
-                  <FastAgendamento 
-                    consultationDuration="30"
-                    fullWidth={true}
-                    onAgendamentoRapido={async (data) => {
-                      try {
-                        await fetchAppointments();
-                      } catch (error) {
-                        console.error('Error refreshing appointments:', error);
-                      }
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </DoctorScheduleProvider>
     </div>
   );
