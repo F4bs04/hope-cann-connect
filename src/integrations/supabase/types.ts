@@ -1384,6 +1384,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_doctor_available: {
+        Args: {
+          p_medico_id: number
+          p_data_hora: string
+          p_consulta_id?: number
+        }
+        Returns: boolean
+      }
       verificar_chats_expirados: {
         Args: Record<PropertyKey, never>
         Returns: undefined
