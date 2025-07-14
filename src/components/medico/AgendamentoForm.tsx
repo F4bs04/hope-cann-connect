@@ -34,6 +34,7 @@ import { CheckboxReact } from "@/components/ui/checkbox-react";
 import { AlertCircle, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useForm } from 'react-hook-form';
+import { useHorariosValidation } from '@/hooks/useHorariosValidation';
 
 interface AgendamentoFormProps {
   onSuccess: () => void;
@@ -59,11 +60,9 @@ const AgendamentoForm: React.FC<AgendamentoFormProps> = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [medicoId, setMedicoId] = useState<number | null>(null);
-  
-  const availableTimes = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'
-  ];
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState<any[]>([]);
+  const { validateTimeSlot, loading: validationLoading } = useHorariosValidation();
   
   const diasSemanaOptions: DiasSemanaOption[] = [
     { value: 'segunda', label: 'Segunda-feira' },
@@ -92,7 +91,7 @@ const AgendamentoForm: React.FC<AgendamentoFormProps> = ({ onSuccess }) => {
   const daysOfMonth = Array.from({ length: 31 }, (_, i) => i + 1);
   
   useEffect(() => {
-    const fetchMedicoId = async () => {
+    const fetchMedicoData = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
@@ -117,13 +116,52 @@ const AgendamentoForm: React.FC<AgendamentoFormProps> = ({ onSuccess }) => {
         if (medicoError) throw medicoError;
         
         setMedicoId(medicoData.id);
+        
+        // Buscar horários disponíveis do médico
+        const { data: horariosData, error: horariosError } = await supabase
+          .from('horarios_disponiveis')
+          .select('*')
+          .eq('id_medico', medicoData.id)
+          .order('dia_semana', { ascending: true })
+          .order('hora_inicio', { ascending: true });
+          
+        if (horariosError) {
+          console.error("Erro ao buscar horários:", horariosError);
+        } else {
+          setHorariosDisponiveis(horariosData || []);
+          
+          // Extrair todos os horários únicos e gerar intervalos de 30 min
+          const allTimes = new Set<string>();
+          horariosData?.forEach(horario => {
+            const inicio = parseInt(horario.hora_inicio.split(':')[0]);
+            const inicioMin = parseInt(horario.hora_inicio.split(':')[1]);
+            const fim = parseInt(horario.hora_fim.split(':')[0]);
+            const fimMin = parseInt(horario.hora_fim.split(':')[1]);
+            
+            let currentHour = inicio;
+            let currentMin = inicioMin;
+            
+            while (currentHour < fim || (currentHour === fim && currentMin < fimMin)) {
+              const time = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
+              allTimes.add(time);
+              
+              currentMin += 30;
+              if (currentMin >= 60) {
+                currentMin = 0;
+                currentHour++;
+              }
+            }
+          });
+          
+          setAvailableTimes(Array.from(allTimes).sort());
+        }
       } catch (error: any) {
-        console.error("Erro ao buscar médico:", error);
+        console.error("Erro ao buscar dados do médico:", error);
         setError("Não foi possível obter sua identificação como médico");
       }
     };
     
-    fetchMedicoId();
+    fetchMedicoData();
   }, []);
   
   const onSubmit = async (data: FormValues) => {
@@ -140,6 +178,18 @@ const AgendamentoForm: React.FC<AgendamentoFormProps> = ({ onSuccess }) => {
       const dataHora = new Date(data.dataConsulta);
       const [hours, minutes] = data.horario.split(':').map(Number);
       dataHora.setHours(hours, minutes, 0, 0);
+      
+      // Validar horário antes de agendar
+      const validation = await validateTimeSlot(medicoId, dataHora);
+      if (!validation.isValid) {
+        setError(validation.message || "Horário não disponível");
+        toast({
+          variant: "destructive",
+          title: "Horário indisponível",
+          description: validation.message || "Este horário não está disponível",
+        });
+        return;
+      }
       
       if (data.repeticao === 'nenhuma') {
         // Create a single appointment
@@ -309,9 +359,12 @@ const AgendamentoForm: React.FC<AgendamentoFormProps> = ({ onSuccess }) => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      Horários disponíveis em intervalos de 30 minutos
-                    </FormDescription>
+                     <FormDescription>
+                       {availableTimes.length > 0 
+                         ? "Horários baseados na sua configuração de disponibilidade" 
+                         : "Configure seus horários de atendimento para personalizar os horários disponíveis"
+                       }
+                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -470,9 +523,9 @@ const AgendamentoForm: React.FC<AgendamentoFormProps> = ({ onSuccess }) => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={loading}
+            disabled={loading || validationLoading}
           >
-            {loading ? "Agendando..." : "Agendar Consulta"}
+            {loading || validationLoading ? "Verificando disponibilidade..." : "Agendar Consulta"}
           </Button>
         </form>
       </Form>

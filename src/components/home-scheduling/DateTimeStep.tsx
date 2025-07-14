@@ -1,6 +1,6 @@
 
 import React from 'react';
-import DateTimeSelection from '@/components/scheduling/DateTimeSelection';
+import AgendarConsultaPaciente from '@/components/paciente/AgendarConsultaPaciente';
 
 interface DateTimeStepProps {
   selectedDate: Date | null;
@@ -22,14 +22,12 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
   doctorId
 }) => {
   return (
-    <DateTimeSelection
-      selectedDate={selectedDate}
-      selectedTime={selectedTime}
-      setSelectedDate={setSelectedDate}
-      setSelectedTime={setSelectedTime}
-      onNext={onNext}
-      onBack={onBack}
-      doctorId={doctorId}
-    />
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-center mb-6">Agendar Consulta</h2>
+      <AgendarConsultaPaciente
+        selectedDoctorId={doctorId}
+        onSuccess={onNext}
+      />
+    </div>
   );
 };

@@ -75,35 +75,40 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
           // Se o médico tem horários configurados, usar eles
           horariosDisponiveis.forEach(horario => {
             const inicio = parseInt(horario.hora_inicio.split(':')[0]);
+            const inicioMin = parseInt(horario.hora_inicio.split(':')[1]);
             const fim = parseInt(horario.hora_fim.split(':')[0]);
+            const fimMin = parseInt(horario.hora_fim.split(':')[1]);
+            
+            let currentHour = inicio;
+            let currentMin = inicioMin;
             
             // Gerar slots de 30 em 30 minutos
-            for (let hour = inicio; hour < fim; hour++) {
-              for (let minute = 0; minute < 60; minute += 30) {
-                const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                slots.push({
-                  time,
-                  available: true // Permitir seleção de todos os horários
-                });
+            while (currentHour < fim || (currentHour === fim && currentMin < fimMin)) {
+              const time = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
+              slots.push({
+                time,
+                available: !ocupados.has(time) // Marcar como indisponível se já ocupado
+              });
+              
+              currentMin += 30;
+              if (currentMin >= 60) {
+                currentMin = 0;
+                currentHour++;
               }
             }
           });
         } else {
-          // Horários de 6h às 19h30 com intervalos de 30 minutos
-          for (let hour = 6; hour <= 19; hour++) {
+          // Horários padrão de 8h às 17h com intervalos de 30 minutos
+          for (let hour = 8; hour <= 17; hour++) {
             for (let minute = 0; minute < 60; minute += 30) {
-              if (hour === 19 && minute === 30) {
-                slots.push({
-                  time: "19:30",
-                  available: true
-                });
-                break;
+              if (hour === 17 && minute === 30) {
+                break; // Parar em 17:00
               }
               
               const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
               slots.push({
                 time,
-                available: true
+                available: !ocupados.has(time) // Marcar como indisponível se já ocupado
               });
             }
           }
