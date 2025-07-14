@@ -85,7 +85,10 @@ export const getSaldoPacientes = async () => {
   try {
     const { data, error } = await supabase
       .from('saldo_pacientes')
-      .select('*, pacientes(nome)')
+      .select(`
+        *,
+        pacientes_backup!inner(nome)
+      `)
       .order('saldo_total', { ascending: false });
     
     if (error) {

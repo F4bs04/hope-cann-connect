@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCalendarNavigation } from '@/hooks/useCalendarNavigation';
-import { useHorarios } from '@/hooks/useHorarios';
+import { useHorariosState } from '@/hooks/useHorariosState';
 import { usePacientesData } from '@/hooks/usePacientesData';
 import { useDialogState } from '@/hooks/useDialogState';
 import { format } from 'date-fns';
@@ -95,7 +95,7 @@ const DoctorScheduleContext = createContext<DoctorScheduleContextType | undefine
 export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { toast } = useToast();
   const calendarNavigation = useCalendarNavigation();
-  const horarios = useHorarios();
+  const horarios = useHorariosState();
   const pacientesData = usePacientesData();
   const dialogState = useDialogState();
   const [currentConsultationDuration, setCurrentConsultationDuration] = useState("30");
@@ -124,10 +124,23 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     });
   };
 
+  // Stub functions for missing horarios functionality
+  const stubHorarios = {
+    handleQuickSetAvailability: () => {},
+    applyPatternToWeek: () => {},
+    handleAdicionarHorario: () => {},
+    handleRemoverHorario: () => {},
+    handleToggleDayAvailability: () => {},
+    handleDateSelect: (date: Date | undefined) => date,
+    handleAddSlot: () => {},
+    saveAvailability: async () => false,
+  };
+
   // Combine all the hooks into a single context value
   const value: DoctorScheduleContextType = {
     ...calendarNavigation,
     ...horarios,
+    ...stubHorarios,
     ...pacientesData,
     ...dialogState,
     handleFastAgendamento,
