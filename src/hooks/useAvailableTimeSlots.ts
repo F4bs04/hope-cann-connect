@@ -124,6 +124,28 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
     };
 
     fetchAvailableSlots();
+    
+    // Set up real-time subscription for consultas changes
+    const channel = supabase
+      .channel('consultas_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'consultas',
+          filter: `id_medico=eq.${doctorId}`
+        },
+        () => {
+          // Refetch slots when a consultation is added/updated/deleted
+          fetchAvailableSlots();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [doctorId, selectedDate]);
 
   return { timeSlots, loading };
