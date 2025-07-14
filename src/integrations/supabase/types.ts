@@ -767,6 +767,68 @@ export type Database = {
         }
         Relationships: []
       }
+      pacientes_unified: {
+        Row: {
+          condicao_medica: string | null
+          cpf: string | null
+          created_at: string
+          data_cadastro: string
+          data_nascimento: string
+          email: string
+          endereco: string | null
+          genero: string | null
+          id: number
+          id_usuario: number | null
+          nome: string
+          status: boolean
+          telefone: string | null
+          ultima_consulta: string | null
+          updated_at: string
+        }
+        Insert: {
+          condicao_medica?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_cadastro?: string
+          data_nascimento: string
+          email: string
+          endereco?: string | null
+          genero?: string | null
+          id?: number
+          id_usuario?: number | null
+          nome: string
+          status?: boolean
+          telefone?: string | null
+          ultima_consulta?: string | null
+          updated_at?: string
+        }
+        Update: {
+          condicao_medica?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_cadastro?: string
+          data_nascimento?: string
+          email?: string
+          endereco?: string | null
+          genero?: string | null
+          id?: number
+          id_usuario?: number | null
+          nome?: string
+          status?: boolean
+          telefone?: string | null
+          ultima_consulta?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pacientes_unified_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedidos_exame: {
         Row: {
           arquivo_pdf: string | null
