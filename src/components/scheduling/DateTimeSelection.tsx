@@ -49,19 +49,31 @@ const DateTimeSelection = ({
           <Calendar
             mode="single"
             selected={selectedDate || undefined}
-            onSelect={(date) => date && setSelectedDate(date)}
+            onSelect={(date) => {
+              if (date) {
+                setSelectedDate(date);
+                setSelectedTime(null); // Reset selected time when date changes
+              }
+            }}
             disabled={{ before: addDays(new Date(), 1) }}
             locale={ptBR}
             className={cn("w-full pointer-events-auto")}
             fromMonth={new Date()}
             toMonth={addDays(new Date(), 60)}
             classNames={{
-              day_selected: "bg-primary text-primary-foreground hover:bg-primary/90 scale-105 shadow-lg",
-              day_today: "bg-accent text-accent-foreground font-bold border-2 border-primary/30",
-              button: "h-12 w-12 text-base font-medium hover:bg-secondary transition-all duration-200 hover:scale-110",
-              head_cell: "text-muted-foreground font-semibold",
-              cell: "text-center p-1",
-              nav_button: "h-10 w-10 hover:bg-secondary transition-colors",
+              months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+              month: "space-y-4",
+              table: "w-full border-collapse",
+              head_row: "flex",
+              head_cell: "text-muted-foreground rounded-md w-12 font-semibold text-sm flex-1 text-center p-2",
+              row: "flex w-full mt-1",
+              cell: "h-12 w-12 text-center text-sm p-0 relative flex-1 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+              day: "h-12 w-12 p-0 font-medium aria-selected:opacity-100 hover:bg-secondary transition-all duration-200 hover:scale-105 rounded-md",
+              day_selected: "bg-primary text-primary-foreground hover:bg-primary/90 scale-105 shadow-lg !important",
+              day_today: "bg-accent text-accent-foreground font-bold border border-primary/30",
+              day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+              day_disabled: "text-muted-foreground opacity-50",
+              nav_button: "h-10 w-10 hover:bg-secondary transition-colors rounded-md",
               nav_button_previous: "hover:scale-110 transition-transform",
               nav_button_next: "hover:scale-110 transition-transform",
             }}
