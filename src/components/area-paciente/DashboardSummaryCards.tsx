@@ -10,15 +10,15 @@ export function DashboardSummaryCards() {
   if (isLoading) {
     return (
       <div className="w-full">
-        <h2 className="text-2xl font-bold mb-4">Resumo</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <h2 className="text-2xl font-bold mb-6 text-foreground">Resumo</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[1, 2, 3].map((index) => (
-            <div key={index} className="rounded-xl p-5 bg-gray-100 shadow-sm">
-              <div className="flex items-center gap-3">
-                <Skeleton className="w-6 h-6 rounded" />
-                <div className="flex-1">
-                  <Skeleton className="h-6 w-20 mb-2" />
-                  <Skeleton className="h-4 w-24" />
+            <div key={index} className="rounded-xl p-6 bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <Skeleton className="w-8 h-8 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-4 w-28" />
                 </div>
               </div>
             </div>
@@ -35,13 +35,13 @@ export function DashboardSummaryCards() {
         ? `${data.proximaConsulta.data} às ${data.proximaConsulta.horario}`
         : "Nenhuma agendada",
       icon: CalendarDays,
-      colorClass: "bg-hopecann-teal/10",
+      colorClass: "bg-primary/10 border-primary/20",
     },
     {
       label: "Consultas Pendentes",
       value: data.consultasPendentes.toString(),
       icon: HeartPulse,
-      colorClass: "bg-hopecann-green/10",
+      colorClass: "bg-secondary/10 border-secondary/20",
     },
     {
       label: "Novos Documentos",
@@ -49,14 +49,14 @@ export function DashboardSummaryCards() {
         ? `${data.novosDocumentos} receita${data.novosDocumentos > 1 ? 's' : ''}`
         : "Nenhum novo",
       icon: FileText,
-      colorClass: "bg-blue-100",
+      colorClass: "bg-accent/10 border-accent/20",
     }
   ];
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold mb-4">Resumo</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <h2 className="text-2xl font-bold mb-6 text-foreground">Resumo</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {summaryCards.map((card) => (
           <DashboardSummaryCard
             key={card.label}

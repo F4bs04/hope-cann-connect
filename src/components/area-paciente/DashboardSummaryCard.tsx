@@ -11,11 +11,13 @@ interface DashboardSummaryCardProps {
 
 export function DashboardSummaryCard({ label, value, icon: Icon, colorClass }: DashboardSummaryCardProps) {
   return (
-    <div className={`rounded-xl p-5 flex items-center gap-3 shadow-sm ${colorClass}`}>
-      <Icon className="w-6 h-6 text-hopecann-teal" />
-      <div>
-        <div className="font-semibold text-lg text-gray-800">{value}</div>
-        <div className="text-gray-500 text-sm">{label}</div>
+    <div className={`rounded-xl p-6 flex items-center gap-4 border shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02] ${colorClass} bg-card`}>
+      <div className="p-3 rounded-lg bg-primary/10">
+        <Icon className="w-6 h-6 text-primary" />
+      </div>
+      <div className="flex-1">
+        <div className="font-bold text-xl text-foreground mb-1">{value}</div>
+        <div className="text-muted-foreground text-sm font-medium">{label}</div>
       </div>
     </div>
   );
