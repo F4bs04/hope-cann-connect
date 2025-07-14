@@ -70,27 +70,33 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
             const inicio = parseInt(horario.hora_inicio.split(':')[0]);
             const fim = parseInt(horario.hora_fim.split(':')[0]);
             
+            // Gerar slots de 30 em 30 minutos
             for (let hour = inicio; hour < fim; hour++) {
-              const time = `${hour.toString().padStart(2, '0')}:00`;
+              for (let minute = 0; minute < 60; minute += 30) {
+                const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                slots.push({
+                  time,
+                  available: !ocupados.has(time)
+                });
+              }
+            }
+          });
+        } else {
+          // Horários completos do dia se não há configuração específica (7h às 18h)
+          for (let hour = 7; hour <= 18; hour++) {
+            for (let minute = 0; minute < 60; minute += 30) {
+              // Pular horário de almoço (12:00 - 13:30)
+              if (hour === 12 && minute === 0) continue;
+              if (hour === 12 && minute === 30) continue;
+              if (hour === 13 && minute === 0) continue;
+              
+              const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
               slots.push({
                 time,
                 available: !ocupados.has(time)
               });
             }
-          });
-        } else {
-          // Horários padrão se não há configuração específica
-          const defaultTimes = [
-            "08:00", "09:00", "10:00", "11:00", 
-            "13:00", "14:00", "15:00", "16:00", "17:00"
-          ];
-          
-          defaultTimes.forEach(time => {
-            slots.push({
-              time,
-              available: !ocupados.has(time)
-            });
-          });
+          }
         }
 
         setTimeSlots(slots.sort((a, b) => a.time.localeCompare(b.time)));
