@@ -19,9 +19,9 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row">
           <div className={`w-full md:w-2 p-0 md:p-0 ${
-            consulta.status === 'agendada' ? 'bg-blue-500' : 
+            consulta.status === 'agendada' ? 'bg-primary' : 
             consulta.status === 'realizada' ? 'bg-green-500' : 
-            'bg-red-500'
+            'bg-destructive'
           }`}></div>
           <div className="p-4 flex-1">
             <div className="flex justify-between flex-wrap gap-2">
@@ -30,9 +30,9 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
                 <p className="text-sm text-gray-600 truncate">{consulta.medicos?.especialidade || 'Especialidade não especificada'}</p>
               </div>
               <Badge className={
-                consulta.status === 'agendada' ? 'bg-blue-100 text-blue-800' :
+                consulta.status === 'agendada' ? 'bg-primary/10 text-primary' :
                 consulta.status === 'realizada' ? 'bg-green-100 text-green-800' :
-                'bg-red-100 text-red-800'
+                'bg-destructive/10 text-destructive'
               }>
                 {consulta.status.charAt(0).toUpperCase() + consulta.status.slice(1)}
               </Badge>
@@ -42,7 +42,7 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
               <p className="text-sm text-gray-700 mt-2 truncate">{consulta.motivo}</p>
             )}
             
-            <div className="mt-3 flex items-center text-sm text-gray-500">
+            <div className="mt-3 flex items-center text-sm text-muted-foreground">
               <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
               <span className="truncate">{format(new Date(consulta.data_hora), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
               <Clock className="h-4 w-4 ml-3 mr-1 flex-shrink-0" />
@@ -61,7 +61,7 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="text-red-500 border-red-200 hover:bg-red-50"
+                  className="text-destructive border-destructive/20 hover:bg-destructive/10"
                   onClick={() => onCancelar(consulta.id)}
                 >
                   Cancelar

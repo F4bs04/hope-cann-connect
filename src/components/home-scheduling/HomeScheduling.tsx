@@ -228,6 +228,7 @@ const HomeScheduling = () => {
               setSelectedTime={setSelectedTime} // from hook
               onNext={localHandleNext}
               onBack={handleBack} // from hook
+              doctorId={selectedDoctor}
             />
           )}
           

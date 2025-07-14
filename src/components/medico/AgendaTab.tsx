@@ -50,7 +50,8 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
             motivo,
             status,
             tipo_consulta,
-            id_paciente
+            id_paciente,
+            pacientes (id, nome, email, telefone)
           `)
           .eq('id_medico', userInfo.medicoId)
           .order('data_hora', { ascending: true });
@@ -60,10 +61,13 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
           return;
         }
         
-        // Mapear dados para incluir informações do paciente se disponível
+        // Mapear dados para incluir informações do paciente
         const consultasWithPatients = (data || []).map(consulta => ({
           ...consulta,
-          pacientes_app: { id: consulta.id_paciente, nome: 'Paciente' }
+          pacientes_app: {
+            id: consulta.id_paciente,
+            nome: consulta.pacientes?.nome || 'Paciente'
+          }
         }));
         
         setConsultasMock(consultasWithPatients);
