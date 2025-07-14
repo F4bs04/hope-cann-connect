@@ -44,6 +44,7 @@ export const usePacienteProfileUpdate = ({
       data_nascimento: formattedDataNascimento,
       endereco: data.endereco,
       genero: data.genero,
+      foto_perfil: data.foto_perfil,
     };
 
     const { error } = await supabase

@@ -10,5 +10,5 @@ export interface Paciente {
   endereco?: string;
   telefone?: string;
   genero?: string;
-  // fotoUrl?: string; 
+  foto_perfil?: string;
 }

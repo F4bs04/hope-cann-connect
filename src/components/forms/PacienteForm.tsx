@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { format } from 'date-fns';
 
 const pacienteFormSchema = z.object({
@@ -17,6 +18,7 @@ const pacienteFormSchema = z.object({
   data_nascimento: z.string(),
   genero: z.string().optional(),
   endereco: z.string().min(5, { message: 'Endereço deve ter pelo menos 5 caracteres' }),
+  foto_perfil: z.string().optional(),
 });
 
 type PacienteFormValues = z.infer<typeof pacienteFormSchema>;
@@ -44,12 +46,31 @@ const PacienteForm: React.FC<PacienteFormProps> = ({
         : '',
       genero: initialData?.genero || '',
       endereco: initialData?.endereco || '',
+      foto_perfil: initialData?.foto_perfil || '',
     },
   });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="foto_perfil"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Foto de Perfil</FormLabel>
+              <FormControl>
+                <ImageUpload
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Alterar foto"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <FormField
           control={form.control}
           name="nome"

@@ -11,13 +11,13 @@ interface PacienteInfoDisplayProps {
 }
 
 const PacienteInfoDisplay: React.FC<PacienteInfoDisplayProps> = ({ paciente }) => {
-  const { nome, email, cpf, data_nascimento, endereco, telefone, genero } = paciente;
+  const { nome, email, cpf, data_nascimento, endereco, telefone, genero, foto_perfil } = paciente;
 
   return (
     <>
       <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 mb-8 pb-8 border-b border-gray-200">
         <Avatar className="w-24 h-24 sm:w-32 sm:h-32 text-hopecann-teal">
-          {/* <AvatarImage src={paciente.fotoUrl} alt={nome} /> */}
+          <AvatarImage src={foto_perfil} alt={nome} />
           <AvatarFallback className="bg-hopecann-teal/10">
             <User className="w-12 h-12 sm:w-16 sm:h-16" />
           </AvatarFallback>
