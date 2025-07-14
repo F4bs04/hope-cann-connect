@@ -41,43 +41,45 @@ const DateTimeSelection = ({
       
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
         {/* Left column: Calendar */}
-        <div className="bg-card p-8 rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-          <h3 className="font-bold mb-6 text-xl text-primary flex items-center gap-2">
+        <div className="bg-card p-6 rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+          <h3 className="font-bold mb-4 text-xl text-primary flex items-center gap-2">
             <CalendarIcon className="h-6 w-6" />
             Calendário
           </h3>
-          <Calendar
-            mode="single"
-            selected={selectedDate || undefined}
-            onSelect={(date) => {
-              if (date) {
-                setSelectedDate(date);
-                setSelectedTime(null); // Reset selected time when date changes
-              }
-            }}
-            disabled={{ before: addDays(new Date(), 1) }}
-            locale={ptBR}
-            className={cn("w-full pointer-events-auto")}
-            fromMonth={new Date()}
-            toMonth={addDays(new Date(), 60)}
-            classNames={{
-              months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-              month: "space-y-4",
-              table: "w-full border-collapse",
-              head_row: "flex",
-              head_cell: "text-foreground rounded-md w-12 font-semibold text-sm flex-1 text-center p-2",
-              row: "flex w-full mt-1",
-              cell: "h-12 w-12 text-center text-sm p-0 relative flex-1 focus-within:relative focus-within:z-20",
-              day: "h-12 w-12 p-0 font-medium hover:border-2 hover:border-primary hover:bg-transparent transition-all duration-200 rounded-lg",
-              day_selected: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-lg border-0",
-              day_today: "bg-accent text-accent-foreground font-bold border border-primary/50 rounded-lg",
-              day_outside: "text-muted-foreground/70 opacity-60",
-              day_disabled: "text-muted-foreground/50 opacity-40",
-              nav_button: "h-10 w-10 hover:bg-secondary transition-colors rounded-md",
-              nav_button_previous: "hover:scale-110 transition-transform",
-              nav_button_next: "hover:scale-110 transition-transform",
-            }}
-          />
+          <div className="flex-1 flex items-center justify-center">
+            <Calendar
+              mode="single"
+              selected={selectedDate || undefined}
+              onSelect={(date) => {
+                if (date) {
+                  setSelectedDate(date);
+                  setSelectedTime(null); // Reset selected time when date changes
+                }
+              }}
+              disabled={{ before: new Date() }}
+              locale={ptBR}
+              className={cn("w-full pointer-events-auto h-full flex flex-col justify-center")}
+              fromMonth={new Date()}
+              toMonth={addDays(new Date(), 60)}
+              classNames={{
+                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
+                month: "space-y-4 flex-1 flex flex-col",
+                table: "w-full border-collapse flex-1",
+                head_row: "flex mb-2",
+                head_cell: "text-foreground rounded-md w-full font-semibold text-sm flex-1 text-center p-3",
+                row: "flex w-full mt-2",
+                cell: "h-14 w-full text-center text-sm p-1 relative flex-1 focus-within:relative focus-within:z-20",
+                day: "h-12 w-full p-0 font-medium hover:border-2 hover:border-primary hover:bg-transparent transition-all duration-200 rounded-lg text-base",
+                day_selected: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-lg border-0",
+                day_today: "bg-accent text-accent-foreground font-bold border border-primary/50 rounded-lg",
+                day_outside: "text-muted-foreground/70 opacity-60",
+                day_disabled: "text-muted-foreground/50 opacity-40",
+                nav_button: "h-10 w-10 hover:bg-secondary transition-colors rounded-md",
+                nav_button_previous: "hover:scale-110 transition-transform",
+                nav_button_next: "hover:scale-110 transition-transform",
+              }}
+            />
+          </div>
         </div>
         
         {/* Right column: Time slots */}
