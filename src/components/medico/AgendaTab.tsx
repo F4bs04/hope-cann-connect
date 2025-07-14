@@ -51,7 +51,7 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
             status,
             tipo_consulta,
             id_paciente,
-            pacientes (id, nome, email, telefone)
+            id_paciente
           `)
           .eq('id_medico', userInfo.medicoId)
           .order('data_hora', { ascending: true });
@@ -61,12 +61,24 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ isQuickMode = false }) => {
           return;
         }
         
+        // Buscar nomes dos pacientes
+        const pacienteIds = [...new Set((data || []).map(c => c.id_paciente).filter(Boolean))];
+        
+        const { data: pacientesData } = await supabase
+          .from('pacientes')
+          .select('id, nome, email, telefone')
+          .in('id', pacienteIds);
+
+        const pacientesMap = new Map(
+          (pacientesData || []).map(p => [p.id, p])
+        );
+
         // Mapear dados para incluir informações do paciente
         const consultasWithPatients = (data || []).map(consulta => ({
           ...consulta,
           pacientes_app: {
             id: consulta.id_paciente,
-            nome: consulta.pacientes?.nome || 'Paciente'
+            nome: pacientesMap.get(consulta.id_paciente)?.nome || 'Paciente'
           }
         }));
         

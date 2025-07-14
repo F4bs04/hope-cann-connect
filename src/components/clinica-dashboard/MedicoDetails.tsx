@@ -75,7 +75,7 @@ export function MedicoDetails({ open, onOpenChange, medicoId }: MedicoDetailsPro
       
       // Fetch patient data for each unique patient ID
       const { data: pacientesData, error: pacientesError } = await supabase
-        .from('pacientes_app')
+        .from('pacientes')
         .select('id, nome')
         .in('id', uniquePacienteIds);
       

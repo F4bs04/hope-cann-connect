@@ -6,13 +6,16 @@ import { useToast } from '@/hooks/use-toast';
 interface Paciente {
   id: number;
   nome: string;
-  email?: string;
+  email: string;
   telefone?: string;
-  idade: number;
-  condicao?: string;
-  data_nascimento?: string;
+  cpf?: string;
+  data_nascimento: string;
+  condicao_medica?: string;
   endereco?: string;
   genero?: string;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Consulta {
@@ -38,7 +41,7 @@ export function usePacientesData() {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from('pacientes_app')
+        .from('pacientes')
         .select('*')
         .order('nome');
 

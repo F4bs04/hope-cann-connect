@@ -84,7 +84,7 @@ export function useMedicoDashboardData() {
           id,
           data_hora,
           tipo_consulta,
-          pacientes!inner(nome)
+          id_paciente
         `)
         .eq('id_medico', userInfo.medicoId)
         .eq('status', 'agendada')
@@ -101,7 +101,7 @@ export function useMedicoDashboardData() {
           data_hora,
           tipo_consulta,
           status,
-          pacientes!inner(nome)
+          id_paciente
         `)
         .eq('id_medico', userInfo.medicoId)
         .order('data_hora', { ascending: false })
@@ -124,13 +124,28 @@ export function useMedicoDashboardData() {
 
       const pacientesUnicos = new Set(pacientesData?.map(p => p.id_paciente) || []);
 
+      // Buscar nomes dos pacientes
+      const pacienteIds = [
+        ...(proximaConsultaData ? [proximaConsultaData.id_paciente] : []),
+        ...(consultasRecentesData || []).map(c => c.id_paciente)
+      ].filter(Boolean);
+
+      const { data: pacientesNomes } = await supabase
+        .from('pacientes')
+        .select('id, nome')
+        .in('id', pacienteIds);
+
+      const pacientesMap = new Map(
+        (pacientesNomes || []).map(p => [p.id, p.nome])
+      );
+
       // Processar próxima consulta
       let proximaConsulta = null;
       if (proximaConsultaData) {
         const dataConsulta = new Date(proximaConsultaData.data_hora);
         proximaConsulta = {
           id: proximaConsultaData.id,
-          paciente: proximaConsultaData.pacientes?.nome || 'Paciente não identificado',
+          paciente: pacientesMap.get(proximaConsultaData.id_paciente) || 'Paciente não identificado',
           data: dataConsulta.toLocaleDateString('pt-BR'),
           horario: dataConsulta.toLocaleTimeString('pt-BR', { 
             hour: '2-digit', 
@@ -144,7 +159,7 @@ export function useMedicoDashboardData() {
         const dataConsulta = new Date(consulta.data_hora);
         return {
           id: consulta.id,
-          paciente: consulta.pacientes?.nome || 'Paciente não identificado',
+          paciente: pacientesMap.get(consulta.id_paciente) || 'Paciente não identificado',
           data: dataConsulta.toLocaleDateString('pt-BR'),
           tipo: consulta.tipo_consulta || 'Consulta padrão',
           status: consulta.status

@@ -43,7 +43,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
   };
   
   const filteredProntuarios = prontuarios.filter(prontuario => 
-    (prontuario.pacientes_app?.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (prontuario.pacientes?.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     prontuario.diagnostico?.toLowerCase().includes(searchQuery.toLowerCase()))
   ).filter(prontuario => {
     if (activeTab === 'todos') return true;
@@ -67,8 +67,8 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
           setSelectedPaciente({
             id: paciente.id,
             nome: paciente.nome,
-            idade: paciente.idade,
-            condicao: paciente.condicao || '',
+            idade: paciente.data_nascimento ? new Date().getFullYear() - new Date(paciente.data_nascimento).getFullYear() : 0,
+            condicao: paciente.condicao_medica || '',
             ultimaConsulta: paciente.ultima_consulta || new Date().toISOString()
           });
           
@@ -177,8 +177,8 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
                   <div className="p-4 flex-1">
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
                       <div className="flex items-center">
-                        <h3 className="font-medium text-lg">{prontuario.pacientes_app?.nome}</h3>
-                        <span className="text-sm text-gray-500 ml-4">{prontuario.pacientes_app?.idade} anos</span>
+                        <h3 className="font-medium text-lg">{prontuario.pacientes?.nome}</h3>
+                        <span className="text-sm text-gray-500 ml-4">{prontuario.pacientes?.data_nascimento ? new Date().getFullYear() - new Date(prontuario.pacientes.data_nascimento).getFullYear() : 'N/A'} anos</span>
                       </div>
                       <div 
                         className={`

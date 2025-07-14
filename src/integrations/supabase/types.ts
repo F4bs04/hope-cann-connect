@@ -57,7 +57,7 @@ export type Database = {
             foreignKeyName: "acompanhamento_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes"
+            referencedRelation: "pacientes_backup"
             referencedColumns: ["id"]
           },
         ]
@@ -149,7 +149,7 @@ export type Database = {
             foreignKeyName: "atestados_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes_app"
+            referencedRelation: "pacientes_app_backup"
             referencedColumns: ["id"]
           },
         ]
@@ -327,7 +327,7 @@ export type Database = {
             foreignKeyName: "consultas_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes"
+            referencedRelation: "pacientes_backup"
             referencedColumns: ["id"]
           },
         ]
@@ -368,7 +368,7 @@ export type Database = {
             foreignKeyName: "documentos_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes"
+            referencedRelation: "pacientes_backup"
             referencedColumns: ["id"]
           },
           {
@@ -413,7 +413,7 @@ export type Database = {
             foreignKeyName: "historico_medico_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes"
+            referencedRelation: "pacientes_backup"
             referencedColumns: ["id"]
           },
         ]
@@ -495,7 +495,7 @@ export type Database = {
             foreignKeyName: "laudos_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes_app"
+            referencedRelation: "pacientes_app_backup"
             referencedColumns: ["id"]
           },
         ]
@@ -680,95 +680,6 @@ export type Database = {
       }
       pacientes: {
         Row: {
-          cpf: string
-          data_cadastro: string | null
-          data_nascimento: string
-          email: string
-          endereco: string
-          genero: string | null
-          id: number
-          id_usuario: number | null
-          nome: string
-          telefone: string
-        }
-        Insert: {
-          cpf: string
-          data_cadastro?: string | null
-          data_nascimento: string
-          email: string
-          endereco: string
-          genero?: string | null
-          id?: never
-          id_usuario?: number | null
-          nome: string
-          telefone: string
-        }
-        Update: {
-          cpf?: string
-          data_cadastro?: string | null
-          data_nascimento?: string
-          email?: string
-          endereco?: string
-          genero?: string | null
-          id?: never
-          id_usuario?: number | null
-          nome?: string
-          telefone?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pacientes_id_usuario_fkey"
-            columns: ["id_usuario"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pacientes_app: {
-        Row: {
-          condicao: string | null
-          data_cadastro: string | null
-          data_nascimento: string | null
-          email: string | null
-          endereco: string | null
-          genero: string | null
-          id: number
-          idade: number
-          nome: string
-          telefone: string | null
-          ultima_consulta: string | null
-        }
-        Insert: {
-          condicao?: string | null
-          data_cadastro?: string | null
-          data_nascimento?: string | null
-          email?: string | null
-          endereco?: string | null
-          genero?: string | null
-          id?: number
-          idade: number
-          nome: string
-          telefone?: string | null
-          ultima_consulta?: string | null
-        }
-        Update: {
-          condicao?: string | null
-          data_cadastro?: string | null
-          data_nascimento?: string | null
-          email?: string | null
-          endereco?: string | null
-          genero?: string | null
-          id?: number
-          idade?: number
-          nome?: string
-          telefone?: string | null
-          ultima_consulta?: string | null
-        }
-        Relationships: []
-      }
-      pacientes_unified: {
-        Row: {
           condicao_medica: string | null
           cpf: string | null
           created_at: string
@@ -829,6 +740,95 @@ export type Database = {
           },
         ]
       }
+      pacientes_app_backup: {
+        Row: {
+          condicao: string | null
+          data_cadastro: string | null
+          data_nascimento: string | null
+          email: string | null
+          endereco: string | null
+          genero: string | null
+          id: number
+          idade: number
+          nome: string
+          telefone: string | null
+          ultima_consulta: string | null
+        }
+        Insert: {
+          condicao?: string | null
+          data_cadastro?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          genero?: string | null
+          id?: number
+          idade: number
+          nome: string
+          telefone?: string | null
+          ultima_consulta?: string | null
+        }
+        Update: {
+          condicao?: string | null
+          data_cadastro?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          genero?: string | null
+          id?: number
+          idade?: number
+          nome?: string
+          telefone?: string | null
+          ultima_consulta?: string | null
+        }
+        Relationships: []
+      }
+      pacientes_backup: {
+        Row: {
+          cpf: string
+          data_cadastro: string | null
+          data_nascimento: string
+          email: string
+          endereco: string
+          genero: string | null
+          id: number
+          id_usuario: number | null
+          nome: string
+          telefone: string
+        }
+        Insert: {
+          cpf: string
+          data_cadastro?: string | null
+          data_nascimento: string
+          email: string
+          endereco: string
+          genero?: string | null
+          id?: never
+          id_usuario?: number | null
+          nome: string
+          telefone: string
+        }
+        Update: {
+          cpf?: string
+          data_cadastro?: string | null
+          data_nascimento?: string
+          email?: string
+          endereco?: string
+          genero?: string | null
+          id?: never
+          id_usuario?: number | null
+          nome?: string
+          telefone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pacientes_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedidos_exame: {
         Row: {
           arquivo_pdf: string | null
@@ -871,7 +871,7 @@ export type Database = {
             foreignKeyName: "pedidos_exame_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes_app"
+            referencedRelation: "pacientes_app_backup"
             referencedColumns: ["id"]
           },
         ]
@@ -968,7 +968,7 @@ export type Database = {
             foreignKeyName: "prescricoes_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes"
+            referencedRelation: "pacientes_backup"
             referencedColumns: ["id"]
           },
           {
@@ -1058,7 +1058,7 @@ export type Database = {
             foreignKeyName: "prontuarios_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes_app"
+            referencedRelation: "pacientes_app_backup"
             referencedColumns: ["id"]
           },
         ]
@@ -1102,7 +1102,7 @@ export type Database = {
             foreignKeyName: "receitas_app_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes_app"
+            referencedRelation: "pacientes_app_backup"
             referencedColumns: ["id"]
           },
         ]
@@ -1153,7 +1153,7 @@ export type Database = {
             foreignKeyName: "renovacoes_prescricao_id_paciente_fkey"
             columns: ["id_paciente"]
             isOneToOne: false
-            referencedRelation: "pacientes"
+            referencedRelation: "pacientes_backup"
             referencedColumns: ["id"]
           },
           {

@@ -83,7 +83,7 @@ const FastAgendamento: React.FC<FastAgendamentoProps> = ({
       // Check if patient exists or create a new one
       let patientId;
       const { data: existingPatient } = await supabase
-        .from('pacientes_app')
+        .from('pacientes')
         .select('id')
         .eq('nome', patientName)
         .eq('email', patientEmail || null)
@@ -94,11 +94,12 @@ const FastAgendamento: React.FC<FastAgendamentoProps> = ({
       } else {
         // Create new patient
         const { data: newPatient, error: patientError } = await supabase
-          .from('pacientes_app')
+          .from('pacientes')
           .insert({
             nome: patientName,
-            email: patientEmail || null,
-            idade: 0 // Default value since we don't have age information
+            email: patientEmail || 'temp@email.com',
+            cpf: `temp-${Date.now()}`,
+            data_nascimento: new Date().toISOString().split('T')[0] // Default birth date
           })
           .select('id')
           .single();

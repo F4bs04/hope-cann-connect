@@ -39,8 +39,8 @@ export const AgendamentosList = () => {
         .select(`
           id,
           data_hora,
-          pacientes (nome),
-          medicos (nome),
+          id_paciente,
+          id_medico,
           status
         `)
         .order('data_hora', { ascending: true });
@@ -51,6 +51,22 @@ export const AgendamentosList = () => {
       }
       
       if (data) {
+        // Buscar nomes dos pacientes e médicos
+        const pacienteIds = [...new Set(data.map(c => c.id_paciente).filter(Boolean))];
+        const medicoIds = [...new Set(data.map(c => c.id_medico).filter(Boolean))];
+
+        const [pacientesResponse, medicosResponse] = await Promise.all([
+          supabase.from('pacientes').select('id, nome').in('id', pacienteIds),
+          supabase.from('medicos').select('id, nome').in('id', medicoIds)
+        ]);
+
+        const pacientesMap = new Map(
+          (pacientesResponse.data || []).map(p => [p.id, p.nome])
+        );
+        const medicosMap = new Map(
+          (medicosResponse.data || []).map(m => [m.id, m.nome])
+        );
+
         // Extract date and time from data_hora
         const formattedData = data.map(item => {
           const dateTime = new Date(item.data_hora);
@@ -58,8 +74,8 @@ export const AgendamentosList = () => {
             id: item.id,
             data: dateTime.toISOString().split('T')[0], // Extract just the date part
             horario: dateTime.toTimeString().substring(0, 5), // Extract hours and minutes
-            paciente: item.pacientes?.nome || 'N/A',
-            medico: item.medicos?.nome || 'N/A',
+            paciente: pacientesMap.get(item.id_paciente) || 'N/A',
+            medico: medicosMap.get(item.id_medico) || 'N/A',
             status: item.status
           };
         });
