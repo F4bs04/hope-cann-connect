@@ -14,11 +14,18 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
 
   useEffect(() => {
     if (!doctorId || !selectedDate) {
-      // Horários padrão quando não há médico ou data selecionada
-      const defaultSlots = [
-        "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-        "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"
-      ].map(time => ({ time, available: true }));
+      // Horários padrão de 6h às 19h30 com intervalos de 30 minutos
+      const defaultSlots = [];
+      for (let hour = 6; hour <= 19; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          if (hour === 19 && minute === 30) {
+            defaultSlots.push({ time: "19:30", available: true });
+            break;
+          }
+          const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          defaultSlots.push({ time, available: true });
+        }
+      }
       
       setTimeSlots(defaultSlots);
       return;
@@ -82,18 +89,21 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
             }
           });
         } else {
-          // Horários completos do dia se não há configuração específica (7h às 18h)
-          for (let hour = 7; hour <= 18; hour++) {
+          // Horários de 6h às 19h30 com intervalos de 30 minutos
+          for (let hour = 6; hour <= 19; hour++) {
             for (let minute = 0; minute < 60; minute += 30) {
-              // Pular horário de almoço (12:00 - 13:30)
-              if (hour === 12 && minute === 0) continue;
-              if (hour === 12 && minute === 30) continue;
-              if (hour === 13 && minute === 0) continue;
+              if (hour === 19 && minute === 30) {
+                slots.push({
+                  time: "19:30",
+                  available: true
+                });
+                break;
+              }
               
               const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
               slots.push({
                 time,
-                available: true // Permitir seleção de todos os horários
+                available: true
               });
             }
           }
