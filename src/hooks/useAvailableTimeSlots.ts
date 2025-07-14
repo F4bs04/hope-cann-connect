@@ -16,8 +16,8 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
     if (!doctorId || !selectedDate) {
       // Horários padrão quando não há médico ou data selecionada
       const defaultSlots = [
-        "08:00", "09:00", "10:00", "11:00", 
-        "13:00", "14:00", "15:00", "16:00", "17:00"
+        "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+        "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"
       ].map(time => ({ time, available: true }));
       
       setTimeSlots(defaultSlots);
@@ -76,7 +76,7 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
                 const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
                 slots.push({
                   time,
-                  available: !ocupados.has(time)
+                  available: true // Permitir seleção de todos os horários
                 });
               }
             }
@@ -93,7 +93,7 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
               const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
               slots.push({
                 time,
-                available: !ocupados.has(time)
+                available: true // Permitir seleção de todos os horários
               });
             }
           }
