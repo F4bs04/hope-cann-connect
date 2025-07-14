@@ -1,7 +1,5 @@
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 
 // Configuração do React Query
@@ -22,12 +20,8 @@ interface AppProviderProps {
 export function AppProvider({ children }: AppProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-        <Toaster />
-      </BrowserRouter>
+      {children}
+      <Toaster />
     </QueryClientProvider>
   );
 }
