@@ -58,21 +58,19 @@ const AreaMedicoContent: React.FC = () => {
     setSelectedConsulta 
   } = useMedicoNavigation();
   
-  const { isLoading: authLoading, isAuthenticated, isMedico, isApproved } = useMedicoAuth();
+  const { isLoading: authLoading, isAuthenticated, isMedico } = useMedicoAuth();
   const [showProntuarioAba, setShowProntuarioAba] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
 
-  // Debug logging
   useEffect(() => {
     console.log('=== AREA MEDICO DEBUG ===');
     console.log('authLoading:', authLoading);
     console.log('isAuthenticated:', isAuthenticated);
     console.log('isMedico:', isMedico);
-    console.log('isApproved:', isApproved);
     console.log('currentSection:', currentSection);
-  }, [authLoading, isAuthenticated, isMedico, isApproved, currentSection]);
+  }, [authLoading, isAuthenticated, isMedico, currentSection]);
 
   // Load URL params on mount
   useEffect(() => {
@@ -127,7 +125,7 @@ const AreaMedicoContent: React.FC = () => {
     return <DashboardSkeleton />;
   }
 
-  // Authentication check - Allow access even if not approved
+  // Authentication check
   if (!isAuthenticated || !isMedico) {
     console.log('Access denied - not authenticated or not medico');
     return (
@@ -139,7 +137,6 @@ const AreaMedicoContent: React.FC = () => {
             <p>Debug info:</p>
             <p>Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
             <p>Is Medico: {isMedico ? 'Yes' : 'No'}</p>
-            <p>Is Approved: {isApproved ? 'Yes' : 'No'}</p>
           </div>
         </div>
       </div>

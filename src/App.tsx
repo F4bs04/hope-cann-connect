@@ -44,7 +44,7 @@ function App() {
         <Route 
           path="/area-medico/*" 
           element={
-            <ProtectedRoute allowedUserTypes={['medico']} requireApproval>
+            <ProtectedRoute allowedUserTypes={['medico']}>
               <AreaMedico />
             </ProtectedRoute>
           } 
