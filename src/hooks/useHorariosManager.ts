@@ -18,17 +18,27 @@ export function useHorariosManager() {
   const [saving, setSaving] = useState(false);
 
   const fetchHorarios = async () => {
-    if (!userInfo.medicoId) return;
+    if (!userInfo.medicoId) {
+      console.log('Médico ID não encontrado:', userInfo);
+      return;
+    }
     
     try {
       setLoading(true);
+      console.log('Buscando horários para médico ID:', userInfo.medicoId);
+      
       const { data, error } = await supabase
         .from('horarios_disponiveis')
         .select('*')
         .eq('id_medico', userInfo.medicoId)
         .order('dia_semana', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro SQL:', error);
+        throw error;
+      }
+      
+      console.log('Horários encontrados:', data);
       setHorarios(data || []);
     } catch (error: any) {
       console.error('Erro ao buscar horários:', error);
@@ -49,6 +59,15 @@ export function useHorariosManager() {
   }, [userInfo.medicoId, loadingUser]);
 
   const adicionarHorario = async (diaAtual: string, horaInicio: string, horaFim: string) => {
+    if (!userInfo.medicoId) {
+      toast({
+        variant: "destructive",
+        title: "Erro de autenticação",
+        description: "Médico não identificado. Faça login novamente.",
+      });
+      return false;
+    }
+
     if (!diaAtual || !horaInicio || !horaFim) {
       toast({
         variant: "destructive",
@@ -86,6 +105,8 @@ export function useHorariosManager() {
 
     try {
       setSaving(true);
+      console.log('Adicionando horário:', { id_medico: userInfo.medicoId, dia_semana: diaAtual, hora_inicio: horaInicio, hora_fim: horaFim });
+      
       const { data, error } = await supabase
         .from('horarios_disponiveis')
         .insert({
@@ -97,8 +118,12 @@ export function useHorariosManager() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro SQL ao inserir:', error);
+        throw error;
+      }
 
+      console.log('Horário inserido com sucesso:', data);
       setHorarios([...horarios, data]);
       
       // Atualizar status de disponibilidade do médico
@@ -118,7 +143,7 @@ export function useHorariosManager() {
       toast({
         variant: "destructive",
         title: "Erro ao adicionar horário",
-        description: "Não foi possível adicionar o horário. Tente novamente.",
+        description: error.message || "Não foi possível adicionar o horário. Tente novamente.",
       });
       return false;
     } finally {
