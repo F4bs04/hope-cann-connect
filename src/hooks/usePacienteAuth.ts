@@ -11,21 +11,19 @@ export const usePacienteAuth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    let mounted = true;
+    
     const checkAuth = async () => {
       try {
-        // Verificar primeiro a sessão do Supabase
-        const { data: { session } } = await supabase.auth.getSession();
-        
         // Verificar o localStorage para autenticação baseada em localStorage
         const userEmail = localStorage.getItem('userEmail');
         const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
         
-        if (!session && !isAuthenticated) {
+        if (!isAuthenticated || !userEmail) {
           throw new Error("Usuário não autenticado");
         }
         
-        // Usar o email da sessão do Supabase ou do localStorage
-        const email = session?.user?.email || userEmail;
+        const email = userEmail;
         
         if (!email) {
           throw new Error("Email não encontrado");
@@ -43,10 +41,10 @@ export const usePacienteAuth = () => {
           throw new Error("Erro ao verificar paciente");
         }
         
-        if (pacienteData) {
+        if (pacienteData && mounted) {
           // Se encontrou o paciente, define os dados
           setPaciente(pacienteData);
-        } else {
+        } else if (mounted) {
           // Se não encontrou o paciente, verifica se há um usuário correspondente
           const { data: userData, error: userError } = await supabase
             .from('usuarios')
@@ -89,9 +87,9 @@ export const usePacienteAuth = () => {
               variant: "destructive"
             });
             // Mesmo com erro, permite acesso mas define paciente com dados mínimos
-            setPaciente({ ...newPaciente, id: null });
+            if (mounted) setPaciente({ ...newPaciente, id: null });
           } else {
-            setPaciente(insertedPaciente);
+            if (mounted) setPaciente(insertedPaciente);
           }
         }
       } catch (error: any) {
@@ -108,11 +106,15 @@ export const usePacienteAuth = () => {
         localStorage.removeItem('authTimestamp');
         navigate('/login');
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
     
     checkAuth();
+    
+    return () => {
+      mounted = false;
+    };
   }, [navigate, toast]);
 
   return { paciente, loading };

@@ -36,12 +36,25 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
       try {
         const dayOfWeek = format(selectedDate, 'EEEE', { locale: ptBR }).toLowerCase();
         
+        // Mapeamento de dias da semana
+        const dayMapping: { [key: string]: string } = {
+          'segunda-feira': 'segunda-feira',
+          'terça-feira': 'terça-feira', 
+          'quarta-feira': 'quarta-feira',
+          'quinta-feira': 'quinta-feira',
+          'sexta-feira': 'sexta-feira',
+          'sábado': 'sábado',
+          'domingo': 'domingo'
+        };
+        
+        const normalizedDay = dayMapping[dayOfWeek] || dayOfWeek;
+        
         // Buscar horários disponíveis do médico para o dia da semana
         const { data: horariosDisponiveis, error: horariosError } = await supabase
           .from('horarios_disponiveis')
           .select('*')
           .eq('id_medico', doctorId)
-          .eq('dia_semana', dayOfWeek);
+          .ilike('dia_semana', normalizedDay);
 
         if (horariosError) {
           console.error('Erro ao buscar horários disponíveis:', horariosError);
@@ -57,7 +70,7 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
           .eq('id_medico', doctorId)
           .gte('data_hora', `${dateStr}T00:00:00`)
           .lt('data_hora', `${dateStr}T23:59:59`)
-          .eq('status', 'agendada');
+          .in('status', ['agendada', 'confirmada', 'em_andamento']);
 
         if (consultasError) {
           console.error('Erro ao buscar consultas agendadas:', consultasError);

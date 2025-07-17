@@ -79,28 +79,30 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        const userEmail = localStorage.getItem('userEmail');
+        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        
+        if (!isAuthenticated || !userEmail) {
           setError("Você precisa estar logado para agendar consultas");
           return;
         }
         
-        // Buscar ID do paciente
-        const { data: userData, error: userError } = await supabase
-          .from('usuarios')
-          .select('id')
-          .eq('email', session.user.email)
-          .single();
-          
-        if (userError) throw userError;
-        
+        // Buscar ID do paciente usando o email do localStorage
         const { data: pacienteData, error: pacienteError } = await supabase
           .from('pacientes')
           .select('id')
-          .eq('id_usuario', userData.id)
-          .single();
+          .eq('email', userEmail)
+          .maybeSingle();
           
-        if (pacienteError) throw pacienteError;
+        if (pacienteError) {
+          console.error("Erro ao buscar paciente:", pacienteError);
+          throw pacienteError;
+        }
+        
+        if (!pacienteData) {
+          setError("Perfil de paciente não encontrado");
+          return;
+        }
         
         setPacienteId(pacienteData.id);
         
