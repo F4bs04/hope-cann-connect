@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect } from 'react';
+
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [initialized, setInitialized] = useState(false);
   
   const {
     isAuthenticated,
@@ -35,22 +37,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Inicializar autenticação apenas uma vez
   useEffect(() => {
-    console.log("[AuthContext] Inicializando autenticação...");
-    initialize();
-  }, []); // Remove initialize from deps to prevent infinite loops
+    if (!initialized) {
+      console.log("[AuthContext] Inicializando autenticação pela primeira vez...");
+      initialize().finally(() => {
+        setInitialized(true);
+      });
+    }
+  }, [initialized, initialize]);
 
-  // Redirecionamento fixo sem loop
+  // Redirecionamento apenas após inicialização completa
   useEffect(() => {
-    if (!isLoading && isAuthenticated && userProfile) {
+    if (initialized && !isLoading && isAuthenticated && userProfile) {
       const currentPath = window.location.pathname;
       const correctPath = getCorrectPath();
       
       // Apenas redirecionar se estiver na página de login
       if (currentPath === '/login' && correctPath !== '/login') {
+        console.log("[AuthContext] Redirecionando para:", correctPath);
         navigate(correctPath, { replace: true });
       }
     }
-  }, [isAuthenticated, userProfile, isLoading, navigate, getCorrectPath]);
+  }, [initialized, isAuthenticated, userProfile, isLoading, navigate, getCorrectPath]);
 
   const login = async (email: string, password: string) => {
     const result = await authLogin(email, password);
@@ -94,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const contextValue: AuthContextType = {
     isAuthenticated,
-    isLoading,
+    isLoading: isLoading || !initialized,
     userProfile,
     userType: getUserType(),
     hasPermission,

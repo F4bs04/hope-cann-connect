@@ -30,6 +30,7 @@ interface AuthState {
   // Estado de autenticação
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean;
   session: Session | null;
   user: User | null;
   userProfile: UserProfile | null;
@@ -67,6 +68,7 @@ export const useAuthStore = create<AuthState>()(
       // Estado inicial
       isAuthenticated: false,
       isLoading: true,
+      isInitialized: false,
       session: null,
       user: null,
       userProfile: null,
@@ -78,11 +80,19 @@ export const useAuthStore = create<AuthState>()(
 
       // Inicialização do store
       initialize: async () => {
+        const state = get();
+        
+        // Evitar múltiplas inicializações
+        if (state.isInitialized) {
+          console.log("[AuthStore] Já inicializado, pulando...");
+          return;
+        }
+
         try {
           console.log("[AuthStore] Iniciando initialize...");
           set({ isLoading: true });
           
-          // Verificar localStorage primeiro para evitar loops
+          // Verificar localStorage primeiro
           const localAuth = localStorage.getItem('isAuthenticated') === 'true';
           const localEmail = localStorage.getItem('userEmail');
           const authTimestamp = localStorage.getItem('authTimestamp');
@@ -93,15 +103,15 @@ export const useAuthStore = create<AuthState>()(
             if (!isExpired) {
               console.log("[AuthStore] Auth local válido, carregando perfil...");
               await get().loadUserProfile(localEmail);
-              set({ isAuthenticated: true });
-              return; // Early return to avoid Supabase session check
+              set({ isAuthenticated: true, isInitialized: true });
+              return;
             } else {
               console.log("[AuthStore] Auth local expirado, limpando...");
               get().clearAuth();
             }
           }
           
-          // Verificar sessão do Supabase apenas se não houver auth local válido
+          // Verificar sessão do Supabase
           console.log("[AuthStore] Verificando sessão do Supabase...");
           const { data: { session } } = await supabase.auth.getSession();
           
@@ -111,16 +121,19 @@ export const useAuthStore = create<AuthState>()(
             set({ 
               session, 
               user: session.user, 
-              isAuthenticated: true 
+              isAuthenticated: true,
+              isInitialized: true 
             });
           } else {
             console.log("[AuthStore] Nenhuma sessão encontrada");
+            set({ isInitialized: true });
           }
         } catch (error) {
           console.error('Erro na inicialização:', error);
           get().clearAuth();
+          set({ isInitialized: true });
         } finally {
-          console.log("[AuthStore] Finalizando initialize, setando isLoading: false");
+          console.log("[AuthStore] Finalizando initialize");
           set({ isLoading: false });
         }
       },
