@@ -10,7 +10,7 @@ import LaudosPaciente from '@/components/paciente/LaudosPaciente';
 import PedidosExamePaciente from '@/components/paciente/PedidosExamePaciente';
 import MedicosPaciente from '@/components/paciente/MedicosPaciente';
 import PacientePerfilDetalhes from '@/components/area-paciente/PacientePerfilDetalhes';
-import { usePacienteAuth } from '@/hooks/usePacienteAuth';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { supabase } from "@/integrations/supabase/client";
 
 interface Paciente {
@@ -31,7 +31,7 @@ interface AreaPacienteProps {
 
 const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard' }) => {
   const [currentSection, setCurrentSection] = useState(initialSection);
-  const { paciente: initialPaciente, loading } = usePacienteAuth();
+  const { userProfile: initialPaciente, isLoading: loading } = useUnifiedAuth();
   const [pacienteData, setPacienteData] = useState<Paciente | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   
