@@ -9,7 +9,7 @@ import BenefitsSection from '../components/BenefitsSection';
 import TestimonialSection from '../components/TestimonialSection';
 import ProcessSteps from '../components/ProcessSteps';
 import WhyChooseUs from '../components/WhyChooseUs';
-import { HomeScheduling } from '@/components/home-scheduling';
+// HomeScheduling removido - agora está apenas na área autenticada
 import FAQSection from '../components/FAQSection';
 import DoctorCTA from '../components/DoctorCTA';
 import MedicalConditionsSection from '../components/MedicalConditionsSection';
@@ -22,7 +22,7 @@ const Index = () => {
         <HeroSection />
         <WhyChooseUs />
         <ProcessSteps />
-        <HomeScheduling />
+        {/* HomeScheduling movido para área autenticada */}
         <BenefitsSection />
         <MedicalConditionsSection />
         {/* We can keep only one of the two conditions sections */}

@@ -21,7 +21,8 @@ import {
   FilePenLine,
   FileSignature,
   FileCheck,
-  User
+  User,
+  Clock
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
@@ -37,6 +38,7 @@ import Laudos from '@/components/medico-dashboard/Laudos';
 import PedidosExame from '@/components/medico-dashboard/PedidosExame';
 import ConsultaView from '@/components/medico-dashboard/ConsultaView';
 import ProntuarioAba from '@/components/medico/ProntuarioAba';
+import AgendaSlotsManager from '@/components/medico/AgendaSlotsManager';
 import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
 import EditProfileDialog from '@/components/medico/EditProfileDialog';
 import MedicoHeader from '@/components/medico/MedicoHeader';
@@ -63,6 +65,7 @@ const AreaMedicoContent: React.FC = () => {
   const [userType, setUserType] = useState<string | null>(null);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
+  const [medicoId, setMedicoId] = useState<number>(1);
 
   useEffect(() => {
     console.log('=== AREA MEDICO DEBUG ===');
@@ -157,6 +160,8 @@ const AreaMedicoContent: React.FC = () => {
         return <ClinicaDashboard />;
       case 'agenda':
         return <AgendaMedica />;
+      case 'slots':
+        return <AgendaSlotsManager medicoId={medicoId || 1} />;
       case 'prescricoes':
         return <Prescricoes />;
       case 'prontuarios':
@@ -227,6 +232,16 @@ const AreaMedicoContent: React.FC = () => {
                   className="text-white hover:bg-[#009E9B]"
                 >
                   <Calendar className="w-5 h-5 mr-2" /> Agenda
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={() => navigateToSection('slots')}
+                  isActive={currentSection === 'slots'}
+                  className="text-white hover:bg-[#009E9B]"
+                >
+                  <Clock className="w-5 h-5 mr-2" /> Gerenciar Slots
                 </SidebarMenuButton>
               </SidebarMenuItem>
               

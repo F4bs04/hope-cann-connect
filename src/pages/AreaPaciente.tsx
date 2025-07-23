@@ -10,6 +10,7 @@ import LaudosPaciente from '@/components/paciente/LaudosPaciente';
 import PedidosExamePaciente from '@/components/paciente/PedidosExamePaciente';
 import MedicosPaciente from '@/components/paciente/MedicosPaciente';
 import PacientePerfilDetalhes from '@/components/area-paciente/PacientePerfilDetalhes';
+import SmartScheduling from '@/components/scheduling/SmartScheduling';
 import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -123,6 +124,8 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
     switch (currentSection) {
       case 'dashboard':
         return <PacienteDashboard />;
+      case 'agendar':
+        return <SmartScheduling />;
       case 'consultas':
         return <ConsultasPaciente pacienteId={pacienteId} />;
       case 'receitas':
