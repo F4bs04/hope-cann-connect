@@ -38,17 +38,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initialize();
   }, [initialize]);
 
-  // Remover redirecionamento automático que estava causando loop infinito
-  // useEffect(() => {
-  //   if (!isLoading && isAuthenticated && userProfile) {
-  //     const currentPath = window.location.pathname;
-  //     const correctPath = getCorrectPath();
+  // Redirecionamento fixo sem loop
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && userProfile) {
+      const currentPath = window.location.pathname;
+      const correctPath = getCorrectPath();
       
-  //     if (currentPath !== correctPath && !currentPath.startsWith(correctPath)) {
-  //       navigate(correctPath);
-  //     }
-  //   }
-  // }, [isAuthenticated, userProfile, isLoading, navigate, getCorrectPath]);
+      // Apenas redirecionar se estiver na página de login
+      if (currentPath === '/login' && correctPath !== '/login') {
+        navigate(correctPath, { replace: true });
+      }
+    }
+  }, [isAuthenticated, userProfile, isLoading, navigate, getCorrectPath]);
 
   const login = async (email: string, password: string) => {
     const result = await authLogin(email, password);

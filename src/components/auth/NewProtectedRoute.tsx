@@ -28,12 +28,16 @@ export function ProtectedRoute({
 
   // Verificar se o tipo de usuário tem permissão
   if (allowedUserTypes.length > 0 && userType && !allowedUserTypes.includes(userType)) {
-    // Redirecionar para a área apropriada
+    // Redirecionar para a área apropriada, mas evitar loops
+    const currentPath = window.location.pathname;
     const redirectPath = userType === 'medico' ? '/area-medico' :
                         userType === 'paciente' ? '/area-paciente' :
                         userType === 'admin_clinica' ? '/admin' : '/';
     
-    return <Navigate to={redirectPath} replace />;
+    // Só redirecionar se não estivermos já no caminho correto
+    if (!currentPath.startsWith(redirectPath)) {
+      return <Navigate to={redirectPath} replace />;
+    }
   }
 
   // Verificar aprovação se necessário

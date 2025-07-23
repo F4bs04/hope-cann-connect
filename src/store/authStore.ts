@@ -81,31 +81,31 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true });
           
-          // Verificar sessão do Supabase
-          const { data: { session } } = await supabase.auth.getSession();
+          // Verificar localStorage primeiro para evitar loops
+          const localAuth = localStorage.getItem('isAuthenticated') === 'true';
+          const localEmail = localStorage.getItem('userEmail');
+          const authTimestamp = localStorage.getItem('authTimestamp');
           
-          if (session?.user) {
-            await get().loadUserProfile(session.user.email!);
-            set({ 
-              session, 
-              user: session.user, 
-              isAuthenticated: true 
-            });
-          } else {
-            // Verificar localStorage como fallback
-            const localAuth = localStorage.getItem('isAuthenticated') === 'true';
-            const localEmail = localStorage.getItem('userEmail');
-            const authTimestamp = localStorage.getItem('authTimestamp');
+          if (localAuth && localEmail && authTimestamp) {
+            const isExpired = Date.now() - parseInt(authTimestamp) > 24 * 60 * 60 * 1000;
             
-            if (localAuth && localEmail && authTimestamp) {
-              const isExpired = Date.now() - parseInt(authTimestamp) > 24 * 60 * 60 * 1000;
-              
-              if (!isExpired) {
-                await get().loadUserProfile(localEmail);
-                set({ isAuthenticated: true });
-              } else {
-                get().clearAuth();
-              }
+            if (!isExpired) {
+              await get().loadUserProfile(localEmail);
+              set({ isAuthenticated: true });
+            } else {
+              get().clearAuth();
+            }
+          } else {
+            // Verificar sessão do Supabase apenas se não houver auth local
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session?.user) {
+              await get().loadUserProfile(session.user.email!);
+              set({ 
+                session, 
+                user: session.user, 
+                isAuthenticated: true 
+              });
             }
           }
         } catch (error) {
