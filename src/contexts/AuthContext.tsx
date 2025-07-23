@@ -20,7 +20,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [initialized, setInitialized] = useState(false);
   
   const {
     isAuthenticated,
@@ -35,49 +34,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getCorrectPath,
   } = useAuthStore();
 
-  // Inicializar autenticação apenas uma vez
+  // Inicializar apenas uma vez quando o componente monta
   useEffect(() => {
-    console.log("[AuthContext] Tentando inicializar...", { initialized, isLoading });
-    
-    if (!initialized) {
-      console.log("[AuthContext] Inicializando autenticação pela primeira vez...");
-      setInitialized(true);
-      
-      // Timeout de segurança para evitar loading infinito
-      const safetyTimeout = setTimeout(() => {
-        console.log("[AuthContext] TIMEOUT: Forçando saída do loading");
-        // Se ainda estiver carregando após 5 segundos, força a saída
-        if (isLoading) {
-          // Força a atualização no store também
-          const currentState = useAuthStore.getState();
-          if (currentState.isLoading) {
-            useAuthStore.setState({ 
-              isLoading: false, 
-              isInitialized: true 
-            });
-          }
-        }
-      }, 5000);
-      
-      // Inicializar autenticação
-      initialize()
-        .catch((error) => {
-          console.error("[AuthContext] Erro na inicialização:", error);
-          // Em caso de erro, força a saída do loading
-          useAuthStore.setState({ 
-            isLoading: false, 
-            isInitialized: true 
-          });
-        })
-        .finally(() => {
-          clearTimeout(safetyTimeout);
-        });
-    }
-  }, []);
+    console.log("[AuthContext] Montando AuthProvider, iniciando inicialização...");
+    initialize();
+  }, []); // Array vazio é correto aqui - queremos que rode apenas uma vez
 
-  // Redirecionamento apenas após inicialização completa
+  // Redirecionamento após login bem-sucedido
   useEffect(() => {
-    if (initialized && !isLoading && isAuthenticated && userProfile) {
+    if (!isLoading && isAuthenticated && userProfile) {
       const currentPath = window.location.pathname;
       const correctPath = getCorrectPath();
       
@@ -87,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         navigate(correctPath, { replace: true });
       }
     }
-  }, [initialized, isAuthenticated, userProfile, isLoading, navigate, getCorrectPath]);
+  }, [isAuthenticated, userProfile, isLoading, navigate, getCorrectPath]);
 
   const login = async (email: string, password: string) => {
     const result = await authLogin(email, password);
@@ -131,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const contextValue: AuthContextType = {
     isAuthenticated,
-    isLoading: isLoading || !initialized,
+    isLoading,
     userProfile,
     userType: getUserType(),
     hasPermission,

@@ -82,54 +82,25 @@ export const useAuthStore = create<AuthState>()(
       initialize: async () => {
         const state = get();
         
-        console.log("[AuthStore] Initialize chamado. Estado atual:", {
-          isInitialized: state.isInitialized,
-          isLoading: state.isLoading
-        });
+        console.log("[AuthStore] Initialize chamado");
         
         // Evitar múltiplas inicializações
         if (state.isInitialized) {
-          console.log("[AuthStore] Já inicializado, definindo loading como false");
+          console.log("[AuthStore] Já inicializado");
           set({ isLoading: false });
           return;
         }
         
-        console.log("[AuthStore] Iniciando initialize...");
-        set({ isLoading: true, isInitialized: false });
+        if (state.isLoading) {
+          console.log("[AuthStore] Já está inicializando");
+          return;
+        }
+        
+        console.log("[AuthStore] Iniciando inicialização...");
+        set({ isLoading: true });
         
         try {
-          // Verificar localStorage primeiro
-          const localAuth = localStorage.getItem('isAuthenticated') === 'true';
-          const localEmail = localStorage.getItem('userEmail');
-          const authTimestamp = localStorage.getItem('authTimestamp');
-          
-          console.log("[AuthStore] Verificando localStorage:", { localAuth, localEmail, authTimestamp });
-          
-          if (localAuth && localEmail && authTimestamp) {
-            const isExpired = Date.now() - parseInt(authTimestamp) > 24 * 60 * 60 * 1000;
-            
-            if (!isExpired) {
-              console.log("[AuthStore] Auth local válido, carregando perfil...");
-              try {
-                await get().loadUserProfile(localEmail);
-                set({ 
-                  isAuthenticated: true, 
-                  isInitialized: true,
-                  isLoading: false 
-                });
-                console.log("[AuthStore] Perfil carregado com sucesso via localStorage");
-                return;
-              } catch (profileError) {
-                console.error("[AuthStore] Erro ao carregar perfil:", profileError);
-                // Continua para verificar sessão Supabase
-              }
-            } else {
-              console.log("[AuthStore] Auth local expirado, limpando...");
-              get().clearAuth();
-            }
-          }
-          
-          // Verificar sessão do Supabase
+          // Verificar sessão do Supabase primeiro (mais confiável)
           console.log("[AuthStore] Verificando sessão do Supabase...");
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
           
@@ -139,29 +110,47 @@ export const useAuthStore = create<AuthState>()(
           }
           
           if (session?.user) {
-            console.log("[AuthStore] Sessão Supabase encontrada, carregando perfil...");
-            try {
-              await get().loadUserProfile(session.user.email!);
+            console.log("[AuthStore] Sessão Supabase encontrada");
+            await get().loadUserProfile(session.user.email!);
+            set({ 
+              session, 
+              user: session.user, 
+              isAuthenticated: true,
+              isInitialized: true,
+              isLoading: false 
+            });
+            get().syncLocalStorage();
+            return;
+          }
+          
+          // Se não há sessão Supabase, verificar localStorage como fallback
+          const localAuth = localStorage.getItem('isAuthenticated') === 'true';
+          const localEmail = localStorage.getItem('userEmail');
+          const authTimestamp = localStorage.getItem('authTimestamp');
+          
+          if (localAuth && localEmail && authTimestamp) {
+            const isExpired = Date.now() - parseInt(authTimestamp) > 24 * 60 * 60 * 1000;
+            
+            if (!isExpired) {
+              console.log("[AuthStore] Auth local válido como fallback");
+              await get().loadUserProfile(localEmail);
               set({ 
-                session, 
-                user: session.user, 
-                isAuthenticated: true,
+                isAuthenticated: true, 
                 isInitialized: true,
                 isLoading: false 
               });
-              console.log("[AuthStore] Perfil carregado com sucesso via Supabase");
-            } catch (profileError) {
-              console.error("[AuthStore] Erro ao carregar perfil via Supabase:", profileError);
-              throw profileError;
+              return;
             }
-          } else {
-            console.log("[AuthStore] Nenhuma sessão encontrada, usuário não autenticado");
-            set({ 
-              isInitialized: true,
-              isLoading: false,
-              isAuthenticated: false 
-            });
           }
+          
+          // Nenhuma autenticação encontrada
+          console.log("[AuthStore] Nenhuma autenticação encontrada");
+          set({ 
+            isInitialized: true,
+            isLoading: false,
+            isAuthenticated: false 
+          });
+          
         } catch (error) {
           console.error('[AuthStore] Erro na inicialização:', error);
           get().clearAuth();
@@ -172,7 +161,7 @@ export const useAuthStore = create<AuthState>()(
           });
         }
         
-        console.log("[AuthStore] Initialize finalizado");
+        console.log("[AuthStore] Inicialização finalizada");
       },
 
       // Login unificado
@@ -419,23 +408,34 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Setup listener para mudanças de autenticação do Supabase
-let hasSetupListener = false;
-if (!hasSetupListener) {
-  hasSetupListener = true;
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log("[AuthStore] Auth state change:", event);
-    const store = useAuthStore.getState();
+// Setup listener para mudanças de autenticação do Supabase (apenas uma vez)
+if (typeof window !== 'undefined') {
+  let authListenerSetup = false;
+  
+  const setupAuthListener = () => {
+    if (authListenerSetup) return;
+    authListenerSetup = true;
     
-    if (event === 'SIGNED_IN' && session?.user) {
-      await store.loadUserProfile(session.user.email!);
-      useAuthStore.setState({ 
-        session, 
-        user: session.user, 
-        isAuthenticated: true 
-      });
-    } else if (event === 'SIGNED_OUT') {
-      store.clearAuth();
-    }
-  });
+    console.log("[AuthStore] Configurando auth listener...");
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[AuthStore] Auth state change:", event);
+      const store = useAuthStore.getState();
+      
+      // Apenas reagir a mudanças reais de autenticação, não a verificações iniciais
+      if (event === 'SIGNED_IN' && session?.user && !store.isAuthenticated) {
+        console.log("[AuthStore] Usuário fez login via Supabase");
+        await store.loadUserProfile(session.user.email!);
+        useAuthStore.setState({ 
+          session, 
+          user: session.user, 
+          isAuthenticated: true 
+        });
+      } else if (event === 'SIGNED_OUT' && store.isAuthenticated) {
+        console.log("[AuthStore] Usuário fez logout via Supabase");
+        store.clearAuth();
+      }
+    });
+  };
+  
+  setupAuthListener();
 }
