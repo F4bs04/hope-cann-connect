@@ -347,21 +347,35 @@ const Header = () => {
   );
 };
 
+interface NavLinkProps {
+  to: string;
+  children: React.ReactNode;
+  isActive: boolean;
+  isScrolled: boolean;
+}
+
 const NavLink = ({
   to,
   children,
   isActive,
   isScrolled
-}) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : isScrolled ? 'text-hopecann-green hover:text-hopecann-teal' : 'text-hopecann-green hover:text-hopecann-teal'}`}>
+}: NavLinkProps) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : isScrolled ? 'text-hopecann-green hover:text-hopecann-teal' : 'text-hopecann-green hover:text-hopecann-teal'}`}>
     {children}
   </Link>;
+
+interface MobileNavLinkProps {
+  to: string;
+  children: React.ReactNode;
+  isActive: boolean;
+  onClick: () => void;
+}
 
 const MobileNavLink = ({
   to,
   children,
   isActive,
   onClick
-}) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : 'text-hopecann-green hover:text-hopecann-teal'}`} onClick={onClick}>
+}: MobileNavLinkProps) => <Link to={to} className={`font-medium transition-colors ${isActive ? 'text-hopecann-teal' : 'text-hopecann-green hover:text-hopecann-teal'}`} onClick={onClick}>
     {children}
   </Link>;
 

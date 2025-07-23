@@ -33,13 +33,16 @@ export const enviarMensagem = async (mensagemData: any) => {
     
     if (error) {
       console.error("Erro ao enviar mensagem:", error);
-      return null;
+      throw new Error("Não foi possível enviar a mensagem. Tente novamente.");
     }
     
     return data;
   } catch (error) {
     console.error("Erro ao enviar mensagem:", error);
-    return null;
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Erro interno ao enviar mensagem");
   }
 };
 
@@ -90,6 +93,10 @@ export const marcarMensagensComoLidas = async (medicoId: number, pacienteId: num
 
 export const getChatsAtivos = async (medicoId: number) => {
   try {
+    if (!medicoId) {
+      throw new Error("ID do médico é obrigatório");
+    }
+
     const { data, error } = await supabase
       .from('chat_ativo')
       .select(`
@@ -102,13 +109,16 @@ export const getChatsAtivos = async (medicoId: number) => {
     
     if (error) {
       console.error("Erro ao buscar chats ativos:", error);
-      return [];
+      throw new Error("Não foi possível carregar os chats ativos");
     }
     
-    return data;
+    return data || [];
   } catch (error) {
     console.error("Erro ao buscar chats ativos:", error);
-    return [];
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Erro interno ao buscar chats");
   }
 };
 

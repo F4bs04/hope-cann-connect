@@ -73,6 +73,7 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
       console.error('Error loading chats:', error);
       setChats([]);
       setFilteredChats([]);
+      // Você pode adicionar um toast aqui para mostrar o erro ao usuário
     } finally {
       setLoading(false);
     }
