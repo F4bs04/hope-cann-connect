@@ -20,165 +20,200 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
+      const redirectUrl = `${window.location.origin}/`;
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/login`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
           }
         }
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Google OAuth error:", error);
+        throw error;
+      }
+      
+      console.log("Google OAuth iniciado:", data);
     } catch (error: any) {
       console.error("Google login error:", error);
       toast({
         title: "Erro ao fazer login com Google",
-        description: error.message || "Ocorreu um erro ao fazer login com Google. Tente novamente.",
+        description: error.message || "Ocorreu um erro ao fazer login com Google. Verifique se o provedor Google está configurado corretamente.",
         variant: "destructive"
       });
-    } finally {
       setGoogleLoading(false);
     }
   };
 
+  // Configurar listener para mudanças de auth state
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[Login] Auth state change:", event, session);
       
-      if (session?.provider_token) {
-        const user = session.user;
-        if (user) {
-          // Clear any existing toast flags
-          localStorage.removeItem('toast-shown-auth');
-          localStorage.removeItem('toast-shown-perm');
-          
-          setUserAvatar(user.user_metadata.avatar_url);
-          const { data: userData, error: userError } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('email', user.email)
-            .maybeSingle();
-
-          if (userError) {
-            const { data: newUser, error: createError } = await supabase
-              .from('usuarios')
-              .insert([{
-                email: user.email,
-                senha: '',
-                tipo_usuario: 'paciente',
-                ultimo_acesso: new Date().toISOString()
-              }])
-              .select()
-              .single();
-
-            if (createError) throw createError;
-
-            if (newUser) {
-              await supabase.from('pacientes').insert([{
-                id_usuario: newUser.id,
-                nome: user.user_metadata.full_name || user.email?.split('@')[0] || '',
-                cpf: '',
-                data_nascimento: new Date('2000-01-01').toISOString(),
-                endereco: '',
-                telefone: '',
-                email: user.email || ''
-              }]);
-
-              // Store auth data in localStorage to maintain compatibility with both auth systems
-              localStorage.setItem('isAuthenticated', 'true');
-              localStorage.setItem('userEmail', user.email || '');
-              localStorage.setItem('userId', newUser.id.toString());
-              localStorage.setItem('userType', 'paciente');
-              localStorage.setItem('userAvatar', user.user_metadata.avatar_url || '');
-              localStorage.setItem('authTimestamp', Date.now().toString());
-
-              toast({
-                title: "Conta criada com sucesso",
-                description: "Bem-vindo ao sistema! Por favor, complete seu perfil."
-              });
-              navigate('/area-paciente');
-            }
-          } else {
-            await supabase
-              .from('usuarios')
-              .update({ ultimo_acesso: new Date().toISOString() })
-              .eq('id', userData.id);
-
-            // Store auth data in localStorage to maintain compatibility with both auth systems
-            localStorage.setItem('isAuthenticated', 'true');
-            localStorage.setItem('userEmail', user.email || '');
-            localStorage.setItem('userId', userData.id.toString());
-            localStorage.setItem('userType', userData.tipo_usuario);
-            localStorage.setItem('userAvatar', user.user_metadata.avatar_url || '');
-            localStorage.setItem('authTimestamp', Date.now().toString());
-
-            toast({
-              title: "Login bem-sucedido",
-              description: "Bem-vindo de volta ao sistema!"
-            });
-
-            switch (userData.tipo_usuario) {
-              case 'medico':
-                navigate('/area-medico');
-                break;
-              case 'paciente':
-                navigate('/area-paciente');
-                break;
-              case 'admin_clinica':
-                navigate('/admin');
-                break;
-              default:
-                navigate('/area-paciente');
-            }
-          }
-        }
+      if (event === 'SIGNED_IN' && session?.user) {
+        await handleSuccessfulAuth(session.user);
       }
-      setGoogleLoading(false);
-    };
+    });
 
-    // Check if the user is already logged in from localStorage
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    const userType = localStorage.getItem('userType');
-    const authTimestamp = localStorage.getItem('authTimestamp');
-    
-    // Check if the auth is expired (24 hours)
-    if (isAuthenticated && authTimestamp) {
-      const timestamp = parseInt(authTimestamp);
-      const now = Date.now();
-      const authAgeDays = (now - timestamp) / (1000 * 60 * 60 * 24);
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSuccessfulAuth = async (user: any) => {
+    try {
+      // Verificar se o usuário já existe
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('email', user.email)
+        .maybeSingle();
+
+      if (userError && userError.code !== 'PGRST116') {
+        console.error("Erro ao buscar usuário:", userError);
+        throw userError;
+      }
+
+      let finalUserData = userData;
+
+      // Se usuário não existe, criar conta
+      if (!userData) {
+        console.log("Criando novo usuário para:", user.email);
+        
+        const { data: newUser, error: createError } = await supabase
+          .from('usuarios')
+          .insert([{
+            email: user.email,
+            tipo_usuario: 'paciente',
+            ultimo_acesso: new Date().toISOString()
+          }])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Erro ao criar usuário:", createError);
+          throw createError;
+        }
+
+        // Criar perfil de paciente
+        const { error: pacienteError } = await supabase
+          .from('pacientes')
+          .insert([{
+            id_usuario: newUser.id,
+            nome: user.user_metadata.full_name || user.email?.split('@')[0] || '',
+            email: user.email || '',
+            cpf: '',
+            data_nascimento: '2000-01-01',
+            endereco: '',
+            telefone: ''
+          }]);
+
+        if (pacienteError) {
+          console.error("Erro ao criar perfil de paciente:", pacienteError);
+        }
+
+        finalUserData = newUser;
+        
+        toast({
+          title: "Conta criada com sucesso",
+          description: "Bem-vindo ao HopeCann! Complete seu perfil."
+        });
+      } else {
+        // Atualizar último acesso
+        await supabase
+          .from('usuarios')
+          .update({ ultimo_acesso: new Date().toISOString() })
+          .eq('id', userData.id);
+
+        toast({
+          title: "Login bem-sucedido",
+          description: "Bem-vindo de volta ao HopeCann!"
+        });
+      }
+
+      // Salvar dados de autenticação
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userEmail', user.email || '');
+      localStorage.setItem('userId', finalUserData!.id.toString());
+      localStorage.setItem('userType', finalUserData!.tipo_usuario);
+      localStorage.setItem('authTimestamp', Date.now().toString());
       
-      if (authAgeDays <= 1) { // not expired
-        // Redirect based on user type if already authenticated
-        if (userType) {
+      if (user.user_metadata?.avatar_url) {
+        localStorage.setItem('userAvatar', user.user_metadata.avatar_url);
+        setUserAvatar(user.user_metadata.avatar_url);
+      }
+
+      // Redirecionar baseado no tipo de usuário
+      const userType = finalUserData!.tipo_usuario;
+      switch (userType) {
+        case 'medico':
+          navigate('/area-medico', { replace: true });
+          break;
+        case 'paciente':
+          navigate('/area-paciente', { replace: true });
+          break;
+        case 'admin_clinica':
+          navigate('/admin', { replace: true });
+          break;
+        default:
+          navigate('/area-paciente', { replace: true });
+      }
+    } catch (error: any) {
+      console.error("Erro no handleSuccessfulAuth:", error);
+      toast({
+        title: "Erro na autenticação",
+        description: error.message || "Ocorreu um erro durante a autenticação.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Verificar se já está logado no carregamento da página
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      // Verificar autenticação local
+      const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+      const userType = localStorage.getItem('userType');
+      const authTimestamp = localStorage.getItem('authTimestamp');
+      
+      if (isAuthenticated && authTimestamp) {
+        const timestamp = parseInt(authTimestamp);
+        const authAgeDays = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
+        
+        if (authAgeDays <= 1) {
+          // Redirecionar se já autenticado
           switch (userType) {
             case 'medico':
-              navigate('/area-medico');
+              navigate('/area-medico', { replace: true });
               return;
             case 'paciente':
-              navigate('/area-paciente');
+              navigate('/area-paciente', { replace: true });
               return;
             case 'admin_clinica':
-              navigate('/admin');
+              navigate('/admin', { replace: true });
               return;
             default:
-              navigate('/area-paciente');
+              navigate('/area-paciente', { replace: true });
               return;
           }
+        } else {
+          // Limpar autenticação expirada
+          ['isAuthenticated', 'userEmail', 'userId', 'userType', 'authTimestamp', 'userAvatar']
+            .forEach(key => localStorage.removeItem(key));
         }
-      } else {
-        // Clear expired authentication
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('userType');
-        localStorage.removeItem('authTimestamp');
-        localStorage.removeItem('userAvatar');
       }
-    }
 
-    checkSession();
+      // Verificar sessão do Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await handleSuccessfulAuth(session.user);
+      }
+    };
+
+    checkExistingAuth();
   }, [navigate, toast]);
 
   return (

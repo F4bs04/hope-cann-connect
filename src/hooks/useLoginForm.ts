@@ -8,8 +8,19 @@ import { useToast } from "@/hooks/use-toast";
 import { verifyClinicPassword as verifyClinicPasswordService } from "@/services/supabaseService";
 
 const loginSchema = z.object({
-  email: z.string().email("Insira um email válido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  email: z
+    .string()
+    .min(1, 'Email é obrigatório')
+    .email('Digite um email válido')
+    .refine((email) => {
+      // Validação adicional para formatos de email mais rigorosos
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailRegex.test(email);
+    }, 'Digite um email válido'),
+  password: z
+    .string()
+    .min(6, 'Senha deve ter pelo menos 6 caracteres')
+    .max(100, 'Senha muito longa'),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
@@ -25,7 +36,8 @@ export const useLoginForm = () => {
     defaultValues: {
       email: "",
       password: "",
-    }
+    },
+    mode: 'onBlur', // Validar ao sair do campo
   });
 
   const handleLogin = async (values: LoginFormValues) => {
