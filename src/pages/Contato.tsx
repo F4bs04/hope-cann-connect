@@ -240,16 +240,7 @@ const Contato = () => {
           </div>
         </section>
         
-        {/* Teste de Sistema - Apenas para desenvolvimento */}
-        <section className="py-16 bg-red-50">
-          <div className="hopecann-container">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-4 text-red-700">⚠️ TESTE DO SISTEMA</h2>
-              <p className="text-red-600">Esta seção é apenas para testes da funcionalidade de agendamento</p>
-            </div>
-            <AgendamentoTest />
-          </div>
-        </section>
+        {/* Seção de teste removida */}
       </main>
       <Footer />
     </div>
