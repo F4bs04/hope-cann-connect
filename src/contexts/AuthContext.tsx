@@ -36,8 +36,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Inicializar apenas uma vez quando o componente monta
   useEffect(() => {
+    let isMounted = true;
     console.log("[AuthContext] Montando AuthProvider, iniciando inicialização...");
-    initialize();
+    
+    const initializeAuth = async () => {
+      if (isMounted) {
+        await initialize();
+      }
+    };
+    
+    initializeAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []); // Array vazio é correto aqui - queremos que rode apenas uma vez
 
   // Redirecionamento após login bem-sucedido

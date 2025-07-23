@@ -87,7 +87,6 @@ export const useAuthStore = create<AuthState>()(
         // Evitar múltiplas inicializações
         if (state.isInitialized) {
           console.log("[AuthStore] Já inicializado");
-          set({ isLoading: false });
           return;
         }
         
@@ -123,25 +122,10 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
           
-          // Se não há sessão Supabase, verificar localStorage como fallback
-          const localAuth = localStorage.getItem('isAuthenticated') === 'true';
-          const localEmail = localStorage.getItem('userEmail');
-          const authTimestamp = localStorage.getItem('authTimestamp');
-          
-          if (localAuth && localEmail && authTimestamp) {
-            const isExpired = Date.now() - parseInt(authTimestamp) > 24 * 60 * 60 * 1000;
-            
-            if (!isExpired) {
-              console.log("[AuthStore] Auth local válido como fallback");
-              await get().loadUserProfile(localEmail);
-              set({ 
-                isAuthenticated: true, 
-                isInitialized: true,
-                isLoading: false 
-              });
-              return;
-            }
-          }
+          // Limpeza do localStorage se não há sessão Supabase válida
+          console.log("[AuthStore] Limpando localStorage desatualizado");
+          ['isAuthenticated', 'userEmail', 'userId', 'userType', 'authTimestamp']
+            .forEach(key => localStorage.removeItem(key));
           
           // Nenhuma autenticação encontrada
           console.log("[AuthStore] Nenhuma autenticação encontrada");

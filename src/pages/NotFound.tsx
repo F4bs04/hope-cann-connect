@@ -29,6 +29,15 @@ const NotFound = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20">
       <div className="text-center p-8 max-w-md mx-auto">
         <div className="mb-6">
+          {/* Logo da HopeCann */}
+          <div className="mb-6">
+            <img 
+              src="/lovable-uploads/cannabis-oil-hero.jpg" 
+              alt="HopeCann Logo" 
+              className="h-20 w-20 mx-auto rounded-full object-cover"
+            />
+          </div>
+          
           <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-4" />
           <h1 className="text-4xl font-bold text-foreground mb-2">404</h1>
           <h2 className="text-2xl font-semibold text-foreground/80 mb-4">Página não encontrada</h2>
