@@ -98,32 +98,34 @@ export const useAuthStore = create<AuthState>()(
           const { data: { session } } = await supabase.auth.getSession();
           
           if (session?.user) {
-            console.log("[AuthStore] Sessão encontrada");
-            await get().loadUserProfile(session.user.email!);
-            set({ 
-              session, 
-              user: session.user, 
-              isAuthenticated: true,
-              isInitialized: true,
-              isLoading: false 
-            });
-            return;
+            console.log("[AuthStore] Sessão encontrada, carregando perfil...");
+            try {
+              await get().loadUserProfile(session.user.email!);
+              set({ 
+                session, 
+                user: session.user, 
+                isAuthenticated: true
+              });
+            } catch (profileError) {
+              console.log("[AuthStore] Erro ao carregar perfil, usuário sem dados:", profileError);
+              // Usuário existe no Supabase mas não tem dados na nossa tabela
+              set({ 
+                session, 
+                user: session.user, 
+                isAuthenticated: false // Não deixar entrar sem dados completos
+              });
+            }
+          } else {
+            console.log("[AuthStore] Nenhuma sessão");
           }
-          
-          // Nenhuma autenticação
-          console.log("[AuthStore] Nenhuma autenticação");
-          set({ 
-            isInitialized: true,
-            isLoading: false,
-            isAuthenticated: false 
-          });
           
         } catch (error) {
           console.error('[AuthStore] Erro:', error);
+        } finally {
+          // SEMPRE finalizar o loading
           set({ 
             isInitialized: true,
-            isLoading: false,
-            isAuthenticated: false 
+            isLoading: false 
           });
         }
         
@@ -219,13 +221,15 @@ export const useAuthStore = create<AuthState>()(
 
       // Carregar perfil do usuário
       loadUserProfile: async (email: string) => {
-        const { data: userData } = await supabase
-          .from('usuarios')
-          .select('*')
-          .eq('email', email)
-          .single();
+        try {
+          const { data: userData, error } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
 
-        if (!userData) return;
+          if (error) throw error;
+          if (!userData) throw new Error('Usuário não encontrado');
 
         let profile: UserProfile = {
           id: userData.id,
@@ -293,6 +297,10 @@ export const useAuthStore = create<AuthState>()(
         }
 
         set({ userProfile: profile });
+        } catch (error) {
+          console.error('Erro ao carregar perfil:', error);
+          throw error; // Re-throw para ser capturado na inicialização
+        }
       },
 
       // Sincronizar com localStorage
