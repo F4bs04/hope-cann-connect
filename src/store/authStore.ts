@@ -382,6 +382,8 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // Setup listener para mudanças de autenticação do Supabase (apenas uma vez)
+let authListener: { data: { subscription: any } } | null = null;
+
 if (typeof window !== 'undefined') {
   let authListenerSetup = false;
   
@@ -390,7 +392,7 @@ if (typeof window !== 'undefined') {
     authListenerSetup = true;
     
     console.log("[AuthStore] Configurando auth listener...");
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    authListener = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("[AuthStore] Auth state change:", event);
       const store = useAuthStore.getState();
       
@@ -403,4 +405,11 @@ if (typeof window !== 'undefined') {
   };
   
   setupAuthListener();
+  
+  // Cleanup listener when window unloads
+  window.addEventListener('beforeunload', () => {
+    if (authListener) {
+      authListener.data.subscription.unsubscribe();
+    }
+  });
 }

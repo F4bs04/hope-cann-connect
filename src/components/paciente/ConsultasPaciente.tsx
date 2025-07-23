@@ -12,6 +12,7 @@ const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => 
   const { toast } = useToast();
   const [consultas, setConsultas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (pacienteId <= 0) {
@@ -21,6 +22,7 @@ const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => 
     
     const buscarConsultas = async () => {
       setLoading(true);
+      setError(null);
       try {
         // Using a simpler query approach to avoid RLS issues
         const { data, error } = await supabase
@@ -35,9 +37,11 @@ const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => 
         if (data) setConsultas(data);
       } catch (error) {
         console.error("Erro ao buscar consultas:", error);
+        const errorMessage = "Não foi possível carregar suas consultas. Por favor, tente novamente mais tarde.";
+        setError(errorMessage);
         toast({
           title: "Erro ao carregar consultas",
-          description: "Não foi possível carregar suas consultas. Por favor, tente novamente mais tarde.",
+          description: errorMessage,
           variant: "destructive"
         });
       } finally {
@@ -88,6 +92,7 @@ const ConsultasPaciente: React.FC<ConsultasPacienteProps> = ({ pacienteId }) => 
       <ConsultasList
         consultas={consultas}
         loading={loading}
+        error={error}
         onReagendar={handleReagendar}
         onCancelar={handleCancelarConsulta}
       />

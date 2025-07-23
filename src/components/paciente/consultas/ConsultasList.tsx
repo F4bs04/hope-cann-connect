@@ -7,15 +7,24 @@ import { Loader2 } from 'lucide-react';
 interface ConsultasListProps {
   consultas: any[];
   loading: boolean;
+  error?: string | null;
   onReagendar: (id: number) => void;
   onCancelar: (id: number) => void;
 }
 
-export function ConsultasList({ consultas, loading, onReagendar, onCancelar }: ConsultasListProps) {
+export function ConsultasList({ consultas, loading, error, onReagendar, onCancelar }: ConsultasListProps) {
   if (loading) {
     return (
       <div className="flex justify-center my-8">
         <Loader2 className="h-8 w-8 animate-spin text-hopecann-teal" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center my-8 p-4 border border-destructive/20 rounded-lg">
+        <p className="text-destructive">{error}</p>
       </div>
     );
   }
