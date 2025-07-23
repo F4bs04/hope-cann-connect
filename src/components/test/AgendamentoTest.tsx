@@ -11,7 +11,7 @@ export const AgendamentoTest = () => {
   const [loading, setLoading] = useState(false);
   const [medicoId, setMedicoId] = useState('5'); // ID do médico de teste criado
   const [pacienteId, setPacienteId] = useState('32'); // ID do paciente de teste criado
-  const [dataHora, setDataHora] = useState('');
+  const [dataHora, setDataHora] = useState('2025-07-28T10:00'); // Segunda-feira, 28 de julho de 2025
   const [availableData, setAvailableData] = useState({ medicos: [], pacientes: [] });
   const { toast } = useToast();
 
@@ -129,6 +129,12 @@ export const AgendamentoTest = () => {
             <strong>Pacientes disponíveis:</strong> {availableData.pacientes.map(p => `${p.id} (${p.nome})`).join(', ')}
           </p>
         </div>
+
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-700">
+            <strong>⚠️ DICA:</strong> Primeiro crie um horário para segunda-feira (08:00-17:00), depois escolha uma data que seja segunda-feira para agendar a consulta!
+          </p>
+        </div>
         
         <div>
           <label className="block text-sm font-medium mb-1">ID do Médico</label>
@@ -152,10 +158,15 @@ export const AgendamentoTest = () => {
 
         <div>
           <label className="block text-sm font-medium mb-1">Data e Hora</label>
+          <p className="text-xs text-gray-500 mb-1">
+            Escolha uma segunda-feira entre 08:00 e 17:00 (ex: 2025-07-28T10:00)
+          </p>
           <Input
             type="datetime-local"
             value={dataHora}
             onChange={(e) => setDataHora(e.target.value)}
+            min="2025-07-28T08:00"
+            max="2025-07-28T17:00"
           />
         </div>
 
