@@ -38,10 +38,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Inicializar autenticação apenas uma vez
   useEffect(() => {
     console.log("[AuthContext] Tentando inicializar...", { initialized, isLoading });
-    if (!initialized && !isLoading) {
+    
+    if (!initialized) {
       console.log("[AuthContext] Inicializando autenticação pela primeira vez...");
       setInitialized(true);
-      initialize();
+      
+      // Timeout de segurança para evitar loading infinito
+      const safetyTimeout = setTimeout(() => {
+        console.log("[AuthContext] TIMEOUT: Forçando saída do loading");
+        // Se ainda estiver carregando após 5 segundos, força a saída
+        if (isLoading) {
+          // Força a atualização no store também
+          const currentState = useAuthStore.getState();
+          if (currentState.isLoading) {
+            useAuthStore.setState({ 
+              isLoading: false, 
+              isInitialized: true 
+            });
+          }
+        }
+      }, 5000);
+      
+      // Inicializar autenticação
+      initialize()
+        .catch((error) => {
+          console.error("[AuthContext] Erro na inicialização:", error);
+          // Em caso de erro, força a saída do loading
+          useAuthStore.setState({ 
+            isLoading: false, 
+            isInitialized: true 
+          });
+        })
+        .finally(() => {
+          clearTimeout(safetyTimeout);
+        });
     }
   }, []);
 

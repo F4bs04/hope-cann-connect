@@ -82,15 +82,20 @@ export const useAuthStore = create<AuthState>()(
       initialize: async () => {
         const state = get();
         
+        console.log("[AuthStore] Initialize chamado. Estado atual:", {
+          isInitialized: state.isInitialized,
+          isLoading: state.isLoading
+        });
+        
         // Evitar múltiplas inicializações
         if (state.isInitialized) {
-          console.log("[AuthStore] Já inicializado, pulando...");
+          console.log("[AuthStore] Já inicializado, definindo loading como false");
           set({ isLoading: false });
           return;
         }
         
         console.log("[AuthStore] Iniciando initialize...");
-        set({ isLoading: true });
+        set({ isLoading: true, isInitialized: false });
         
         try {
           // Verificar localStorage primeiro
@@ -98,18 +103,26 @@ export const useAuthStore = create<AuthState>()(
           const localEmail = localStorage.getItem('userEmail');
           const authTimestamp = localStorage.getItem('authTimestamp');
           
+          console.log("[AuthStore] Verificando localStorage:", { localAuth, localEmail, authTimestamp });
+          
           if (localAuth && localEmail && authTimestamp) {
             const isExpired = Date.now() - parseInt(authTimestamp) > 24 * 60 * 60 * 1000;
             
             if (!isExpired) {
               console.log("[AuthStore] Auth local válido, carregando perfil...");
-              await get().loadUserProfile(localEmail);
-              set({ 
-                isAuthenticated: true, 
-                isInitialized: true,
-                isLoading: false 
-              });
-              return;
+              try {
+                await get().loadUserProfile(localEmail);
+                set({ 
+                  isAuthenticated: true, 
+                  isInitialized: true,
+                  isLoading: false 
+                });
+                console.log("[AuthStore] Perfil carregado com sucesso via localStorage");
+                return;
+              } catch (profileError) {
+                console.error("[AuthStore] Erro ao carregar perfil:", profileError);
+                // Continua para verificar sessão Supabase
+              }
             } else {
               console.log("[AuthStore] Auth local expirado, limpando...");
               get().clearAuth();
@@ -118,33 +131,48 @@ export const useAuthStore = create<AuthState>()(
           
           // Verificar sessão do Supabase
           console.log("[AuthStore] Verificando sessão do Supabase...");
-          const { data: { session } } = await supabase.auth.getSession();
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.error("[AuthStore] Erro ao obter sessão:", sessionError);
+            throw sessionError;
+          }
           
           if (session?.user) {
             console.log("[AuthStore] Sessão Supabase encontrada, carregando perfil...");
-            await get().loadUserProfile(session.user.email!);
-            set({ 
-              session, 
-              user: session.user, 
-              isAuthenticated: true,
-              isInitialized: true,
-              isLoading: false 
-            });
+            try {
+              await get().loadUserProfile(session.user.email!);
+              set({ 
+                session, 
+                user: session.user, 
+                isAuthenticated: true,
+                isInitialized: true,
+                isLoading: false 
+              });
+              console.log("[AuthStore] Perfil carregado com sucesso via Supabase");
+            } catch (profileError) {
+              console.error("[AuthStore] Erro ao carregar perfil via Supabase:", profileError);
+              throw profileError;
+            }
           } else {
-            console.log("[AuthStore] Nenhuma sessão encontrada");
+            console.log("[AuthStore] Nenhuma sessão encontrada, usuário não autenticado");
             set({ 
               isInitialized: true,
-              isLoading: false 
+              isLoading: false,
+              isAuthenticated: false 
             });
           }
         } catch (error) {
-          console.error('Erro na inicialização:', error);
+          console.error('[AuthStore] Erro na inicialização:', error);
           get().clearAuth();
           set({ 
             isInitialized: true,
-            isLoading: false 
+            isLoading: false,
+            isAuthenticated: false 
           });
         }
+        
+        console.log("[AuthStore] Initialize finalizado");
       },
 
       // Login unificado
