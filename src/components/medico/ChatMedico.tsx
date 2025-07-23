@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Send, ArrowLeft, Calendar, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { enviarMensagem, getMensagensChat, marcarMensagensComoLidas } from '@/services/supabaseService';
+import { enviarMensagem, getMensagensChat, marcarMensagensComoLidas } from '@/services/chat/chatService';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

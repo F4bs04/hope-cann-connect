@@ -94,7 +94,7 @@ export const getChatsAtivos = async (medicoId: number) => {
       .from('chat_ativo')
       .select(`
         *,
-        pacientes_app(*),
+        pacientes(*),
         consultas(*)
       `)
       .eq('id_medico', medicoId)

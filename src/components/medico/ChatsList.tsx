@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, MessageCircle, User, Calendar, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getChatsAtivos } from '@/services/supabaseService';
+import { getChatsAtivos } from '@/services/chat/chatService';
 
 interface ChatsListProps {
   medicoId: number;
@@ -23,7 +23,7 @@ interface ChatData {
     id?: number;
     motivo?: string;
   } | null;
-  pacientes_app?: {
+  pacientes?: {
     id?: number;
     nome?: string;
   } | null;
@@ -37,9 +37,9 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
 
   useEffect(() => {
     const filtered = chats.filter(chat => 
-      chat.pacientes_app && 
-      chat.pacientes_app.nome && 
-      chat.pacientes_app.nome.toLowerCase().includes(searchTerm.toLowerCase())
+      chat.pacientes && 
+      chat.pacientes.nome && 
+      chat.pacientes.nome.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredChats(filtered);
   }, [searchTerm, chats]);
@@ -61,9 +61,9 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
           id: chat.consultas?.id || 0,
           motivo: chat.consultas?.motivo || 'Consulta'
         },
-        pacientes_app: {
-          id: chat.pacientes_app?.id || 0,
-          nome: chat.pacientes_app?.nome || 'Paciente'
+        pacientes: {
+          id: chat.pacientes?.id || 0,
+          nome: chat.pacientes?.nome || 'Paciente'
         }
       }));
       
@@ -132,7 +132,7 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
                   <div className="bg-hopecann-teal w-full md:w-2 p-0 md:p-0"></div>
                   <div className="p-4 flex-1">
                     <div className="flex justify-between">
-                      <h3 className="font-semibold">{chat.pacientes_app?.nome || 'Paciente'}</h3>
+                      <h3 className="font-semibold">{chat.pacientes?.nome || 'Paciente'}</h3>
                       <Badge variant="outline" className="bg-blue-50 text-blue-700">
                         Chat ativo
                       </Badge>

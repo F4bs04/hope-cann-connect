@@ -22,7 +22,8 @@ import {
   FileSignature,
   FileCheck,
   User,
-  Clock
+  Clock,
+  MessageCircle
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
@@ -42,11 +43,14 @@ import AgendaSlotsManager from '@/components/medico/AgendaSlotsManager';
 import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
 import EditProfileDialog from '@/components/medico/EditProfileDialog';
 import MedicoHeader from '@/components/medico/MedicoHeader';
+import ChatsList from '@/components/medico/ChatsList';
+import ChatMedico from '@/components/medico/ChatMedico';
 
 // Contexts and Hooks
 import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
 import { MedicoNavigationProvider, useMedicoNavigation } from '@/contexts/MedicoNavigationContext';
 import { useMedicoAuth } from '@/hooks/useMedicoAuth';
+import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
 import { DashboardSkeleton } from '@/components/medico/LoadingStates';
 
 const AreaMedicoContent: React.FC = () => {
@@ -61,11 +65,12 @@ const AreaMedicoContent: React.FC = () => {
   } = useMedicoNavigation();
   
   const { isLoading: authLoading, isAuthenticated, isMedico } = useMedicoAuth();
+  const { userInfo, loading: userInfoLoading } = useCurrentUserInfo();
   const [showProntuarioAba, setShowProntuarioAba] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
-  const [medicoId, setMedicoId] = useState<number>(1);
+  const [selectedChat, setSelectedChat] = useState<any>(null);
 
   useEffect(() => {
     console.log('=== AREA MEDICO DEBUG ===');
@@ -161,7 +166,7 @@ const AreaMedicoContent: React.FC = () => {
       case 'agenda':
         return <AgendaMedica />;
       case 'slots':
-        return <AgendaSlotsManager medicoId={medicoId || 1} />;
+        return <AgendaSlotsManager medicoId={userInfo.medicoId || 1} />;
       case 'prescricoes':
         return <Prescricoes />;
       case 'prontuarios':
@@ -183,6 +188,22 @@ const AreaMedicoContent: React.FC = () => {
             onBack={() => handleBackToSection('dashboard')} 
           />
         ) : null;
+      case 'chat':
+        return selectedChat ? (
+          <ChatMedico
+            medicoId={userInfo.medicoId || 1}
+            pacienteId={selectedChat.pacientes?.id}
+            pacienteNome={selectedChat.pacientes?.nome}
+            motivoConsulta={selectedChat.consultas?.motivo}
+            dataConsulta={selectedChat.data_inicio}
+            onBack={() => setSelectedChat(null)}
+          />
+        ) : (
+          <ChatsList 
+            medicoId={userInfo.medicoId || 1} 
+            onSelectChat={setSelectedChat} 
+          />
+        );
       default:
         return <DashboardHome onOpenConsulta={handleOpenConsulta} />;
     }
@@ -312,6 +333,16 @@ const AreaMedicoContent: React.FC = () => {
                   className="text-white hover:bg-[#009E9B]"
                 >
                   <Activity className="w-5 h-5 mr-2" /> Pedidos de Exame
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={() => navigateToSection('chat')}
+                  isActive={currentSection === 'chat'}
+                  className="text-white hover:bg-[#009E9B]"
+                >
+                  <MessageCircle className="w-5 h-5 mr-2" /> Chat com Pacientes
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
