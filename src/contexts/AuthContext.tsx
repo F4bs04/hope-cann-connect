@@ -33,10 +33,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getCorrectPath,
   } = useAuthStore();
 
-  // Inicializar autenticação
+  // Inicializar autenticação apenas uma vez
   useEffect(() => {
+    console.log("[AuthContext] Inicializando autenticação...");
     initialize();
-  }, [initialize]);
+  }, []); // Remove initialize from deps to prevent infinite loops
 
   // Redirecionamento fixo sem loop
   useEffect(() => {

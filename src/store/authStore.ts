@@ -79,6 +79,7 @@ export const useAuthStore = create<AuthState>()(
       // Inicialização do store
       initialize: async () => {
         try {
+          console.log("[AuthStore] Iniciando initialize...");
           set({ isLoading: true });
           
           // Verificar localStorage primeiro para evitar loops
@@ -112,6 +113,7 @@ export const useAuthStore = create<AuthState>()(
           console.error('Erro na inicialização:', error);
           get().clearAuth();
         } finally {
+          console.log("[AuthStore] Finalizando initialize, setando isLoading: false");
           set({ isLoading: false });
         }
       },
