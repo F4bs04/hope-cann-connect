@@ -1404,6 +1404,14 @@ export type Database = {
         Args: { p_email: string; p_password: string }
         Returns: boolean
       }
+      verify_user_password_v2: {
+        Args: { p_email: string; p_password: string }
+        Returns: {
+          user_id: number
+          user_type: string
+          is_valid: boolean
+        }[]
+      }
     }
     Enums: {
       user_type: "administrador" | "medico" | "paciente"
