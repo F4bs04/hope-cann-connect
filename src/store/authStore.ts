@@ -83,14 +83,15 @@ export const useAuthStore = create<AuthState>()(
         const state = get();
         
         // Evitar múltiplas inicializações
-        if (state.isInitialized) {
-          console.log("[AuthStore] Já inicializado, pulando...");
+        if (state.isInitialized || state.isLoading) {
+          console.log("[AuthStore] Já inicializado ou inicializando, pulando...");
           return;
         }
+        
+        set({ isLoading: true });
 
         try {
           console.log("[AuthStore] Iniciando initialize...");
-          set({ isLoading: true });
           
           // Verificar localStorage primeiro
           const localAuth = localStorage.getItem('isAuthenticated') === 'true';

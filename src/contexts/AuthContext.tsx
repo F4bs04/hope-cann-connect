@@ -37,13 +37,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Inicializar autenticação apenas uma vez
   useEffect(() => {
-    if (!initialized) {
+    if (!initialized && !isLoading) {
       console.log("[AuthContext] Inicializando autenticação pela primeira vez...");
-      initialize().finally(() => {
-        setInitialized(true);
-      });
+      setInitialized(true);
+      initialize();
     }
-  }, [initialized, initialize]);
+  }, []);
 
   // Redirecionamento apenas após inicialização completa
   useEffect(() => {
