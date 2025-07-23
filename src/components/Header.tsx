@@ -236,7 +236,7 @@ const Header = () => {
       <div className="hopecann-container flex justify-between items-center">
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
-            <img src="/lovable-uploads/9826141f-2e80-41ba-8792-01e2ed93ac69.png" alt="Clínica HopeCann Logo" className="h-20" />
+            <img src="/lovable-uploads/79feadec-46eb-449d-b375-4fac34f5ad25.png" alt="Clínica HopeCann Logo" className="h-20" />
           </Link>
         </div>
 
