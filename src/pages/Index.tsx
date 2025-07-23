@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import HeroSection from '../components/HeroSection';
@@ -15,6 +17,27 @@ import DoctorCTA from '../components/DoctorCTA';
 import MedicalConditionsSection from '../components/MedicalConditionsSection';
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, userType, isLoading } = useAuth();
+
+  // Redirecionar usuários autenticados para suas áreas corretas
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && userType) {
+      const path = userType === 'medico' ? '/area-medico' :
+                   userType === 'admin_clinica' ? '/admin' : '/area-paciente';
+      navigate(path, { replace: true });
+    }
+  }, [isAuthenticated, userType, isLoading, navigate]);
+
+  // Mostrar loading enquanto verifica autenticação
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 border-2 border-hopecann-teal border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
