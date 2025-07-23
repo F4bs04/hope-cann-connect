@@ -107,22 +107,8 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
               }
             }
           });
-        } else {
-          // Horários padrão de 8h às 17h com intervalos de 30 minutos
-          for (let hour = 8; hour <= 17; hour++) {
-            for (let minute = 0; minute < 60; minute += 30) {
-              if (hour === 17 && minute === 30) {
-                break; // Parar em 17:00
-              }
-              
-              const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-              slots.push({
-                time,
-                available: !ocupados.has(time) // Marcar como indisponível se já ocupado
-              });
-            }
-          }
         }
+        // Se o médico não cadastrou horários disponíveis, não mostra nenhum slot
 
         setTimeSlots(slots.sort((a, b) => a.time.localeCompare(b.time)));
       } catch (error) {
