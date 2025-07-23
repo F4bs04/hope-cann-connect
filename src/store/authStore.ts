@@ -123,13 +123,12 @@ export const useAuthStore = create<AuthState>()(
           console.error('[AuthStore] Erro:', error);
         } finally {
           // SEMPRE finalizar o loading
+          console.log("[AuthStore] Inicialização finalizada");
           set({ 
             isInitialized: true,
             isLoading: false 
           });
         }
-        
-        console.log("[AuthStore] Inicialização finalizada");
       },
 
       // Login unificado
