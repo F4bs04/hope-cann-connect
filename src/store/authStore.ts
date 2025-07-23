@@ -91,23 +91,30 @@ export const useAuthStore = create<AuthState>()(
             const isExpired = Date.now() - parseInt(authTimestamp) > 24 * 60 * 60 * 1000;
             
             if (!isExpired) {
+              console.log("[AuthStore] Auth local válido, carregando perfil...");
               await get().loadUserProfile(localEmail);
               set({ isAuthenticated: true });
+              return; // Early return to avoid Supabase session check
             } else {
+              console.log("[AuthStore] Auth local expirado, limpando...");
               get().clearAuth();
             }
+          }
+          
+          // Verificar sessão do Supabase apenas se não houver auth local válido
+          console.log("[AuthStore] Verificando sessão do Supabase...");
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session?.user) {
+            console.log("[AuthStore] Sessão Supabase encontrada, carregando perfil...");
+            await get().loadUserProfile(session.user.email!);
+            set({ 
+              session, 
+              user: session.user, 
+              isAuthenticated: true 
+            });
           } else {
-            // Verificar sessão do Supabase apenas se não houver auth local
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (session?.user) {
-              await get().loadUserProfile(session.user.email!);
-              set({ 
-                session, 
-                user: session.user, 
-                isAuthenticated: true 
-              });
-            }
+            console.log("[AuthStore] Nenhuma sessão encontrada");
           }
         } catch (error) {
           console.error('Erro na inicialização:', error);
@@ -363,17 +370,22 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // Setup listener para mudanças de autenticação do Supabase
-supabase.auth.onAuthStateChange(async (event, session) => {
-  const store = useAuthStore.getState();
-  
-  if (event === 'SIGNED_IN' && session?.user) {
-    await store.loadUserProfile(session.user.email!);
-    useAuthStore.setState({ 
-      session, 
-      user: session.user, 
-      isAuthenticated: true 
-    });
-  } else if (event === 'SIGNED_OUT') {
-    store.clearAuth();
-  }
-});
+let hasSetupListener = false;
+if (!hasSetupListener) {
+  hasSetupListener = true;
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("[AuthStore] Auth state change:", event);
+    const store = useAuthStore.getState();
+    
+    if (event === 'SIGNED_IN' && session?.user) {
+      await store.loadUserProfile(session.user.email!);
+      useAuthStore.setState({ 
+        session, 
+        user: session.user, 
+        isAuthenticated: true 
+      });
+    } else if (event === 'SIGNED_OUT') {
+      store.clearAuth();
+    }
+  });
+}
