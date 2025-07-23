@@ -63,7 +63,7 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
       medicoId: selectedDoctorId || 0,
       dataConsulta: new Date(),
       horario: '',
-      tipoConsulta: 'Primeira consulta',
+      tipoConsulta: 'presencial',
       motivo: '',
     },
   });
@@ -385,9 +385,8 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Primeira consulta">Primeira consulta</SelectItem>
-                        <SelectItem value="Retorno">Retorno</SelectItem>
-                        <SelectItem value="Consulta padrão">Consulta padrão</SelectItem>
+                        <SelectItem value="presencial">Presencial</SelectItem>
+                        <SelectItem value="telemedicina">Telemedicina</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

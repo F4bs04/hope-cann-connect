@@ -15,20 +15,7 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
 
   useEffect(() => {
     if (!doctorId || !selectedDate) {
-      // Horários padrão de 6h às 19h30 com intervalos de 30 minutos
-      const defaultSlots = [];
-      for (let hour = 6; hour <= 19; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          if (hour === 19 && minute === 30) {
-            defaultSlots.push({ time: "19:30", available: true });
-            break;
-          }
-          const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          defaultSlots.push({ time, available: true });
-        }
-      }
-      
-      setTimeSlots(defaultSlots);
+      setTimeSlots([]);
       return;
     }
 
