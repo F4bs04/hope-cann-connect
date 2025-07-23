@@ -124,31 +124,28 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedUserTy
 
   // Move toast and redirects outside of render function
   if (!isAuthenticated) {
-    // Using localStorage to prevent toast showing multiple times
-    if (typeof window !== 'undefined' && !localStorage.getItem('toast-shown-auth')) {
+    // Show toast only once per session
+    const toastKey = `toast-shown-auth-${Date.now()}`;
+    if (typeof window !== 'undefined' && !sessionStorage.getItem('toast-shown-auth')) {
       toast({
         variant: "destructive",
         title: "Acesso restrito",
         description: "Redirecionando para a página inicial...",
       });
-      localStorage.setItem('toast-shown-auth', 'true');
-      // Remove this item after a delay
-      setTimeout(() => localStorage.removeItem('toast-shown-auth'), 2000);
+      sessionStorage.setItem('toast-shown-auth', 'true');
     }
     return <Navigate to="/" />;
   }
 
   if (userType && !allowedUserTypes.includes(userType)) {
-    // Using localStorage to prevent toast showing multiple times
-    if (typeof window !== 'undefined' && !localStorage.getItem('toast-shown-perm')) {
+    // Show toast only once per session
+    if (typeof window !== 'undefined' && !sessionStorage.getItem('toast-shown-perm')) {
       toast({
         variant: "destructive", 
         title: "Acesso não autorizado",
         description: "Redirecionando para sua área correta...",
       });
-      localStorage.setItem('toast-shown-perm', 'true');
-      // Remove this item after a delay
-      setTimeout(() => localStorage.removeItem('toast-shown-perm'), 2000);
+      sessionStorage.setItem('toast-shown-perm', 'true');
     }
     
     // Redirect based on user type

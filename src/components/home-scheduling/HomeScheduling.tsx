@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { StepIndicator } from './StepIndicator';
 import { DoctorStep } from './DoctorStep';
 import { DateTimeStep } from './DateTimeStep';

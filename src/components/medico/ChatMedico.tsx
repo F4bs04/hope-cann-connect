@@ -70,10 +70,10 @@ const ChatMedico: React.FC<ChatMedicoProps> = ({
   useEffect(() => {
     loadMessages();
     
-    // Configurar polling para atualizar mensagens a cada 10 segundos
+    // Configurar polling para atualizar mensagens a cada 30 segundos
     const interval = setInterval(() => {
       loadMessages();
-    }, 10000);
+    }, 30000);
     
     // Limpar o intervalo quando o componente for desmontado
     return () => clearInterval(interval);

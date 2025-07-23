@@ -7,7 +7,14 @@ import { useToast } from '@/hooks/use-toast';
 export const useAuth = () => {
   const [loading, setLoading] = useState(true);
   const [userType, setUserType] = useState<string | null>(null);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<{
+    id?: number;
+    email?: string;
+    nome?: string;
+    tipo_usuario?: string;
+    status?: boolean;
+    [key: string]: any;
+  } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
