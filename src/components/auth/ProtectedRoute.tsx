@@ -129,22 +129,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedUserTy
       toast({
         variant: "destructive",
         title: "Acesso restrito",
-        description: "Faça login para acessar esta página.",
+        description: "Redirecionando para a página inicial...",
       });
       localStorage.setItem('toast-shown-auth', 'true');
       // Remove this item after a delay
       setTimeout(() => localStorage.removeItem('toast-shown-auth'), 2000);
     }
-    return <Navigate to="/login" />;
+    return <Navigate to="/" />;
   }
 
   if (userType && !allowedUserTypes.includes(userType)) {
     // Using localStorage to prevent toast showing multiple times
     if (typeof window !== 'undefined' && !localStorage.getItem('toast-shown-perm')) {
       toast({
-        variant: "destructive",
+        variant: "destructive", 
         title: "Acesso não autorizado",
-        description: "Você não tem permissão para acessar esta página.",
+        description: "Redirecionando para sua área correta...",
       });
       localStorage.setItem('toast-shown-perm', 'true');
       // Remove this item after a delay
