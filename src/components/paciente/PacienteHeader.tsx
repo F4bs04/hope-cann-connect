@@ -1,21 +1,15 @@
 
 import React from 'react';
-import { User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useUnifiedAuth';
 
 interface PacienteHeaderProps {
   pacienteNome?: string;
 }
 
 const PacienteHeader: React.FC<PacienteHeaderProps> = ({ pacienteNome = "Paciente" }) => {
-  const navigate = useNavigate();
-  
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userEmail');
-    navigate('/login');
-  };
+  const { logout } = useAuth();
 
   return (
     <header className="bg-white border-b border-gray-200 py-4 sticky top-0 z-10">
@@ -32,9 +26,10 @@ const PacienteHeader: React.FC<PacienteHeaderProps> = ({ pacienteNome = "Pacient
         
         <Button 
           variant="outline" 
-          onClick={handleLogout}
-          className="text-gray-700 hover:text-gray-900"
+          onClick={logout}
+          className="text-gray-700 hover:text-gray-900 flex items-center gap-2"
         >
+          <LogOut className="w-4 h-4" />
           Sair
         </Button>
       </div>
