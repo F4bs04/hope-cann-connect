@@ -170,12 +170,17 @@ export const useAuthStore = create<AuthState>()(
             return { success: false, error: 'Usuário não encontrado' };
           }
 
-          const { data: isValid } = await supabase.rpc('verify_user_password', {
+          const { data: verificationResult, error: verifyError } = await supabase.rpc('verify_user_password_v2', {
             p_email: email,
             p_password: password
           });
 
-          if (!isValid) {
+          if (verifyError || !verificationResult || verificationResult.length === 0) {
+            return { success: false, error: 'Erro na verificação de senha' };
+          }
+
+          const result = verificationResult[0];
+          if (!result.is_valid) {
             return { success: false, error: 'Senha incorreta' };
           }
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getHorariosByDiaSemana } from '@/services/horarios/horariosService';
 
 interface TimeSlot {
   time: string;
@@ -49,12 +50,8 @@ export const useAvailableTimeSlots = (doctorId: number | null, selectedDate: Dat
         
         const normalizedDay = dayMapping[dayOfWeek] || dayOfWeek;
         
-        // Buscar horários disponíveis do médico para o dia da semana
-        const { data: horariosDisponiveis, error: horariosError } = await supabase
-          .from('horarios_disponiveis')
-          .select('*')
-          .eq('id_medico', doctorId)
-          .ilike('dia_semana', normalizedDay);
+        // Buscar horários disponíveis do médico para o dia da semana usando serviço
+        const { data: horariosDisponiveis, error: horariosError } = await getHorariosByDiaSemana(doctorId, normalizedDay);
 
         if (horariosError) {
           console.error('Erro ao buscar horários disponíveis:', horariosError);
