@@ -83,16 +83,16 @@ export const useAuthStore = create<AuthState>()(
         const state = get();
         
         // Evitar múltiplas inicializações
-        if (state.isInitialized || state.isLoading) {
-          console.log("[AuthStore] Já inicializado ou inicializando, pulando...");
+        if (state.isInitialized) {
+          console.log("[AuthStore] Já inicializado, pulando...");
+          set({ isLoading: false });
           return;
         }
         
+        console.log("[AuthStore] Iniciando initialize...");
         set({ isLoading: true });
-
+        
         try {
-          console.log("[AuthStore] Iniciando initialize...");
-          
           // Verificar localStorage primeiro
           const localAuth = localStorage.getItem('isAuthenticated') === 'true';
           const localEmail = localStorage.getItem('userEmail');
@@ -104,7 +104,11 @@ export const useAuthStore = create<AuthState>()(
             if (!isExpired) {
               console.log("[AuthStore] Auth local válido, carregando perfil...");
               await get().loadUserProfile(localEmail);
-              set({ isAuthenticated: true, isInitialized: true });
+              set({ 
+                isAuthenticated: true, 
+                isInitialized: true,
+                isLoading: false 
+              });
               return;
             } else {
               console.log("[AuthStore] Auth local expirado, limpando...");
@@ -123,19 +127,23 @@ export const useAuthStore = create<AuthState>()(
               session, 
               user: session.user, 
               isAuthenticated: true,
-              isInitialized: true 
+              isInitialized: true,
+              isLoading: false 
             });
           } else {
             console.log("[AuthStore] Nenhuma sessão encontrada");
-            set({ isInitialized: true });
+            set({ 
+              isInitialized: true,
+              isLoading: false 
+            });
           }
         } catch (error) {
           console.error('Erro na inicialização:', error);
           get().clearAuth();
-          set({ isInitialized: true });
-        } finally {
-          console.log("[AuthStore] Finalizando initialize");
-          set({ isLoading: false });
+          set({ 
+            isInitialized: true,
+            isLoading: false 
+          });
         }
       },
 
