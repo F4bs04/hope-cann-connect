@@ -1,4 +1,5 @@
 import { useAuth as useAuthContext } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/authStore';
 
 /**
  * Hook unificado que substitui useAuth, useMedicoAuth, useLoginForm
@@ -6,6 +7,7 @@ import { useAuth as useAuthContext } from '@/contexts/AuthContext';
  */
 export function useUnifiedAuth() {
   const auth = useAuthContext();
+  const authStore = useAuthStore();
   
   return {
     // Estados principais
@@ -16,9 +18,9 @@ export function useUnifiedAuth() {
     
     // Dados específicos por tipo (para compatibilidade)
     userData: auth.userProfile,
-    medicoId: auth.userProfile?.id,
-    pacienteId: auth.userProfile?.id,
-    isApproved: true, // Será determinado pelo contexto interno
+    medicoId: authStore.medicoId,
+    pacienteId: authStore.pacienteId,
+    isApproved: authStore.isApproved,
     
     // Ações
     login: auth.login,

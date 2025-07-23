@@ -34,7 +34,7 @@ interface Consultation {
 
 const SmartScheduling: React.FC = () => {
   const { toast } = useToast();
-  const { userProfile, isAuthenticated } = useUnifiedAuth();
+  const { userProfile, isAuthenticated, pacienteId } = useUnifiedAuth();
   
   const [step, setStep] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
@@ -179,7 +179,7 @@ const SmartScheduling: React.FC = () => {
   };
 
   const handleBookConsultation = async () => {
-    if (!selectedDoctor || !selectedSlot || !userProfile) {
+    if (!selectedDoctor || !selectedSlot || !pacienteId) {
       toast({
         title: "Dados incompletos",
         description: "Verifique se todos os campos estão preenchidos",
@@ -201,7 +201,7 @@ const SmartScheduling: React.FC = () => {
         .from('consultas')
         .insert({
           id_medico: selectedDoctor.id,
-          id_paciente: userProfile.id,
+          id_paciente: pacienteId,
           data_hora: consultationDateTime.toISOString(),
           motivo: reason,
           tipo_consulta: consultationType,
