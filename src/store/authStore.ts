@@ -90,26 +90,15 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
         
-        if (state.isLoading) {
-          console.log("[AuthStore] Já está inicializando");
-          return;
-        }
-        
         console.log("[AuthStore] Iniciando inicialização...");
         set({ isLoading: true });
         
         try {
-          // Verificar sessão do Supabase primeiro (mais confiável)
-          console.log("[AuthStore] Verificando sessão do Supabase...");
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          
-          if (sessionError) {
-            console.error("[AuthStore] Erro ao obter sessão:", sessionError);
-            throw sessionError;
-          }
+          // Verificar sessão do Supabase 
+          const { data: { session } } = await supabase.auth.getSession();
           
           if (session?.user) {
-            console.log("[AuthStore] Sessão Supabase encontrada");
+            console.log("[AuthStore] Sessão encontrada");
             await get().loadUserProfile(session.user.email!);
             set({ 
               session, 
@@ -118,17 +107,11 @@ export const useAuthStore = create<AuthState>()(
               isInitialized: true,
               isLoading: false 
             });
-            get().syncLocalStorage();
             return;
           }
           
-          // Limpeza do localStorage se não há sessão Supabase válida
-          console.log("[AuthStore] Limpando localStorage desatualizado");
-          ['isAuthenticated', 'userEmail', 'userId', 'userType', 'authTimestamp']
-            .forEach(key => localStorage.removeItem(key));
-          
-          // Nenhuma autenticação encontrada
-          console.log("[AuthStore] Nenhuma autenticação encontrada");
+          // Nenhuma autenticação
+          console.log("[AuthStore] Nenhuma autenticação");
           set({ 
             isInitialized: true,
             isLoading: false,
@@ -136,8 +119,7 @@ export const useAuthStore = create<AuthState>()(
           });
           
         } catch (error) {
-          console.error('[AuthStore] Erro na inicialização:', error);
-          get().clearAuth();
+          console.error('[AuthStore] Erro:', error);
           set({ 
             isInitialized: true,
             isLoading: false,
