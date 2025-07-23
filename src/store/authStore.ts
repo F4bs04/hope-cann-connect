@@ -394,16 +394,8 @@ if (typeof window !== 'undefined') {
       console.log("[AuthStore] Auth state change:", event);
       const store = useAuthStore.getState();
       
-      // Apenas reagir a mudanças reais de autenticação, não a verificações iniciais
-      if (event === 'SIGNED_IN' && session?.user && !store.isAuthenticated) {
-        console.log("[AuthStore] Usuário fez login via Supabase");
-        await store.loadUserProfile(session.user.email!);
-        useAuthStore.setState({ 
-          session, 
-          user: session.user, 
-          isAuthenticated: true 
-        });
-      } else if (event === 'SIGNED_OUT' && store.isAuthenticated) {
+      // Apenas reagir a eventos específicos para evitar loops
+      if (event === 'SIGNED_OUT') {
         console.log("[AuthStore] Usuário fez logout via Supabase");
         store.clearAuth();
       }
