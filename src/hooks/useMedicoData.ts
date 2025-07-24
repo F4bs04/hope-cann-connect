@@ -46,7 +46,7 @@ export function useMedicoData() {
         .from('medicos')
         .select('*')
         .eq('id', userInfo.medicoId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

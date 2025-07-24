@@ -49,7 +49,7 @@ import ChatMedico from '@/components/medico/ChatMedico';
 // Contexts and Hooks
 import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
 import { MedicoNavigationProvider, useMedicoNavigation } from '@/contexts/MedicoNavigationContext';
-import { useMedicoAuth } from '@/hooks/useMedicoAuth';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { useCurrentUserInfo } from '@/hooks/useCurrentUserInfo';
 import { DashboardSkeleton } from '@/components/medico/LoadingStates';
 
@@ -64,7 +64,7 @@ const AreaMedicoContent: React.FC = () => {
     setSelectedConsulta 
   } = useMedicoNavigation();
   
-  const { isLoading: authLoading, isAuthenticated, isMedico } = useMedicoAuth();
+  const { isLoading: authLoading, isAuthenticated, isMedico } = useUnifiedAuth();
   const { userInfo, loading: userInfoLoading } = useCurrentUserInfo();
   const [showProntuarioAba, setShowProntuarioAba] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);

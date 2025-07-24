@@ -241,11 +241,16 @@ export const useAuthStore = create<AuthState>()(
         let isApproved = true;
 
         if (userData.tipo_usuario === 'medico') {
-          const { data: medicoData } = await supabase
+          const { data: medicoData, error: medicoError } = await supabase
             .from('medicos')
             .select('*')
             .eq('id_usuario', userData.id)
             .maybeSingle();
+
+          if (medicoError) {
+            console.error('Erro ao buscar dados do médico:', medicoError);
+            throw new Error('Erro ao carregar dados do médico');
+          }
 
           if (medicoData) {
             profile = {
@@ -266,6 +271,10 @@ export const useAuthStore = create<AuthState>()(
               isApproved,
               permissions 
             });
+          } else {
+            // Médico sem dados: criar registro pendente ou bloquear acesso
+            console.warn('Usuário médico sem dados na tabela medicos');
+            throw new Error('Perfil de médico incompleto. Entre em contato com o administrador.');
           }
         } else if (userData.tipo_usuario === 'paciente') {
           const { data: pacienteData } = await supabase
