@@ -55,10 +55,10 @@ const WhyChooseUs = () => {
 
             <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
               <h3 className="text-xl font-semibold text-[#36B37E] mb-2">
-                Medicina canábica de qualidade
+                Médica Responsável
               </h3>
               <p className="text-gray-600 text-center">
-                Tratamentos baseados em evidências científicas e protocolos avançados.
+                Dra. Danielle Aymar - CRM-PE: 27.383
               </p>
             </div>
 
