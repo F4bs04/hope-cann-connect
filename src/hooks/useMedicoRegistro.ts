@@ -186,54 +186,94 @@ export const useMedicoRegistro = () => {
       // Upload profile photo if provided
       let fotoUrl = fotoPreview;
       if (data.foto) {
-        const fileExt = data.foto.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
-        const filePath = `medicos/${fileName}`;
-        
-        const { error: uploadError, data: uploadData } = await supabase.storage
-          .from('profiles')
-          .upload(filePath, data.foto);
+        try {
+          console.log("Iniciando upload da foto...");
+          const fileExt = data.foto.name.split('.').pop();
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `medicos/${fileName}`;
           
-        if (uploadError) {
-          console.error("Error uploading photo:", uploadError);
-          throw new Error("Erro ao fazer upload da foto");
+          console.log("Arquivo:", { nome: data.foto.name, tamanho: data.foto.size, tipo: data.foto.type });
+          console.log("Caminho do upload:", filePath);
+          
+          const { error: uploadError, data: uploadData } = await supabase.storage
+            .from('profiles')
+            .upload(filePath, data.foto, {
+              cacheControl: '3600',
+              upsert: false
+            });
+            
+          if (uploadError) {
+            console.error("Erro detalhado no upload:", uploadError);
+            throw new Error(`Erro ao fazer upload da foto: ${uploadError.message}`);
+          }
+          
+          console.log("Upload realizado com sucesso:", uploadData);
+          
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('profiles')
+            .getPublicUrl(filePath);
+            
+          console.log("URL pública gerada:", publicUrl);
+          fotoUrl = publicUrl;
+        } catch (photoError: any) {
+          console.error("Erro no processo de upload da foto:", photoError);
+          toast({
+            variant: "destructive",
+            title: "Erro no upload da foto",
+            description: photoError.message || "Erro desconhecido ao fazer upload da foto",
+          });
+          throw photoError;
         }
-        
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('profiles')
-          .getPublicUrl(filePath);
-          
-        fotoUrl = publicUrl;
       }
       
       // Upload certificate if provided
       if (data.certificado) {
-        const certFileName = `${crypto.randomUUID()}.pfx`;
-        const certFilePath = `certificados/${userData.id}/${certFileName}`;
-        
-        // Upload certificate to storage
-        const { error: certUploadError } = await supabase.storage
-          .from('documentos_medicos')
-          .upload(certFilePath, data.certificado);
+        try {
+          console.log("Iniciando upload do certificado...");
+          const certFileName = `${crypto.randomUUID()}.pfx`;
+          const certFilePath = `certificados/${userData.id}/${certFileName}`;
           
-        if (certUploadError) {
-          console.error("Error uploading certificate:", certUploadError);
-          throw new Error("Erro ao fazer upload do certificado");
-        }
-        
-        // Create document record in the database
-        const { error: docError } = await supabase
-          .from('documentos')
-          .insert({
-            tipo: 'certificado_pfx',
-            caminho_arquivo: certFilePath,
-            descricao: `Certificado PFX de ${userInfo.name || 'médico'}`,
-            id_usuario_upload: userData.id
+          console.log("Certificado:", { nome: data.certificado.name, tamanho: data.certificado.size, tipo: data.certificado.type });
+          console.log("Caminho do certificado:", certFilePath);
+          
+          // Upload certificate to storage
+          const { error: certUploadError } = await supabase.storage
+            .from('documentos_medicos')
+            .upload(certFilePath, data.certificado, {
+              cacheControl: '3600',
+              upsert: false
+            });
+            
+          if (certUploadError) {
+            console.error("Erro detalhado no upload do certificado:", certUploadError);
+            throw new Error(`Erro ao fazer upload do certificado: ${certUploadError.message}`);
+          }
+          
+          console.log("Upload do certificado realizado com sucesso");
+          
+          // Create document record in the database
+          const { error: docError } = await supabase
+            .from('documentos')
+            .insert({
+              tipo: 'certificado_pfx',
+              caminho_arquivo: certFilePath,
+              descricao: `Certificado PFX de ${userInfo.name || 'médico'}`,
+              id_usuario_upload: userData.id
+            });
+            
+          if (docError) {
+            console.error("Erro ao salvar registro do certificado:", docError);
+            // Não joga erro aqui para não bloquear o cadastro por causa do registro do documento
+          }
+        } catch (certError: any) {
+          console.error("Erro no processo de upload do certificado:", certError);
+          toast({
+            variant: "destructive",
+            title: "Erro no upload do certificado",
+            description: certError.message || "Erro desconhecido ao fazer upload do certificado",
           });
-          
-        if (docError) {
-          console.error("Error saving certificate record:", docError);
+          // Continua o processo mesmo se o certificado falhar, pois é opcional
         }
       }
       
