@@ -125,21 +125,21 @@ const PerfilMedico = () => {
           if (medicoId && (medicoId === 1 || medicoId === 2 || medicoId === 3)) {
             const medicoData: Medico = {
               id: medicoId,
-              nome: medicoId === 1 ? "Dr. Ricardo Silva" : medicoId === 2 ? "Dra. Ana Santos" : "Dr. Carlos Mendes",
-              especialidade: medicoId === 2 ? "Psiquiatra" : "Neurologista",
+              nome: medicoId === 1 ? "Dr. Ricardo Silva" : medicoId === 2 ? "Dra. Danielle Aymar" : "Dr. Carlos Mendes",
+              especialidade: medicoId === 2 ? "Medicina Canábica" : "Neurologista",
               foto: medicoId === 1 
                 ? "/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png"
                 : medicoId === 2 
-                  ? "/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png" 
+                  ? "/lovable-uploads/14ca810c-eaca-46c0-a55c-39d2d327c8b0.png" 
                   : "/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png",
               bio: medicoId === 2 
-                ? "Especializada em tratamentos para ansiedade e depressão com abordagem integrativa. Formada pela UFRJ com residência em Psiquiatria pelo Instituto de Psiquiatria da USP." 
+                ? "Médica responsável: Dra. Danielle Aymar\nCRM-PE: 27.383\n\nMédica graduada pela Universidade Federal de Pernambuco (UFPE) em 2018;\n\nDedicou-se aos estudos do sistema endocanabinóide e suas aplicações clínicas realizando formações nacionais e internacionais nessa área (entre elas, WeCann Academy) desde 2022.\n\nAtualmente membra da APMC (Associação Pan-americana de Medicina Canabinoide)." 
                 : "Especialista em epilepsia e doenças neurodegenerativas, com foco em tratamentos inovadores. Formado pela UNICAMP com doutorado em Neurologia Clínica.",
               credenciais: medicoId === 2 
                 ? [
-                    "Membro da Associação Brasileira de Psiquiatria",
-                    "Mestrado em Neurociências",
-                    "Especialização em Cannabis Medicinal para Transtornos Mentais"
+                    "Membro da APMC (Associação Pan-americana de Medicina Canabinoide)",
+                    "Graduada pela Universidade Federal de Pernambuco (UFPE) em 2018",
+                    "Formações nacionais e internacionais em Cannabis Medicinal (WeCann Academy)"
                   ] 
                 : [
                     "Membro da Academia Brasileira de Neurologia",
@@ -147,12 +147,12 @@ const PerfilMedico = () => {
                     "Coordenador do Centro de Tratamento Avançado em Epilepsia"
                   ],
               citacao: medicoId === 2 
-                ? "Minha abordagem combina a psiquiatria tradicional com os avanços da medicina canábica, buscando sempre o melhor resultado para cada paciente." 
+                ? "Dedico-me aos estudos do sistema endocanabinóide e suas aplicações clínicas, sempre buscando oferecer o melhor tratamento canábico para cada paciente." 
                 : "Vejo diariamente como o tratamento canábico pode transformar a vida de pacientes com condições neurológicas complexas.",
               estado: medicoId === 2 ? "RJ" : "SP",
               disponibilidade: medicoId === 2 ? ["this-week", "next-week"] : ["next-week"],
               telefone: "+55 (11) 99999-9999",
-              email: medicoId === 2 ? "dra.ana.santos@hopecann.com.br" : "dr.carlos.mendes@hopecann.com.br",
+              email: medicoId === 2 ? "dra.danielle.aymar@hopecann.com.br" : "dr.carlos.mendes@hopecann.com.br",
               avaliacao: medicoId === 2 ? 4.9 : 4.7,
               endereco: medicoId === 2 ? "Av. Rio Branco, 156 - Centro, Rio de Janeiro - RJ" : "Av. Paulista, 1000 - Bela Vista, São Paulo - SP",
               horarios: ["Segunda a Sexta: 08:00 - 18:00", "Sábados: 08:00 - 12:00"]
@@ -393,7 +393,7 @@ const PerfilMedico = () => {
                       <CardTitle>Biografia</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-700">{medico.bio}</p>
+                      <div className="text-gray-700 whitespace-pre-line">{medico.bio}</div>
                       
                       <blockquote className="border-l-4 border-hopecann-teal pl-4 my-6 italic text-gray-600">
                         {medico.citacao}
