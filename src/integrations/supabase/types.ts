@@ -62,6 +62,44 @@ export type Database = {
           },
         ]
       }
+      admins: {
+        Row: {
+          cargo: string
+          created_at: string | null
+          id: number
+          id_usuario: number | null
+          nome: string
+          permissoes: Json
+          updated_at: string | null
+        }
+        Insert: {
+          cargo?: string
+          created_at?: string | null
+          id?: number
+          id_usuario?: number | null
+          nome: string
+          permissoes?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          cargo?: string
+          created_at?: string | null
+          id?: number
+          id_usuario?: number | null
+          nome?: string
+          permissoes?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admins_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admins_clinica: {
         Row: {
           cargo: string
