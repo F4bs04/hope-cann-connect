@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Info, Check, Upload, Calendar, Camera, User, Mail } from 'lucide-react';
+import { Info, Check, Upload, Calendar, Camera, User, Mail, Eye, EyeOff } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,8 @@ const CadastroMedico = () => {
   const [certificadoNome, setCertificadoNome] = useState<string | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -535,11 +537,20 @@ const CadastroMedico = () => {
                           <FormItem>
                             <FormLabel>Senha</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="password" 
-                                placeholder="********" 
-                                {...field} 
-                              />
+                              <div className="relative">
+                                <Input 
+                                  type={showPassword ? "text" : "password"} 
+                                  placeholder="********" 
+                                  {...field} 
+                                />
+                                <button
+                                  type="button"
+                                  className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 hover:text-gray-600"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? <EyeOff /> : <Eye />}
+                                </button>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -553,11 +564,20 @@ const CadastroMedico = () => {
                           <FormItem>
                             <FormLabel>Confirmar Senha</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="password" 
-                                placeholder="********" 
-                                {...field} 
-                              />
+                              <div className="relative">
+                                <Input 
+                                  type={showConfirmPassword ? "text" : "password"} 
+                                  placeholder="********" 
+                                  {...field} 
+                                />
+                                <button
+                                  type="button"
+                                  className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 hover:text-gray-600"
+                                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                >
+                                  {showConfirmPassword ? <EyeOff /> : <Eye />}
+                                </button>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
