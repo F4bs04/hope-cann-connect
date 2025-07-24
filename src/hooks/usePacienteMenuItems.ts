@@ -1,5 +1,5 @@
 
-import { CalendarDays, FileText, File, Users, HeartPulse, UserCircle, Calendar } from 'lucide-react';
+import { CalendarDays, FileText, File, Users, HeartPulse, UserCircle, Calendar, MessageCircle } from 'lucide-react';
 
 export const usePacienteMenuItems = () => {
   return [
@@ -40,8 +40,8 @@ export const usePacienteMenuItems = () => {
     },
     {
       key: 'medicos',
-      icon: Users,
-      label: 'Meus Médicos'
+      icon: MessageCircle,
+      label: 'Chat com Médicos'
     },
     {
       key: 'perfil',
