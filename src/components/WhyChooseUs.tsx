@@ -66,24 +66,12 @@ const WhyChooseUs = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="p-6 bg-[#F7FDFB] rounded-2xl border border-[#E3F5F5]">
-                <div className="flex items-center justify-center mb-2">
-                  <Stethoscope className="h-6 w-6 text-[#36B37E]" />
-                </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-[#36B37E]">10+</p>
-                  <p className="text-sm text-gray-600">Médicos especializados</p>
-                </div>
-              </div>
-
-              <div className="p-6 bg-[#F7FDFB] rounded-2xl border border-[#E3F5F5]">
-                <div className="flex items-center justify-center mb-2">
-                  <Clock className="h-6 w-6 text-[#36B37E]" />
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-[#36B37E]">1500+</p>
-                  <p className="text-sm text-gray-600">Atendimentos realizados</p>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Médica graduada pela Universidade Federal de Pernambuco (UFPE) em 2018. Dedicou-se aos estudos do sistema endocanabinóide e suas aplicações clínicas realizando formações nacionais e internacionais nessa área (entre elas, WeCann Academy) desde 2022. Atualmente membra da APMC (Associação Pan-americana de Medicina Canabinoide).
+                  </p>
                 </div>
               </div>
             </div>
