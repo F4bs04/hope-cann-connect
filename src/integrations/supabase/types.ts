@@ -1418,6 +1418,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_all_users: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_authenticated_email: {
         Args: Record<PropertyKey, never>
         Returns: string
