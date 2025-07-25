@@ -174,29 +174,18 @@ export const useAuthStore = create<AuthState>()(
             return { success: true };
           }
 
-          // Login de usuário regular
-          const { data: userData } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('email', email)
-            .maybeSingle();
-
-          if (!userData) {
-            return { success: false, error: 'Usuário não encontrado' };
-          }
-
-          const { data: verificationResult, error: verifyError } = await supabase.rpc('verify_user_password_v2', {
-            p_email: email,
-            p_password: password
+          // Login com Supabase Auth
+          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email,
+            password
           });
 
-          if (verifyError || !verificationResult || verificationResult.length === 0) {
-            return { success: false, error: 'Erro na verificação de senha' };
+          if (authError) {
+            return { success: false, error: authError.message };
           }
 
-          const result = verificationResult[0];
-          if (!result.is_valid) {
-            return { success: false, error: 'Senha incorreta' };
+          if (!authData.user) {
+            return { success: false, error: 'Erro na autenticação' };
           }
 
           await get().loadUserProfile(email);
@@ -221,84 +210,89 @@ export const useAuthStore = create<AuthState>()(
       // Carregar perfil do usuário
       loadUserProfile: async (email: string) => {
         try {
-          const { data: userData, error } = await supabase
-            .from('usuarios')
+          // Primeiro, buscar no profiles
+          const { data: userAuth } = await supabase.auth.getUser();
+          if (!userAuth.user) throw new Error('Usuário não autenticado');
+
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
             .select('*')
             .eq('email', email)
             .maybeSingle();
 
-          if (error) throw error;
-          if (!userData) throw new Error('Usuário não encontrado');
+          if (profileError) throw profileError;
+          if (!profileData) throw new Error('Perfil não encontrado');
 
         let profile: UserProfile = {
-          id: userData.id,
-          nome: '',
-          email: userData.email,
-          tipo_usuario: userData.tipo_usuario as 'medico' | 'paciente' | 'admin_clinica',
+          id: profileData.id,
+          nome: profileData.full_name || '',
+          email: profileData.email,
+          tipo_usuario: profileData.role === 'doctor' ? 'medico' : 
+                       profileData.role === 'patient' ? 'paciente' : 'admin_clinica',
         };
 
         let permissions: string[] = [];
         let isApproved = true;
 
-        if (userData.tipo_usuario === 'medico') {
-          const { data: medicoData, error: medicoError } = await supabase
-            .from('medicos')
+        if (profileData.role === 'doctor') {
+          const { data: doctorData, error: doctorError } = await supabase
+            .from('doctors')
             .select('*')
-            .eq('id_usuario', userData.id)
+            .eq('user_id', profileData.id)
             .maybeSingle();
 
-          if (medicoError) {
-            console.error('Erro ao buscar dados do médico:', medicoError);
+          if (doctorError) {
+            console.error('Erro ao buscar dados do médico:', doctorError);
             throw new Error('Erro ao carregar dados do médico');
           }
 
-          if (medicoData) {
+          if (doctorData) {
             profile = {
               ...profile,
-              nome: medicoData.nome,
-              crm: medicoData.crm,
-              especialidade: medicoData.especialidade,
-              telefone: medicoData.telefone,
-              foto_perfil: medicoData.foto_perfil,
-              valor_por_consulta: medicoData.valor_por_consulta
+              nome: profileData.full_name || '',
+              crm: doctorData.crm,
+              especialidade: doctorData.specialty,
+              telefone: profileData.phone,
+              // foto_perfil: doctorData.foto_perfil,
+              valor_por_consulta: doctorData.consultation_fee
             };
             
-            isApproved = medicoData.aprovado;
+            isApproved = doctorData.is_approved;
             permissions = ['dashboard', 'agenda', 'pacientes', 'receitas'];
             
             set({ 
-              medicoId: medicoData.id,
+              medicoId: doctorData.id,
               isApproved,
               permissions 
             });
           } else {
             // Médico sem dados: criar registro pendente ou bloquear acesso
-            console.warn('Usuário médico sem dados na tabela medicos');
+            console.warn('Usuário médico sem dados na tabela doctors');
             throw new Error('Perfil de médico incompleto. Entre em contato com o administrador.');
           }
-        } else if (userData.tipo_usuario === 'paciente') {
-          const { data: pacienteData } = await supabase
-            .from('pacientes')
+        } else if (profileData.role === 'patient') {
+          const { data: patientData } = await supabase
+            .from('patients')
             .select('*')
-            .eq('id_usuario', userData.id)
+            .eq('user_id', profileData.id)
             .maybeSingle();
 
-          if (pacienteData) {
+          if (patientData) {
             profile = {
               ...profile,
-              nome: pacienteData.nome,
-              cpf: pacienteData.cpf,
-              telefone: pacienteData.telefone,
-              data_nascimento: pacienteData.data_nascimento,
-              endereco: pacienteData.endereco,
-              genero: pacienteData.genero,
-              condicao_medica: pacienteData.condicao_medica
+              nome: profileData.full_name || '',
+              cpf: patientData.cpf,
+              telefone: profileData.phone,
+              data_nascimento: patientData.birth_date,
+              endereco: patientData.address,
+              genero: patientData.gender,
+              condicao_medica: patientData.medical_condition
             };
             
             permissions = ['consultas', 'receitas', 'historico'];
             
             set({ 
-              pacienteId: pacienteData.id,
+              pacienteId: patientData.id,
               permissions 
             });
           }
