@@ -18,10 +18,23 @@ export const useAvailableDoctors = () => {
   useEffect(() => {
     const fetchAvailableDoctors = async () => {
       try {
-        // Buscando médicos disponíveis - removendo o filtro de status_disponibilidade
+        // Buscando médicos aprovados da tabela doctors
         const { data, error } = await supabase
-          .from('medicos')
-          .select('*')
+          .from('doctors')
+          .select(`
+            id,
+            user_id,
+            crm,
+            cpf,
+            specialty,
+            biography,
+            consultation_fee,
+            is_available,
+            is_approved,
+            profiles!inner(full_name, email, phone, avatar_url)
+          `)
+          .eq('is_approved', true)
+          .eq('is_available', true)
           .limit(10);
           
         if (error) {
