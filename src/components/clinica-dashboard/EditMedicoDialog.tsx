@@ -22,7 +22,7 @@ interface EditMedicoDialogProps {
 }
 
 interface MedicoInfo {
-  id: number;
+  id: string;
   nome: string;
   crm: string;
   especialidade: string;
@@ -54,7 +54,7 @@ export function EditMedicoDialog({ open, onOpenChange, medico, onUpdate }: EditM
     setIsLoading(true);
     try {
       const { error } = await supabase
-        .from('medicos')
+        .from('doctors')
         .update(formData)
         .eq('id', medico.id);
 

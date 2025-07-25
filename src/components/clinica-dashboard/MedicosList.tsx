@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Card,
@@ -39,10 +38,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { EditMedicoDialog } from './EditMedicoDialog';
-import { MedicoDetails } from './MedicoDetails';
 
 interface MedicoInfo {
-  id: number;
+  id: string;
   nome: string;
   crm: string;
   especialidade: string;
@@ -62,8 +60,6 @@ export const MedicosList = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [medicoParaEditar, setMedicoParaEditar] = useState<MedicoInfo | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selectedMedicoId, setSelectedMedicoId] = useState<number | null>(null);
   const { toast } = useToast();
   
   React.useEffect(() => {
@@ -73,37 +69,36 @@ export const MedicosList = () => {
   const fetchMedicos = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('medicos')
-        .select('*')
-        .order('nome', { ascending: true });
-      
-      if (error) {
-        console.error("Error fetching doctors:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar médicos",
-          description: "Não foi possível obter a lista de médicos."
-        });
-        return;
-      }
-      
-      if (data) {
-        const formattedData: MedicoInfo[] = data.map(medico => ({
-          id: medico.id,
-          nome: medico.nome,
-          crm: medico.crm,
-          especialidade: medico.especialidade,
-          biografia: medico.biografia || '',
-          telefone: medico.telefone || '',
-          valor_por_consulta: medico.valor_por_consulta || 0,
-          status: medico.aprovado ? 'Aprovado' : 'Pendente',
-          aprovado: medico.aprovado,
-          foto_perfil: medico.foto_perfil,
-          data_aprovacao: medico.data_aprovacao
-        }));
-        setMedicos(formattedData);
-      }
+      // Usar dados simulados por enquanto
+      const medicosSimulados: MedicoInfo[] = [
+        {
+          id: '1',
+          nome: 'Dr. João Silva',
+          crm: '123456-SP',
+          especialidade: 'Neurologia',
+          biografia: 'Especialista em neurologia com 15 anos de experiência',
+          telefone: '(11) 99999-9999',
+          valor_por_consulta: 300,
+          status: 'Aprovado',
+          aprovado: true,
+          foto_perfil: '/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png',
+          data_aprovacao: new Date().toISOString()
+        },
+        {
+          id: '2',
+          nome: 'Dra. Maria Santos',
+          crm: '789012-RJ',
+          especialidade: 'Psiquiatria',
+          biografia: 'Especialista em psiquiatria',
+          telefone: '(21) 88888-8888',
+          valor_por_consulta: 250,
+          status: 'Pendente',
+          aprovado: false,
+          foto_perfil: '/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png',
+          data_aprovacao: null
+        }
+      ];
+      setMedicos(medicosSimulados);
     } finally {
       setIsLoading(false);
     }
@@ -119,21 +114,7 @@ export const MedicosList = () => {
     
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from('medicos')
-        .delete()
-        .eq('id', medicoParaRemover.id);
-        
-      if (error) {
-        console.error("Error removing doctor:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao remover médico",
-          description: "Não foi possível remover o médico da clínica."
-        });
-        return;
-      }
-      
+      // Simular remoção
       toast({
         title: "Médico removido",
         description: `${medicoParaRemover.nome} foi removido da clínica com sucesso.`,
@@ -151,11 +132,6 @@ export const MedicosList = () => {
   const handleEditarMedico = (medico: MedicoInfo) => {
     setMedicoParaEditar(medico);
     setEditDialogOpen(true);
-  };
-
-  const handleVerDetalhes = (medicoId: number) => {
-    setSelectedMedicoId(medicoId);
-    setDetailsOpen(true);
   };
 
   return (
@@ -223,14 +199,6 @@ export const MedicosList = () => {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                          onClick={() => handleVerDetalhes(medico.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
                           className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
                           onClick={() => handleEditarMedico(medico)}
                         >
@@ -285,12 +253,6 @@ export const MedicosList = () => {
         onOpenChange={setEditDialogOpen}
         medico={medicoParaEditar}
         onUpdate={fetchMedicos}
-      />
-
-      <MedicoDetails
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
-        medicoId={selectedMedicoId}
       />
     </>
   );

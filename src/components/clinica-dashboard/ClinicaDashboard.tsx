@@ -137,7 +137,7 @@ const DASH_DATA_INITIAL: DashCardData[] = [
   },
 ];
 
-import MedicosPendentesAprovacao from "./MedicosPendentesAprovacao";
+import { MedicosPendentesAprovacao } from "./MedicosPendentesAprovacao";
 import { DashboardCharts } from "./DashboardCharts";
 import { DoctorRoadmap } from "./DoctorRoadmap";
 
