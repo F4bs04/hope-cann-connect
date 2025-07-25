@@ -65,14 +65,9 @@ const DoctorTabs: React.FC = () => {
         
         <TabsContent value="chat">
           {selectedChat ? (
-            <ChatMedico
-              medicoId={medicoId}
-              pacienteId={selectedChat.pacientes_app.id}
-              pacienteNome={selectedChat.pacientes_app.nome}
-              motivoConsulta={selectedChat.consultas.motivo}
-              dataConsulta={selectedChat.data_inicio}
-              onBack={() => setSelectedChat(null)}
-            />
+            <div className="p-4 text-center">
+              <p className="text-gray-600">Chat temporariamente desativado</p>
+            </div>
           ) : (
             <ChatsList 
               medicoId={medicoId} 
