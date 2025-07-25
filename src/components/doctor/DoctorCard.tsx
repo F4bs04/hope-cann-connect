@@ -5,7 +5,7 @@ import { getAvailabilityText, getAvailabilityColor } from "@/utils/doctorUtils";
 
 // Doctor type definition
 export interface Doctor {
-  id: number;
+  id: string;
   name: string;
   specialty: string;
   bio: string;
@@ -15,7 +15,7 @@ export interface Doctor {
 
 interface DoctorCardProps {
   doctor: Doctor;
-  onSelect: (id: number) => void;
+  onSelect: (id: string) => void;
   isSelected?: boolean;
 }
 

@@ -9,10 +9,10 @@ import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface DoctorSearchProps {
-  onSelectDoctor: (id: number) => void;
+  onSelectDoctor: (id: string) => void;
   initialDoctors?: Doctor[];
   isInitialLoading?: boolean;
-  selectedDoctor?: number | null;
+  selectedDoctor?: string | null;
 }
 
 const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = false, selectedDoctor }: DoctorSearchProps) => {
@@ -47,8 +47,13 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
       setIsLoading(true);
       
       const { data, error } = await supabase
-        .from('medicos')
-        .select('*');
+        .from('doctors')
+        .select(`
+          *,
+          profiles!inner(full_name, avatar_url)
+        `)
+        .eq('is_available', true)
+        .eq('is_approved', true);
         
       if (error) {
         throw error;
@@ -60,12 +65,12 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
         const doctorsWithAvailability = await Promise.all(data.map(async (doctor) => {
           // Check for the nearest available appointment
           const { data: appointmentData, error: appointmentError } = await supabase
-            .from('consultas')
-            .select('data_hora')
-            .eq('id_medico', doctor.id)
-            .eq('status', 'agendada')
-            .gte('data_hora', new Date().toISOString())
-            .order('data_hora', { ascending: true })
+            .from('appointments')
+            .select('scheduled_at')
+            .eq('doctor_id', doctor.id)
+            .eq('status', 'scheduled')
+            .gte('scheduled_at', new Date().toISOString())
+            .order('scheduled_at', { ascending: true })
             .limit(1);
           
           if (appointmentError) {
@@ -75,7 +80,7 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
           let availability = ['next-week']; // Default to next week
           
           if (appointmentData && appointmentData.length > 0) {
-            const appointmentDate = new Date(appointmentData[0].data_hora);
+            const appointmentDate = new Date(appointmentData[0].scheduled_at);
             const today = new Date();
             const thisWeekEnd = new Date(today);
             thisWeekEnd.setDate(today.getDate() + 7);
@@ -92,10 +97,10 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
           
           return {
             id: doctor.id,
-            name: doctor.nome || "Médico",
-            specialty: doctor.especialidade || "Medicina Canábica",
-            bio: doctor.biografia || 'Especialista em tratamentos canábicos.',
-            image: doctor.foto_perfil || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+            name: doctor.profiles?.full_name || "Médico",
+            specialty: doctor.specialty || "Medicina Canábica",
+            bio: doctor.biography || 'Especialista em tratamentos canábicos.',
+            image: doctor.profiles?.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
             availability
           };
         }));
@@ -104,7 +109,7 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
         setFilteredDoctors(doctorsWithAvailability);
         
         // Extract unique specialties for filtering
-        const uniqueSpecialties = [...new Set(data.map(doctor => doctor.especialidade).filter(Boolean))];
+        const uniqueSpecialties = [...new Set(data.map(doctor => doctor.specialty).filter(Boolean))];
         setSpecialties(uniqueSpecialties);
       } else {
         console.log("No doctors found in database");

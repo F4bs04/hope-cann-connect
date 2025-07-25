@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -40,36 +39,16 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
     setIsLoading(true);
 
     try {
-      const { data: existingUser, error: checkError } = await supabase
-        .from('usuarios')
-        .select('id')
-        .eq('email', values.email)
-        .maybeSingle();
-      
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine
-        console.error("Error checking existing user:", checkError);
-        throw new Error("Erro ao verificar usuário existente. Tente novamente.");
-      }
-      
-      if (existingUser) {
-        toast({
-          variant: "destructive",
-          title: "Email já cadastrado",
-          description: "Este email já está sendo utilizado. Tente fazer login ou use outro email.",
-        });
-        setIsLoading(false);
-        return;
-      }
-
       const formattedCpf = values.cpf.replace(/\D/g, '');
       
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
         password: values.senha,
         options: {
+          emailRedirectTo: `${window.location.origin}/area-paciente`,
           data: {
             full_name: values.nome,
-            tipo_usuario: 'paciente', // Ensure this is set if needed by auth triggers/policies
+            role: 'patient', // Set role in user metadata
           }
         }
       });
@@ -88,57 +67,37 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
 
       console.log("Supabase Auth User created successfully, ID:", authData.user.id);
 
-      // The 'senha' column in 'usuarios' table is now nullable.
-      // We pass the plaintext password to 'senha_hash' and the trigger handles hashing.
-      const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .insert(
-          {
-            email: values.email,
-            senha_hash: values.senha, // Pass plaintext to be hashed by trigger
-            tipo_usuario: 'paciente',
-            status: true
-          }
-        )
-        .select('id')
-        .single();
-
-      if (userError) {
-        console.error("Public.usuarios creation error:", userError);
-        // Attempt to clean up the auth user if 'usuarios' table insert fails
-        await supabase.auth.admin.deleteUser(authData.user.id); // Requires admin privileges, ensure this is set up if used
-        throw new Error(userError.message || "Erro ao cadastrar dados do usuário");
-      }
-      
-      if (!userData?.id) {
-        throw new Error("Não foi possível obter o ID do usuário da tabela 'usuarios'");
-      }
-
-      const { error: pacienteError } = await supabase
-        .from('pacientes')
+      const { error: patientError } = await supabase
+        .from('patients')
         .insert([
           {
-            id_usuario: userData.id,
-            nome: values.nome,
+            user_id: authData.user.id,
             cpf: formattedCpf,
-            data_nascimento: values.data_nascimento,
-            endereco: values.endereco,
-            telefone: values.telefone,
-            email: values.email
+            birth_date: values.data_nascimento,
+            address: values.endereco || null,
+            // phone will be in profiles.phone
+            // email will be in profiles.email
+            // name will be in profiles.full_name
           }
         ]);
 
-      if (pacienteError) {
-        console.error("Patient creation error:", pacienteError);
-        
-        // Attempt to clean up 'usuarios' and auth user if 'pacientes' table insert fails
-        await supabase
-          .from('usuarios')
-          .delete()
-          .eq('id', userData.id);
-        await supabase.auth.admin.deleteUser(authData.user.id); // Requires admin privileges
-          
-        throw new Error(pacienteError.message || "Erro ao cadastrar paciente");
+      if (patientError) {
+        console.error("Patient creation error:", patientError);
+        throw new Error(patientError.message || "Erro ao criar registro de paciente");
+      }
+
+      // Update profile with additional info
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          phone: values.telefone,
+          // full_name and email already set during auth signup
+        })
+        .eq('id', authData.user.id);
+
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        // Don't throw error for profile update - not critical
       }
 
       toast({
@@ -149,13 +108,12 @@ const CadastroForm: React.FC<CadastroFormProps> = ({ fromScheduling = false }) =
       // Set localStorage items for immediate use by ProtectedRoute and other hooks
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', values.email);
-      localStorage.setItem('userId', userData.id.toString());
+      localStorage.setItem('userId', authData.user.id);
       localStorage.setItem('userType', 'paciente');
       localStorage.setItem('authTimestamp', Date.now().toString());
       // Clear any previous toast flags that might cause issues on the next page
       localStorage.removeItem('toast-shown-auth');
       localStorage.removeItem('toast-shown-perm');
-
 
       if (fromScheduling) {
         navigate('/agendar');

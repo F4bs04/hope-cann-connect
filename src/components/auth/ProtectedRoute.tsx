@@ -57,50 +57,70 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedUserTy
         // Get user type, preferring Supabase session if it exists
         if (session) {
           // Get user type from database
-          const { data: userInfo, error } = await supabase
-            .from('usuarios')
-            .select('tipo_usuario')
-            .eq('email', session.user.email)
+          const { data: profileInfo, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
             .maybeSingle();
             
           if (error) {
             console.error('Error fetching user type:', error);
             setUserType(null);
-          } else if (userInfo) {
-            setUserType(userInfo.tipo_usuario);
+          } else if (profileInfo) {
+            // Convert role to userType format
+            const userTypeMapping: Record<string, string> = {
+              'doctor': 'medico',
+              'patient': 'paciente',
+              'system_admin': 'admin_clinica'
+            };
+            const mappedUserType = userTypeMapping[profileInfo.role] || 'paciente';
+            setUserType(mappedUserType);
             
             // Atualiza localStorage com os dados mais recentes
             localStorage.setItem('isAuthenticated', 'true');
             localStorage.setItem('userEmail', session.user.email || '');
-            localStorage.setItem('userType', userInfo.tipo_usuario);
+            localStorage.setItem('userType', mappedUserType);
             localStorage.setItem('authTimestamp', Date.now().toString());
           } else if (localStorageUserType) {
-            // Fallback to localStorage user type if no match in usuarios table
+            // Fallback to localStorage user type if no match in profiles table
             setUserType(localStorageUserType);
           }
         } else if (localStorageAuth && localStorageUserType && localStorageEmail) {
           // Se não tem sessão Supabase, mas tem localStorage válido
           // Tenta validar o tipo de usuário com base no email armazenado
-          const { data: userInfo, error } = await supabase
-            .from('usuarios')
-            .select('tipo_usuario')
-            .eq('email', localStorageEmail)
-            .maybeSingle();
-            
-          if (error) {
-            console.error('Error validating localStorage user:', error);
-            setUserType(localStorageUserType); // Mantém o tipo armazenado
-          } else if (userInfo) {
-            setUserType(userInfo.tipo_usuario);
-            
-            // Atualiza o tipo de usuário se for diferente
-            if (userInfo.tipo_usuario !== localStorageUserType) {
-              localStorage.setItem('userType', userInfo.tipo_usuario);
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.id) {
+            const { data: profileInfo, error } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', user.id)
+              .maybeSingle();
+              
+            if (error) {
+              console.error('Error validating localStorage user:', error);
+              setUserType(localStorageUserType); // Mantém o tipo armazenado
+            } else if (profileInfo) {
+              const userTypeMapping: Record<string, string> = {
+                'doctor': 'medico',
+                'patient': 'paciente',
+                'system_admin': 'admin_clinica'
+              };
+              const mappedUserType = userTypeMapping[profileInfo.role] || 'paciente';
+              setUserType(mappedUserType);
+              
+              // Atualiza o tipo de usuário se for diferente
+              if (mappedUserType !== localStorageUserType) {
+                localStorage.setItem('userType', mappedUserType);
+              }
+            } else {
+              // Se não encontrou o usuário, usa o tipo do localStorage
+              setUserType(localStorageUserType);
             }
           } else {
-            // Se não encontrou o usuário, usa o tipo do localStorage
             setUserType(localStorageUserType);
           }
+        } else {
+          setUserType(localStorageUserType);
         }
       } catch (error) {
         console.error('Error checking authentication:', error);

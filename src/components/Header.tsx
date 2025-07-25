@@ -121,32 +121,32 @@ const Header = () => {
     try {
       // First check if user is a doctor
       const {
-        data: medico
-      } = await supabase.from('medicos').select('id').eq('id_usuario', userId).single();
-      if (medico) {
+        data: doctor
+      } = await supabase.from('doctors').select('id').eq('user_id', userId).single();
+      if (doctor) {
         setUserType('medico');
         return;
       }
 
       // If not a doctor, check if user is a patient
       const {
-        data: paciente
-      } = await supabase.from('pacientes').select('id').eq('id_usuario', userId).single();
-      if (paciente) {
+        data: patient
+      } = await supabase.from('patients').select('id').eq('user_id', userId).single();
+      if (patient) {
         setUserType('paciente');
         return;
       }
 
-      // Check if user is a clinic admin (check in clinicas table by email)
+      // Check if user is a clinic admin (check in clinics table by email)
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) {
-        const { data: clinica } = await supabase
-          .from('clinicas')
+        const { data: clinic } = await supabase
+          .from('clinics')
           .select('id')
           .eq('email', user.email)
           .single();
         
-        if (clinica) {
+        if (clinic) {
           setUserType('admin_clinica');
           return;
         }

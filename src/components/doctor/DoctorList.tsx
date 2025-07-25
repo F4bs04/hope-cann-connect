@@ -6,9 +6,9 @@ import EmptyDoctorState from './EmptyDoctorState';
 interface DoctorListProps {
   doctors: Doctor[];
   isLoading: boolean;
-  onSelectDoctor: (id: number) => void;
+  onSelectDoctor: (id: string) => void;
   onClearFilters: () => void;
-  selectedDoctor?: number | null;
+  selectedDoctor?: string | null;
 }
 
 const DoctorList = ({ doctors, isLoading, onSelectDoctor, onClearFilters, selectedDoctor }: DoctorListProps) => {
