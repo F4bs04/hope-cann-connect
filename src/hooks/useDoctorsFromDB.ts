@@ -45,6 +45,9 @@ export const useDoctorsFromDB = () => {
           return;
         }
 
+        console.log('Found doctors in database:', doctorsData.length);
+        console.log('Sample doctor data:', doctorsData[0]);
+
         // Process each doctor to add availability information
         const processedDoctors = await Promise.all(
           doctorsData.map(doctor => processDoctorData(doctor))
