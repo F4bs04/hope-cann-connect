@@ -910,6 +910,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_patient_data: {
+        Args: { patient_user_id: string }
+        Returns: boolean
+      }
       delete_all_users: {
         Args: Record<PropertyKey, never>
         Returns: undefined
