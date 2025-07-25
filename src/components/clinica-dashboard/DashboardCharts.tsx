@@ -52,11 +52,8 @@ export const DashboardCharts = () => {
           const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
           const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
           
-          const { count } = await supabase
-            .from('consultas')
-            .select('*', { count: 'exact' })
-            .gte('data_hora', firstDay.toISOString())
-            .lte('data_hora', lastDay.toISOString());
+          // Usando dados simulados por enquanto
+          const count = Math.floor(Math.random() * 10) + 5;
           
           lastSixMonths.push({
             month: monthName,
@@ -66,41 +63,22 @@ export const DashboardCharts = () => {
         
         setConsultasData(lastSixMonths);
         
-        // Buscar saldo total dos médicos
-        const { data: saldosData } = await supabase
-          .from('saldo_medicos')
-          .select('medicos(nome), saldo_total')
-          .order('saldo_total', { ascending: false })
-          .limit(7);
+        // Dados simulados para saldos
+        const saldosSimulados = [
+          { nome: 'Dr. João Silva', saldo: 5000 },
+          { nome: 'Dra. Maria Santos', saldo: 4500 },
+          { nome: 'Dr. Carlos Oliveira', saldo: 3800 }
+        ];
+        setSaldosData(saldosSimulados);
         
-        if (saldosData) {
-          const formattedSaldosData = saldosData.map(item => ({
-            nome: item.medicos?.nome || 'Médico sem nome',
-            saldo: item.saldo_total
-          }));
-          setSaldosData(formattedSaldosData);
-        }
-        
-        // Buscar médicos por especialidade
-        const { data: medicosData } = await supabase
-          .from('medicos')
-          .select('especialidade');
-        
-        if (medicosData) {
-          const especialidadesCount: Record<string, number> = {};
-          medicosData.forEach(medico => {
-            if (medico.especialidade) {
-              especialidadesCount[medico.especialidade] = (especialidadesCount[medico.especialidade] || 0) + 1;
-            }
-          });
+        // Dados simulados para especialidades
+        const especialidadesSimuladas = [
+          { name: 'Neurologia', value: 3 },
+          { name: 'Psiquiatria', value: 2 },
+          { name: 'Clínica Geral', value: 2 }
+        ];
           
-          const formattedEspecialidadesData = Object.entries(especialidadesCount).map(([name, value]) => ({
-            name,
-            value
-          }));
-          
-          setEspecialidadesData(formattedEspecialidadesData);
-        }
+        setEspecialidadesData(especialidadesSimuladas);
       } catch (error) {
         console.error('Erro ao buscar dados para os gráficos:', error);
       } finally {

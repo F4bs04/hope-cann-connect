@@ -1,9 +1,15 @@
 export const formatTelefone = (value: string) => {
-  return value
-    .replace(/\D/g, '')
-    .replace(/(\d{2})(\d)/, '($1) $2')
-    .replace(/(\d{5})(\d)/, '$1-$2')
-    .replace(/(-\d{4})\d+?$/, '$1');
+  const digitsOnly = value.replace(/\D/g, '');
+  
+  if (digitsOnly.length <= 2) {
+    return digitsOnly.replace(/(\d{2})/, '($1');
+  } else if (digitsOnly.length <= 7) {
+    return digitsOnly.replace(/(\d{2})(\d+)/, '($1) $2');
+  } else if (digitsOnly.length <= 10) {
+    return digitsOnly.replace(/(\d{2})(\d{4})(\d+)/, '($1) $2-$3');
+  } else {
+    return digitsOnly.replace(/(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+  }
 };
 
 export const formatCRM = (value: string) => {

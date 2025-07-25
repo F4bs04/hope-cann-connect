@@ -33,20 +33,14 @@ export function DoctorRoadmap() {
   React.useEffect(() => {
     const fetchDoctorsAchievements = async () => {
       try {
-        const { data: consultasData, error } = await supabase
-          .from('consultas')
-          .select(`
-            id_medico,
-            medicos (
-              id,
-              nome,
-              foto_perfil
-            )
-          `)
-          .eq('status', 'realizada')
-          .not('id_medico', 'is', null);
+        // Dados simulados para achievements
+        const consultasSimuladas = [
+          { id_medico: 1, medicos: { id: 1, nome: 'Dr. João Silva', foto_perfil: '/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png' } },
+          { id_medico: 2, medicos: { id: 2, nome: 'Dra. Maria Santos', foto_perfil: '/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png' } }
+        ];
+        const consultasData = consultasSimuladas;
 
-        if (error) throw error;
+        // Simulated data, no error handling needed
 
         const doctorsMap = new Map();
         

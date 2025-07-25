@@ -21,7 +21,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Documento {
-  id: number;
+  id: string;
   tipo: string;
   nome: string;
   data: string;
@@ -34,37 +34,26 @@ export const DocumentosList = () => {
   
   React.useEffect(() => {
     const fetchDocumentos = async () => {
-      // Check the actual database schema
-      const { data, error } = await supabase
-        .from('documentos')
-        .select(`
-          id,
-          tipo,
-          descricao,
-          data_upload,
-          id_usuario_upload,
-          id_paciente,
-          caminho_arquivo
-        `)
-        .order('data_upload', { ascending: false });
-      
-      if (error) {
-        console.error("Error fetching documents:", error);
-        return;
-      }
-      
-      if (data) {
-        // Use mock data for now, but structured from actual database records
-        const formattedData = data.map((item, index) => ({
-          id: item.id,
-          tipo: item.tipo || 'Prescrição',
-          nome: item.descricao || `Documento ${index + 1}`,
-          data: item.data_upload || new Date().toISOString(),
-          medico: `Dr. ${index % 2 === 0 ? 'Carlos Silva' : 'Ana Mendes'}`,
-          paciente: `Paciente ${index + 1}`
-        }));
-        setDocumentos(formattedData);
-      }
+      // Dados simulados para documentos
+      const documentosSimulados: Documento[] = [
+        {
+          id: '1',
+          tipo: 'Prescrição',
+          nome: 'Prescrição Cannabis - João Silva',
+          data: new Date().toISOString(),
+          medico: 'Dr. Carlos Silva',
+          paciente: 'João Silva'
+        },
+        {
+          id: '2',
+          tipo: 'Atestado',
+          nome: 'Atestado Médico - Maria Santos',
+          data: new Date().toISOString(),
+          medico: 'Dra. Ana Mendes',
+          paciente: 'Maria Santos'
+        }
+      ];
+      setDocumentos(documentosSimulados);
     };
     
     fetchDocumentos();

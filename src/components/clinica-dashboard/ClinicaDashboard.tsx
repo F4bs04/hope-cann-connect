@@ -160,7 +160,7 @@ const ClinicaDashboard: React.FC = () => {
 
         // Buscar dados da clínica
         const { data: clinicaData, error: clinicaError } = await supabase
-          .from('clinicas')
+          .from('clinics')
           .select('id')
           .eq('email', clinicaEmail)
           .single();
@@ -168,53 +168,16 @@ const ClinicaDashboard: React.FC = () => {
         if (clinicaError) throw clinicaError;
 
         if (clinicaData) {
-          // Buscar médicos da clínica
-          const { data: medicosData, error: medicosError } = await supabase
-            .from('medicos')
-            .select('*')
-            .eq('id_clinica', clinicaData.id);
+          // Por enquanto usando dados simulados já que a nova estrutura não tem essas tabelas ainda
+          setMedicos(MEDICOS_CADASTRADOS);
 
-          if (medicosError) throw medicosError;
+          // Atualizar os cards com dados simulados
+          const newDashData = [...DASH_DATA_INITIAL];
+          newDashData[0].value = String(MEDICOS_CADASTRADOS.length); // Total de médicos
+          newDashData[1].value = "15"; // Consultas simuladas
+          newDashData[2].value = "8"; // Pacientes simulados
 
-          if (medicosData) {
-            const medicosFormatados = medicosData.map(medico => ({
-              id: medico.id,
-              nome: medico.nome,
-              especialidade: medico.especialidade,
-              crm: medico.crm,
-              foto: medico.foto_perfil || "/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png"
-            }));
-            setMedicos(medicosFormatados);
-
-            // Atualizar os cards com dados reais
-            const newDashData = [...DASH_DATA_INITIAL];
-            newDashData[0].value = String(medicosData.length); // Total de médicos
-            
-            // Buscar total de consultas da clínica
-            const { count: consultasCount } = await supabase
-              .from('consultas')
-              .select('*', { count: 'exact' })
-              .eq('id_clinica', clinicaData.id);
-
-            newDashData[1].value = String(consultasCount || 0);
-
-            // Buscar pacientes atendidos
-            const { count: pacientesCount } = await supabase
-              .from('pacientes')
-              .select('*', { count: 'exact' });
-
-            newDashData[2].value = String(pacientesCount || 0);
-
-            setDashData(newDashData);
-
-            // Buscar saldo dos médicos
-            const saldoData = await getSaldoMedicos();
-            setSaldoMedicos(saldoData || []);
-
-            // Buscar últimas transações
-            const transacoesData = await getTransacoesMedicos();
-            setUltimasTransacoes(transacoesData || []);
-          }
+          setDashData(newDashData);
         }
       } catch (error) {
         console.error("Erro ao buscar dados:", error);

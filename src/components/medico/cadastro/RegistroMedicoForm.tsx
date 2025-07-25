@@ -93,7 +93,7 @@ const RegistroMedicoForm: React.FC<RegistroMedicoFormProps> = ({
                 <FormLabel>Telefone de contato</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="(00) 00000-0000" 
+                    placeholder="(11) 99999-9999"
                     {...field} 
                     onChange={(e) => {
                       handleTelefoneChange(e);
