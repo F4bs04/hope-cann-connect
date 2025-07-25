@@ -91,34 +91,21 @@ const CadastroMedico = () => {
     setIsLoading(true);
     
     try {
-      // Check if email already exists before proceeding
-      const { data: existingUser, error: checkError } = await supabase
-        .from('usuarios')
-        .select('id')
-        .eq('email', data.email)
-        .single();
-      
-      if (existingUser) {
-        toast({
-          variant: "destructive",
-          title: "Email já cadastrado",
-          description: "Este email já está sendo utilizado. Tente fazer login ou use outro email.",
-        });
-        setIsLoading(false);
-        return;
-      }
+      // Check if user already exists (let Supabase handle the error)
+      // We'll catch the error below if the user already exists
       
       // Format CPF to match database requirements (remove any non-digit characters)
       const formattedCpf = data.cpf.replace(/\D/g, '');
       
-      // First, create auth user
+      // First, create auth user with redirect URL
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
-        password: data.senha, // Use the password from the form
+        password: data.senha,
         options: {
+          emailRedirectTo: `${window.location.origin}/complete-registro-medico`,
           data: {
             full_name: data.nome,
-            tipo_usuario: 'medico',
+            role: 'doctor', // Set as doctor role
           }
         }
       });
@@ -131,33 +118,7 @@ const CadastroMedico = () => {
         throw new Error("Falha ao criar usuário");
       }
 
-      // Then create usuario record
-      const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .insert([
-          {
-            email: data.email,
-            senha: data.senha, // Store the password hash
-            tipo_usuario: 'medico',
-            status: false // Starts as inactive until verified
-          }
-        ])
-        .select('id')
-        .single();
-
-      if (userError) {
-        // If error is duplicate key, provide a clear message
-        if (userError.code === '23505') {
-          toast({
-            variant: "destructive",
-            title: "Email já cadastrado",
-            description: "Este email já está sendo utilizado. Tente fazer login ou use outro email.",
-          });
-          setIsLoading(false);
-          return;
-        }
-        throw userError;
-      }
+      const userId = authData.user.id;
 
       // Upload profile photo if provided
       let fotoUrl = null;
@@ -183,31 +144,41 @@ const CadastroMedico = () => {
         fotoUrl = publicUrl;
       }
       
-      // Create medico record with password hash
-      const { error: medicoError } = await supabase
-        .from('medicos')
+      // Create doctor record in new structure
+      const { error: doctorError } = await supabase
+        .from('doctors')
         .insert([
           {
-            id_usuario: userData.id,
-            nome: data.nome,
+            user_id: userId,
             crm: data.crm,
             cpf: formattedCpf,
-            especialidade: data.especialidade,
-            biografia: data.biografia || null,
-            telefone: '', // Will be filled in later
-            foto_perfil: fotoUrl,
-            senha_hash: data.senha, // This will be hashed by the database trigger
-            status_disponibilidade: false // Starts as inactive until verified and schedule is set
+            specialty: data.especialidade,
+            biography: data.biografia || null,
+            consultation_fee: 150.00, // Default consultation fee
+            is_available: false, // Will be activated after completing registration
+            is_approved: false // Needs approval
           }
         ]);
 
-      if (medicoError) {
-        throw medicoError;
+      if (doctorError) {
+        throw doctorError;
+      }
+      
+      // Update profile avatar if uploaded
+      if (fotoUrl) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ avatar_url: fotoUrl })
+          .eq('id', userId);
+          
+        if (profileError) {
+          console.error("Error updating profile avatar:", profileError);
+        }
       }
       
       toast({
-        title: "Cadastro enviado com sucesso!",
-        description: "Aguarde a verificação das suas informações e complete seu cadastro para começar a atender.",
+        title: "Cadastro realizado com sucesso!",
+        description: "Bem-vindo! Complete seu perfil adicionando seus horários de atendimento.",
       });
       
       // Redirect to complete registration page

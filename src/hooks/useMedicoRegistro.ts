@@ -72,38 +72,31 @@ export const useMedicoRegistro = () => {
           setFotoPreview(user.user_metadata.avatar_url);
         }
 
-        // Get user ID from our usuarios table
-        const { data: userData, error: userError } = await supabase
-          .from('usuarios')
-          .select('id')
-          .eq('email', user.email)
+        // Get doctor data if exists using the new table structure
+        const { data: doctorData, error: doctorError } = await supabase
+          .from('doctors')
+          .select('*')
+          .eq('user_id', user.id)
           .single();
 
-        if (userError) {
-          console.error("Error fetching user data:", userError);
-          return;
-        }
-
-        // Get medico data if exists
-        if (userData) {
-          const { data: medicoData, error: medicoError } = await supabase
-            .from('medicos')
-            .select('*')
-            .eq('id_usuario', userData.id)
+        if (!doctorError && doctorData) {
+          setMedicoId(doctorData.id);
+          
+          // Pre-fill form with existing data
+          form.setValue('crm', doctorData.crm || '');
+          form.setValue('telefone', ''); // Will be filled later
+          form.setValue('especialidade', doctorData.specialty || '');
+          form.setValue('biografia', doctorData.biography || '');
+          
+          // Get avatar from profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', user.id)
             .single();
-
-          if (!medicoError && medicoData) {
-            setMedicoId(medicoData.id.toString());
             
-            // Pre-fill form with existing data
-            form.setValue('crm', medicoData.crm || '');
-            form.setValue('telefone', medicoData.telefone || '');
-            form.setValue('especialidade', medicoData.especialidade || '');
-            form.setValue('biografia', medicoData.biografia || '');
-            
-            if (medicoData.foto_perfil) {
-              setFotoPreview(medicoData.foto_perfil);
-            }
+          if (profileData?.avatar_url) {
+            setFotoPreview(profileData.avatar_url);
           }
         }
       }
@@ -172,16 +165,13 @@ export const useMedicoRegistro = () => {
         throw new Error("Informações de usuário não encontradas");
       }
       
-      // Get user ID from usuarios table
-      const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .select('id')
-        .eq('email', userInfo.email)
-        .single();
-      
-      if (userError) {
-        throw userError;
+      // Get current session to get user_id
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        throw new Error("Usuário não autenticado");
       }
+      
+      const currentUserId = session.user.id;
       
       // Upload profile photo if provided
       let fotoUrl = fotoPreview;
@@ -232,7 +222,7 @@ export const useMedicoRegistro = () => {
         try {
           console.log("Iniciando upload do certificado...");
           const certFileName = `${crypto.randomUUID()}.pfx`;
-          const certFilePath = `certificados/${userData.id}/${certFileName}`;
+          const certFilePath = `certificados/${currentUserId}/${certFileName}`;
           
           console.log("Certificado:", { nome: data.certificado.name, tamanho: data.certificado.size, tipo: data.certificado.type });
           console.log("Caminho do certificado:", certFilePath);
@@ -252,14 +242,15 @@ export const useMedicoRegistro = () => {
           
           console.log("Upload do certificado realizado com sucesso");
           
-          // Create document record in the database
+          // Create document record in the new database structure
           const { error: docError } = await supabase
-            .from('documentos')
+            .from('documents')
             .insert({
-              tipo: 'certificado_pfx',
-              caminho_arquivo: certFilePath,
-              descricao: `Certificado PFX de ${userInfo.name || 'médico'}`,
-              id_usuario_upload: userData.id
+              document_type: 'medical_certificate',
+              title: `Certificado PFX de ${userInfo.name || 'médico'}`,
+              file_path: certFilePath,
+              file_bucket: 'documentos_medicos',
+              patient_id: currentUserId // Temporary, will be adjusted
             });
             
           if (docError) {
@@ -277,23 +268,34 @@ export const useMedicoRegistro = () => {
         }
       }
       
-      // Update or create medico record
-      let medicoIdToUse = medicoId;
+      // Update profile with avatar if uploaded
+      if (fotoUrl) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ avatar_url: fotoUrl })
+          .eq('id', currentUserId);
+          
+        if (profileError) {
+          console.error("Error updating profile avatar:", profileError);
+        }
+      }
+      
+      // Update or create doctor record in new structure
+      let doctorIdToUse = medicoId;
       
       if (!medicoId) {
-        // Create new record if doesn't exist
-        const { data: newMedico, error: createError } = await supabase
-          .from('medicos')
+        // Create new doctor record
+        const { data: newDoctor, error: createError } = await supabase
+          .from('doctors')
           .insert({
-            id_usuario: userData.id,
-            nome: userInfo.name || '',
+            user_id: currentUserId,
             crm: data.crm,
-            cpf: '', // Required field in the database
-            especialidade: data.especialidade,
-            biografia: data.biografia || null,
-            telefone: data.telefone,
-            foto_perfil: fotoUrl,
-            status_disponibilidade: true // Now active
+            cpf: '', // Will be filled in complete registration
+            specialty: data.especialidade,
+            biography: data.biografia || null,
+            consultation_fee: 150.00, // Default fee
+            is_available: true,
+            is_approved: false // Needs approval
           })
           .select()
           .single();
@@ -302,62 +304,79 @@ export const useMedicoRegistro = () => {
           throw createError;
         }
         
-        medicoIdToUse = newMedico.id.toString();
+        doctorIdToUse = newDoctor.id;
       } else {
-        // Update existing record
+        // Update existing doctor record
         const { error: updateError } = await supabase
-          .from('medicos')
+          .from('doctors')
           .update({
             crm: data.crm,
-            especialidade: data.especialidade,
-            biografia: data.biografia || null,
-            telefone: data.telefone,
-            foto_perfil: fotoUrl,
-            status_disponibilidade: true // Now active
+            specialty: data.especialidade,
+            biography: data.biografia || null,
+            is_available: true
           })
-          .eq('id', parseInt(medicoId));
+          .eq('id', medicoId);
           
         if (updateError) {
           throw updateError;
         }
       }
       
-      // Save schedule information
+      // Save schedule information in new structure
       for (const horario of horarios) {
-        // Use raw query to insert into the horarios_disponiveis table
-        const { error: horariosError } = await supabase
-          .from('horarios_disponiveis')
+        // Map Portuguese day names to English enum values
+        const dayMapping: Record<string, string> = {
+          'segunda-feira': 'monday',
+          'terça-feira': 'tuesday',
+          'quarta-feira': 'wednesday',
+          'quinta-feira': 'thursday',
+          'sexta-feira': 'friday',
+          'sábado': 'saturday',
+          'domingo': 'sunday'
+        };
+        
+        const dayOfWeek = dayMapping[horario.dia.toLowerCase()] || horario.dia.toLowerCase();
+        
+        const { error: scheduleError } = await supabase
+          .from('doctor_schedules')
           .insert({
-            id_medico: medicoIdToUse ? parseInt(medicoIdToUse) : null,
-            dia_semana: horario.dia,
-            hora_inicio: horario.horaInicio,
-            hora_fim: horario.horaFim
+            doctor_id: doctorIdToUse,
+            day_of_week: dayOfWeek,
+            start_time: horario.horaInicio,
+            end_time: horario.horaFim,
+            is_active: true
           });
           
-        if (horariosError) {
-          console.error("Error saving schedule:", horariosError);
-          throw horariosError;
+        if (scheduleError) {
+          console.error("Error saving schedule:", scheduleError);
+          throw scheduleError;
         }
       }
       
-      // Update usuario status to active
-      const { error: statusError } = await supabase
-        .from('usuarios')
+      // Update profile role to doctor
+      const { error: roleError } = await supabase
+        .from('profiles')
         .update({
-          status: true
+          role: 'doctor'
         })
-        .eq('id', userData.id);
+        .eq('id', currentUserId);
         
-      if (statusError) {
-        throw statusError;
+      if (roleError) {
+        console.error("Error updating user role:", roleError);
       }
       
       toast({
         title: "Cadastro concluído com sucesso!",
-        description: "Você já pode começar a atender pacientes na plataforma.",
+        description: "Seu perfil está completo! Aguarde a aprovação para começar a atender.",
       });
       
-      // Redirect to doctor dashboard
+      // Force user to be logged in as doctor and redirect
+      localStorage.setItem('userType', 'doctor');
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userEmail', userInfo.email || '');
+      localStorage.setItem('userId', currentUserId);
+      
+      // Redirect to doctor area
       navigate('/area-medico');
       
     } catch (error: any) {
