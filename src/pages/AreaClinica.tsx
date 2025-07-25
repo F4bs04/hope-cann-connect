@@ -168,11 +168,7 @@ const AreaClinica: React.FC = () => {
             {currentSection === 'medicos' && <MedicosList />}
             {currentSection === 'agendamentos' && <AgendamentosList />}
             {currentSection === 'documentos' && <DocumentosList />}
-            <EditProfileDialog 
-              open={showProfileDialog}
-              onOpenChange={setShowProfileDialog}
-              userId={userData?.id || 0}
-            />
+            {/* EditProfileDialog temporarily disabled */}
           </main>
         </SidebarInset>
       </div>

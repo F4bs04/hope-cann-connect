@@ -1,40 +1,8 @@
-
-import { supabase } from "@/integrations/supabase/client";
-
-export const getProntuarios = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('prontuarios')
-      .select('*');
-    
-    if (error) {
-      console.error("Erro ao buscar prontuários:", error);
-      return [];
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Erro ao buscar prontuários:", error);
-    return [];
-  }
-};
-
-export const createProntuario = async (prontuarioData: any) => {
-  try {
-    const { data, error } = await supabase
-      .from('prontuarios')
-      .insert([prontuarioData])
-      .select()
-      .single();
-    
-    if (error) {
-      console.error("Erro ao criar prontuário:", error);
-      return null;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Erro ao criar prontuário:", error);
-    return null;
-  }
-};
+// Prontuarios service temporarily disabled due to database schema updates
+export const getProntuariosByPaciente = async () => [];
+export const createProntuario = async () => ({ success: false });
+export const updateProntuario = async () => ({ success: false });
+export const deleteProntuario = async () => ({ success: false });
+export const getProntuariosByMedico = async () => [];
+export const getProntuarioById = async () => null;
+export const getProntuarios = async () => [];

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { AgendamentoTest } from '../components/test/AgendamentoTest';
+// AgendamentoTest component temporarily removed
 import { Phone, Mail, MapPin, Clock, MessageSquare, Send, CheckCircle } from 'lucide-react';
 
 const Contato = () => {

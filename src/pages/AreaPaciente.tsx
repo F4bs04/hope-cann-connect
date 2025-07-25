@@ -127,15 +127,15 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
       case 'agendar':
         return <SmartScheduling />;
       case 'consultas':
-        return <ConsultasPaciente pacienteId={pacienteId} />;
+        return <ConsultasPaciente />;
       case 'receitas':
-        return <ReceitasPaciente pacienteId={pacienteId} />;
+        return <ReceitasPaciente />;
       case 'atestados':
-        return <AtestadosPaciente pacienteId={pacienteId} />;
+        return <AtestadosPaciente />;
       case 'laudos':
-        return <LaudosPaciente pacienteId={pacienteId} />;
+        return <LaudosPaciente />;
       case 'pedidos-exame':
-        return <PedidosExamePaciente pacienteId={pacienteId} />;
+        return <PedidosExamePaciente />;
       case 'medicos':
         return <MedicosPaciente pacienteId={pacienteId} />;
       case 'perfil':

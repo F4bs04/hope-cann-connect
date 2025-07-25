@@ -8,7 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 // This is a placeholder component that would be connected to real notifications data
 const Notificacoes = () => {
-  const { userType, userData } = useAuth();
+  const { userData } = useAuth();
+  const userType = null; // Temporarily disabled
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 

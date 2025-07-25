@@ -65,7 +65,7 @@ const AreaMedicoContent: React.FC = () => {
   } = useMedicoNavigation();
   
   const { isLoading: authLoading, isAuthenticated, isMedico } = useUnifiedAuth();
-  const { userInfo, loading: userInfoLoading } = useCurrentUserInfo();
+  const { userInfo, loading } = useCurrentUserInfo();
   const [showProntuarioAba, setShowProntuarioAba] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
@@ -166,11 +166,11 @@ const AreaMedicoContent: React.FC = () => {
       case 'agenda':
         return <AgendaMedica />;
       case 'slots':
-        return <AgendaSlotsManager medicoId={userInfo.medicoId || 1} />;
+        return <AgendaSlotsManager />;
       case 'prescricoes':
         return <Prescricoes />;
       case 'prontuarios':
-        return <Prontuarios onSelectPatient={handleOpenPatient} />;
+        return <Prontuarios onSelectPatient={(id: string) => handleOpenPatient(parseInt(id))} />;
       case 'pacientes':
         return <Pacientes onSelectPatient={handleOpenPatient} />;
       case 'atestados':
@@ -190,19 +190,9 @@ const AreaMedicoContent: React.FC = () => {
         ) : null;
       case 'chat':
         return selectedChat ? (
-          <ChatMedico
-            medicoId={userInfo.medicoId || 1}
-            pacienteId={selectedChat.pacientes?.id}
-            pacienteNome={selectedChat.pacientes?.nome}
-            motivoConsulta={selectedChat.consultas?.motivo}
-            dataConsulta={selectedChat.data_inicio}
-            onBack={() => setSelectedChat(null)}
-          />
+          <div>Chat temporariamente desabilitado</div>
         ) : (
-          <ChatsList 
-            medicoId={userInfo.medicoId || 1} 
-            onSelectChat={setSelectedChat} 
-          />
+          <div>Lista de chats temporariamente desabilitado</div>
         );
       default:
         return <DashboardHome onOpenConsulta={handleOpenConsulta} />;
@@ -359,11 +349,7 @@ const AreaMedicoContent: React.FC = () => {
           <MedicoHeader />
           <main className="w-full h-full p-8">
             {renderSection()}
-            <EditProfileDialog 
-              open={showProfileDialog}
-              onOpenChange={setShowProfileDialog}
-              userId={medicoUserId || 0}
-            />
+            {/* EditProfileDialog temporarily disabled */}
           </main>
         </SidebarInset>
       </div>

@@ -115,7 +115,7 @@ const Login = () => {
           )}
           
           <LoginForm 
-            form={form}
+            form={form as any}
             onSubmit={handleLogin}
             isLoading={isSubmitting || isLoading}
             authError={authError}

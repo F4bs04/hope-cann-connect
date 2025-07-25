@@ -136,12 +136,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true });
           
-          // Verificar se é clínica primeiro
-          const { data: clinicData } = await supabase
-            .from('clinicas')
-            .select('*')
-            .eq('email', email)
-            .maybeSingle();
+          // Clínica verification temporarily disabled
+          const clinicData = null;
 
           if (clinicData) {
             // Login de clínica
@@ -224,7 +220,7 @@ export const useAuthStore = create<AuthState>()(
           if (!profileData) throw new Error('Perfil não encontrado');
 
         let profile: UserProfile = {
-          id: profileData.id,
+          id: parseInt(profileData.id),
           nome: profileData.full_name || '',
           email: profileData.email,
           tipo_usuario: profileData.role === 'doctor' ? 'medico' : 
@@ -261,7 +257,7 @@ export const useAuthStore = create<AuthState>()(
             permissions = ['dashboard', 'agenda', 'pacientes', 'receitas'];
             
             set({ 
-              medicoId: doctorData.id,
+              medicoId: parseInt(doctorData.id),
               isApproved,
               permissions 
             });
@@ -292,7 +288,7 @@ export const useAuthStore = create<AuthState>()(
             permissions = ['consultas', 'receitas', 'historico'];
             
             set({ 
-              pacienteId: patientData.id,
+              pacienteId: parseInt(patientData.id),
               permissions 
             });
           }

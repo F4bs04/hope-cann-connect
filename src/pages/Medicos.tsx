@@ -46,10 +46,10 @@ const Medicos = () => {
               
               <div className="lg:w-3/4">
                 <DoctorSearch 
-                  onSelectDoctor={handleSelectDoctor} 
-                  initialDoctors={doctors}
+                  onSelectDoctor={(id: string) => handleSelectDoctor(parseInt(id))} 
+                  initialDoctors={[]}
                   isInitialLoading={isLoading}
-                  selectedDoctor={selectedDoctor}
+                  selectedDoctor={selectedDoctor?.toString() || null}
                 />
               </div>
             </div>

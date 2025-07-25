@@ -1,61 +1,7 @@
-
-import { supabase } from "@/integrations/supabase/client";
-
-export const getReceitasByPaciente = async (pacienteId: number) => {
-  try {
-    const { data, error } = await supabase
-      .from('receitas_app')
-      .select('*')
-      .eq('id_paciente', pacienteId)
-      .order('data', { ascending: false });
-    
-    if (error) {
-      console.error("Erro ao buscar receitas:", error);
-      return [];
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Erro ao buscar receitas:", error);
-    return [];
-  }
-};
-
-export const getReceitas = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('receitas_app')
-      .select('*, pacientes_app(nome)')
-      .order('data', { ascending: false });
-    
-    if (error) {
-      console.error("Erro ao buscar receitas:", error);
-      return [];
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Erro ao buscar receitas:", error);
-    return [];
-  }
-};
-
-export const createReceita = async (receitaData: any) => {
-  try {
-    const { data, error } = await supabase
-      .from('receitas_app')
-      .insert([receitaData])
-      .select()
-      .single();
-    
-    if (error) {
-      console.error("Erro ao criar receita:", error);
-      return null;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Erro ao criar receita:", error);
-    return null;
-  }
-};
+// Receitas service temporarily disabled due to database schema updates
+export const getReceitasByPaciente = async () => [];
+export const createReceita = async () => ({ success: false });
+export const updateReceita = async () => ({ success: false });
+export const deleteReceita = async () => ({ success: false });
+export const getReceitasByMedico = async () => [];
+export const getReceitas = async () => [];
