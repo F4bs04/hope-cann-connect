@@ -22,11 +22,11 @@ export const useDoctorDiagnostics = () => {
   useEffect(() => {
     const diagnoseDatabase = async () => {
       try {
-        // 1. Verificando usuários do tipo médico na tabela 'usuarios'
+        // 1. Verificando usuários do tipo médico na tabela 'profiles'
         const { data: userDoctors, error: userDoctorsError } = await supabase
-          .from('usuarios')
+          .from('profiles')
           .select('*')
-          .eq('tipo_usuario', 'medico');
+          .eq('role', 'doctor');
         
         if (userDoctorsError) {
           console.error('Error fetching doctor users:', userDoctorsError);
@@ -44,9 +44,9 @@ export const useDoctorDiagnostics = () => {
           console.log("Nenhum usuário médico encontrado na tabela");
         }
         
-        // 2. Verificando todos os médicos na tabela 'medicos' para diagnóstico
+        // 2. Verificando todos os médicos na tabela 'doctors' para diagnóstico
         const { data: allDoctors, error: allDoctorsError } = await supabase
-          .from('medicos')
+          .from('doctors')
           .select('*');
         
         if (allDoctorsError) {
