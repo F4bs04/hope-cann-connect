@@ -6,6 +6,27 @@ export const cadastroMedicoFormSchema = z.object({
   crm: z.string().min(4, {
     message: 'CRM inválido',
   }).max(14),
+  telefone: z.string().min(10, {
+    message: 'Telefone inválido',
+  }).max(15),
+  especialidade: z.string().min(3, {
+    message: 'Especialidade é obrigatória',
+  }),
+  biografia: z.string().optional(),
+  foto: z.instanceof(File, {
+    message: 'Foto de perfil',
+  }).optional(),
+  certificado: z.instanceof(File).optional(),
+  termoConciencia: z.boolean().refine((val) => val === true, {
+    message: 'Você deve aceitar os termos',
+  }),
+});
+
+// Schema for complete doctor registration (includes password fields)
+export const cadastroMedicoCompletoSchema = z.object({
+  crm: z.string().min(4, {
+    message: 'CRM inválido',
+  }).max(14),
   senha: z.string().min(8, {
     message: 'A senha deve ter pelo menos 8 caracteres',
   }),
@@ -20,7 +41,7 @@ export const cadastroMedicoFormSchema = z.object({
   foto: z.instanceof(File, {
     message: 'Foto de perfil',
   }).optional(),
-  certificado: z.instanceof(File).optional(), // Added back the certificado field as optional
+  certificado: z.instanceof(File).optional(),
   termoConciencia: z.boolean().refine((val) => val === true, {
     message: 'Você deve aceitar os termos',
   }),
@@ -30,3 +51,4 @@ export const cadastroMedicoFormSchema = z.object({
 });
 
 export type CadastroMedicoFormValues = z.infer<typeof cadastroMedicoFormSchema>;
+export type CadastroMedicoCompletoValues = z.infer<typeof cadastroMedicoCompletoSchema>;
