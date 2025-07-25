@@ -30,10 +30,6 @@ export const {
   getSaldoMedicos,
   getTransacoesMedico,
   getTransacoesMedicos,
-  getTemplatesExame,
-  saveTemplateExame,
-  updateTemplateUsage,
-  deleteTemplateExame
 } = medicosService;
 
 export const {

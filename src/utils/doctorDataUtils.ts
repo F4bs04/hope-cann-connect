@@ -39,7 +39,7 @@ export const processDoctorData = async (doctor: any): Promise<Doctor> => {
   }
   
   return {
-    id: doctor.id,
+    id: doctor.id.toString(), // Convert UUID to string to match DoctorCard interface
     name: doctor.profiles?.full_name || "Médico",
     specialty: doctor.specialty || "Medicina Canábica",
     bio: doctor.biography || 'Especialista em tratamentos canábicos.',
@@ -53,21 +53,21 @@ export const processDoctorData = async (doctor: any): Promise<Doctor> => {
  */
 export const createFallbackDoctors = (): Doctor[] => {
   return [{
-    id: 1,
+    id: "1",
     name: "Dr. Ricardo Silva",
     specialty: "Neurologista",
     bio: "Especialista em tratamentos canábicos para distúrbios neurológicos.",
     image: `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
     availability: ['today', 'this-week']
   }, {
-    id: 2,
+    id: "2",
     name: "Dra. Ana Santos",
     specialty: "Psiquiatra",
     bio: "Especializada em tratamentos para ansiedade e depressão com abordagem integrativa.",
     image: `/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png`,
     availability: ['this-week']
   }, {
-    id: 3,
+    id: "3",
     name: "Dr. Carlos Mendes",
     specialty: "Neurologista",
     bio: "Especialista em epilepsia e doenças neurodegenerativas, com foco em tratamentos inovadores.",

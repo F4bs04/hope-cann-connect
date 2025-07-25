@@ -160,7 +160,7 @@ const HomeScheduling = () => {
           setStep(4); 
         } else {
            console.error("[HomeScheduling] Falha ao criar consulta. Erro retornado por createConsulta:", JSON.stringify(createConsultaError, null, 2));
-           toast({ title: "Erro no Agendamento", description: createConsultaError?.message || "Não foi possível agendar sua consulta. Verifique os logs.", variant: "destructive" });
+           toast({ title: "Erro no Agendamento", description: typeof createConsultaError === 'string' ? createConsultaError : "Não foi possível agendar sua consulta. Verifique os logs.", variant: "destructive" });
         }
       } catch (error: any) {
         console.error("[HomeScheduling] Erro geral (catch) ao agendar consulta (usuário logado):", error);

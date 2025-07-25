@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { saveTemplateExame } from '@/services/medicos/medicosService';
+import { saveTemplateExame } from '@/services/exames/examesService';
 import { useToast } from '@/hooks/use-toast';
 
 interface SaveTemplateDialogProps {

@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { deleteTemplateExame } from '@/services/medicos/medicosService';
+import { deleteTemplateExame } from '@/services/exames/examesService';
 import { useToast } from '@/hooks/use-toast';
 
 interface ExameTemplateItemProps {

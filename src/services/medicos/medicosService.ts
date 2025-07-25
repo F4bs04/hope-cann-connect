@@ -10,7 +10,3 @@ export const searchMedicos = async () => [];
 export const getSaldoMedicos = async () => [];
 export const getTransacoesMedico = async () => [];
 export const getTransacoesMedicos = async () => [];
-export const getTemplatesExame = async () => [];
-export const saveTemplateExame = async () => ({ success: false });
-export const updateTemplateUsage = async () => ({ success: false });
-export const deleteTemplateExame = async () => ({ success: false });

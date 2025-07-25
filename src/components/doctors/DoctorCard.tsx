@@ -7,7 +7,7 @@ import { getAvailabilityText, getAvailabilityColor } from "@/utils/doctorUtils";
 
 // Doctor type definition
 export interface Doctor {
-  id: number;
+  id: string;
   name: string;
   specialty: string;
   bio: string;
