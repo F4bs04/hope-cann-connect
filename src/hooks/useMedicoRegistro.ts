@@ -326,13 +326,20 @@ export const useMedicoRegistro = () => {
       for (const horario of horarios) {
         // Map Portuguese day names to English enum values
         const dayMapping: Record<string, string> = {
+          'segunda': 'monday',
+          'terca': 'tuesday',
+          'quarta': 'wednesday',
+          'quinta': 'thursday',
+          'sexta': 'friday',
+          'sabado': 'saturday',
+          'domingo': 'sunday',
+          // Fallback mappings for full names
           'segunda-feira': 'monday',
           'terça-feira': 'tuesday',
           'quarta-feira': 'wednesday',
           'quinta-feira': 'thursday',
           'sexta-feira': 'friday',
-          'sábado': 'saturday',
-          'domingo': 'sunday'
+          'sábado': 'saturday'
         };
         
         const dayOfWeek = dayMapping[horario.dia.toLowerCase()] || horario.dia.toLowerCase();
