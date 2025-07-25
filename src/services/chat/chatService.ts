@@ -1,10 +1,10 @@
 // Chat service temporarily disabled due to database schema updates
-export const verificarChatAtivo = async () => false;
-export const enviarMensagem = async () => ({ success: false });
-export const getMensagensChat = async () => [];
-export const marcarMensagensComoLidas = async () => false;
-export const getChatsAtivos = async () => [];
-export const getChatsAtivosPaciente = async () => [];
+export const verificarChatAtivo = async (medicoId: any, pacienteId: any) => false;
+export const enviarMensagem = async (data: any) => ({ success: false });
+export const getMensagensChat = async (medicoId: any, pacienteId: any) => [];
+export const marcarMensagensComoLidas = async (medicoId: any, pacienteId: any, tipo: any) => false;
+export const getChatsAtivos = async (medicoId: any) => [];
+export const getChatsAtivosPaciente = async (pacienteId: any) => [];
 
 export const chatService = {
   startChat: async () => ({ success: false, message: 'Chat temporarily disabled' }),
