@@ -20,7 +20,7 @@ const steps = [{
   number: "04",
   icon: Video,
   title: "Consulta",
-  description: "Atendimento online ou presencial com seu médico especialista."
+  description: "Atendimento somente presencial com seu médico especialista."
 }, {
   number: "05",
   icon: FileText,
