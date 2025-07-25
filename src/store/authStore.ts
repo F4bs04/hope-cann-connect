@@ -95,10 +95,16 @@ export const useAuthStore = create<AuthState>()(
         
         try {
           // Verificar sessão do Supabase 
-          const { data: { session } } = await supabase.auth.getSession();
+          console.log("[AuthStore] Verificando sessão do Supabase...");
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.error("[AuthStore] Erro ao obter sessão:", sessionError);
+            throw sessionError;
+          }
           
           if (session?.user) {
-            console.log("[AuthStore] Sessão encontrada, carregando perfil...");
+            console.log("[AuthStore] Sessão encontrada para usuário:", session.user.email);
             try {
               await get().loadUserProfile(session.user.email!);
               set({ 
@@ -106,8 +112,9 @@ export const useAuthStore = create<AuthState>()(
                 user: session.user, 
                 isAuthenticated: true
               });
+              console.log("[AuthStore] Perfil carregado com sucesso");
             } catch (profileError) {
-              console.log("[AuthStore] Erro ao carregar perfil, usuário sem dados:", profileError);
+              console.error("[AuthStore] Erro ao carregar perfil:", profileError);
               // Usuário existe no Supabase mas não tem dados na nossa tabela
               set({ 
                 session, 
@@ -116,7 +123,7 @@ export const useAuthStore = create<AuthState>()(
               });
             }
           } else {
-            console.log("[AuthStore] Nenhuma sessão");
+            console.log("[AuthStore] Nenhuma sessão encontrada");
           }
           
         } catch (error) {
