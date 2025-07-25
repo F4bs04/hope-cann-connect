@@ -87,8 +87,8 @@ const AgendaSlotsManager: React.FC<AgendaSlotsManagerProps> = ({ medicoId }) => 
       const startOfWeekDate = currentWeek;
       const endOfWeekDate = addDays(currentWeek, 6);
 
-      const { data, error } = await supabase
-        .from('consultas')
+    const { data, error } = await supabase
+      .from('appointments')
         .select('*')
         .eq('id_medico', medicoId)
         .gte('data_hora', startOfWeekDate.toISOString())
@@ -172,8 +172,8 @@ const AgendaSlotsManager: React.FC<AgendaSlotsManagerProps> = ({ medicoId }) => 
       });
 
       if (horariosToInsert.length > 0) {
-        const { error } = await supabase
-          .from('horarios_disponiveis')
+    const { error } = await supabase
+      .from('doctor_schedules')
           .insert(horariosToInsert);
 
         if (error) throw error;

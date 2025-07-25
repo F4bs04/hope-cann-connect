@@ -30,11 +30,11 @@ import { cn } from '@/lib/utils';
 
 interface AgendarConsultaPacienteProps {
   onSuccess?: () => void;
-  selectedDoctorId?: number | null;
+  selectedDoctorId?: string | null;
 }
 
 interface FormValues {
-  medicoId: number;
+  medicoId: string;
   dataConsulta: Date;
   horario: string;
   tipoConsulta: string;
@@ -42,7 +42,7 @@ interface FormValues {
 }
 
 interface Medico {
-  id: number;
+  id: string;
   nome: string;
   especialidade: string;
   crm: string;
@@ -60,7 +60,7 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
   
   const form = useForm<FormValues>({
     defaultValues: {
-      medicoId: selectedDoctorId || 0,
+      medicoId: selectedDoctorId || '',
       dataConsulta: new Date(),
       horario: '',
       tipoConsulta: 'presencial',
@@ -231,7 +231,7 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
                     Médico
                   </FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(parseInt(value))} 
+                    onValueChange={(value) => field.onChange(value)} 
                     value={field.value?.toString()}
                   >
                     <FormControl>
@@ -241,7 +241,7 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
                     </FormControl>
                     <SelectContent>
                       {medicos.map((medico) => (
-                        <SelectItem key={medico.id} value={medico.id.toString()}>
+                        <SelectItem key={medico.id} value={medico.id}>
                           {medico.nome} - {medico.especialidade} ({medico.crm})
                         </SelectItem>
                       ))}

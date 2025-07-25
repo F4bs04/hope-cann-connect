@@ -6,8 +6,8 @@ import DoctorSearch from '../DoctorSearch';
 interface DoctorStepProps {
   doctors: any[];
   isLoading: boolean;
-  selectedDoctor: number | null;
-  setSelectedDoctor: (id: number) => void;
+  selectedDoctor: string | null;
+  setSelectedDoctor: (id: string) => void;
   onNext: () => void;
   dbStatus: { success: boolean; message: string };
 }
@@ -20,7 +20,7 @@ export const DoctorStep: React.FC<DoctorStepProps> = ({
   onNext, 
   dbStatus 
 }) => {
-  const handleDoctorSelection = (doctorId: number) => {
+  const handleDoctorSelection = (doctorId: string) => {
     setSelectedDoctor(doctorId);
     console.log("Selected doctor ID:", doctorId);
   };

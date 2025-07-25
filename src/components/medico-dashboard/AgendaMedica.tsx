@@ -35,7 +35,7 @@ const AgendaMedica: React.FC = () => {
       console.log('Buscando consultas para médico ID:', userInfo.medicoId);
       
       const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('consultas')
+        .from('appointments')
         .select(`
           id,
           data_hora,

@@ -93,8 +93,8 @@ const HomeScheduling = () => {
       console.log("[HomeScheduling] Usuário logado. Email:", session.user.email);
       try {
         const { data: usuarioData, error: usuarioError } = await supabase
-          .from('usuarios')
-          .select('id, tipo_usuario')
+          .from('profiles')
+          .select('id, role')
           .eq('email', session.user.email)
           .single();
 
@@ -106,24 +106,24 @@ const HomeScheduling = () => {
           return;
         }
 
-        if (usuarioData.tipo_usuario !== 'paciente') {
+        if (usuarioData.role !== 'patient') {
           toast({ title: "Ação não permitida", description: "Apenas pacientes podem agendar consultas através desta interface.", variant: "destructive" });
-          console.warn("[HomeScheduling] Tentativa de agendamento por usuário não paciente. Tipo:", usuarioData.tipo_usuario);
+          console.warn("[HomeScheduling] Tentativa de agendamento por usuário não paciente. Tipo:", usuarioData.role);
           return;
         }
         
-        console.log("[HomeScheduling] Buscando ID do paciente para id_usuario:", usuarioData.id);
+        console.log("[HomeScheduling] Buscando ID do paciente para user_id:", usuarioData.id);
         const { data: pacienteData, error: pacienteError } = await supabase
-          .from('pacientes')
+          .from('patients')
           .select('id')
-          .eq('id_usuario', usuarioData.id)
+          .eq('user_id', usuarioData.id)
           .single();
 
         console.log("[HomeScheduling] Dados do paciente (tabela pacientes) buscados:", pacienteData, "Erro ao buscar paciente:", pacienteError);
 
         if (pacienteError || !pacienteData) {
           toast({ title: "Perfil de Paciente Incompleto", description: "Não encontramos seu perfil de paciente. Por favor, complete seu cadastro ou entre em contato com o suporte.", variant: "destructive" });
-          console.error("[HomeScheduling] Erro ao buscar perfil do paciente ou perfil não encontrado para id_usuario:", usuarioData.id, "Erro:", pacienteError);
+          console.error("[HomeScheduling] Erro ao buscar perfil do paciente ou perfil não encontrado para user_id:", usuarioData.id, "Erro:", pacienteError);
           return;
         }
 
@@ -143,12 +143,12 @@ const HomeScheduling = () => {
         console.log("[HomeScheduling] Data e Hora da consulta formatada para ISO:", dataHoraISO);
 
         const consultaParaSalvar = {
-          id_medico: selectedDoctor,
-          id_paciente: pacienteId,
-          data_hora: dataHoraISO,
-          status: 'agendada', 
-          tipo_consulta: selectedConsultType,
-          motivo: formData.symptoms,
+          doctor_id: selectedDoctor,
+          patient_id: pacienteId,
+          scheduled_at: dataHoraISO,
+          status: 'scheduled', 
+          consultation_type: selectedConsultType,
+          reason: formData.symptoms,
         };
         console.log("[HomeScheduling] Objeto final consultaParaSalvar antes de enviar para createConsulta:", JSON.stringify(consultaParaSalvar, null, 2));
 

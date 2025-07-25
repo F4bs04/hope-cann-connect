@@ -14,7 +14,7 @@ export interface FormData {
 
 export function useConsultationData() {
   const [step, setStep] = useState(1);
-  const [selectedDoctor, setSelectedDoctorInternal] = useState<number | null>(null); // Renamed to avoid conflict with exported setSelectedDoctor
+  const [selectedDoctor, setSelectedDoctorInternal] = useState<string | null>(null); // Renamed to avoid conflict with exported setSelectedDoctor
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedConsultType, setSelectedConsultType] = useState("primeira");
@@ -54,11 +54,11 @@ export function useConsultationData() {
     navigate('/cadastro');
   };
 
-  const fetchDoctorInfo = async (doctorId: number) => {
+  const fetchDoctorInfo = async (doctorId: string) => {
     try {
       const { data, error } = await supabase
-        .from('medicos')
-        .select('*')
+        .from('doctors')
+        .select('id, user_id, specialty, biography, consultation_fee, profiles!inner(full_name, avatar_url)')
         .eq('id', doctorId)
         .maybeSingle();
         
@@ -80,7 +80,7 @@ export function useConsultationData() {
     }
   };
   
-  const handleDoctorSelection = (doctorId: number | null) => { // Allow null to deselect
+  const handleDoctorSelection = (doctorId: string | null) => { // Allow null to deselect
     setSelectedDoctorInternal(doctorId);
     if (doctorId) {
       fetchDoctorInfo(doctorId);

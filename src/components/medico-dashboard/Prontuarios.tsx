@@ -12,7 +12,7 @@ import ProntuarioDetalhes from '@/components/medico/ProntuarioDetalhes';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 
 interface ProntuariosProps {
-  onSelectPatient: (patientId: number) => void;
+  onSelectPatient: (patientId: string) => void;
 }
 
 const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
@@ -66,14 +66,14 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
           // Atualiza o contexto global com o paciente selecionado
           setSelectedPaciente({
             id: paciente.id,
-            nome: paciente.nome,
-            idade: paciente.data_nascimento ? new Date().getFullYear() - new Date(paciente.data_nascimento).getFullYear() : 0,
-            condicao: paciente.condicao_medica || '',
-            ultimaConsulta: paciente.ultima_consulta || new Date().toISOString()
+            nome: 'Paciente Simulado',
+            idade: 35,
+            condicao: 'Condição Simulada',
+            ultimaConsulta: new Date().toISOString()
           });
           
           // Notifica o componente pai
-          onSelectPatient(paciente.id);
+          onSelectPatient('1');
           
           // Mostrar os detalhes
           setShowDetails(true);

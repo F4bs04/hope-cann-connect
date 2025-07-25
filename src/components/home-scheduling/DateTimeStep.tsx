@@ -9,7 +9,7 @@ interface DateTimeStepProps {
   setSelectedTime: (time: string) => void;
   onNext: () => void;
   onBack: () => void;
-  doctorId?: number | null;
+  doctorId?: string | null;
 }
 
 export const DateTimeStep: React.FC<DateTimeStepProps> = ({
