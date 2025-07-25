@@ -6,12 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Clock, Calendar, User, CheckCircle } from 'lucide-react';
 
 interface HorarioPublico {
-  id: number;
+  id: string;
   dia_semana: string;
   hora_inicio: string;
   hora_fim: string;
   medico: {
-    id: number;
+    id: string;
     nome: string;
     especialidade: string;
     status_disponibilidade: boolean;
@@ -19,13 +19,13 @@ interface HorarioPublico {
 }
 
 const diasSemana = {
-  "segunda-feira": "Segunda-feira",
-  "terça-feira": "Terça-feira", 
-  "quarta-feira": "Quarta-feira",
-  "quinta-feira": "Quinta-feira",
-  "sexta-feira": "Sexta-feira",
-  "sábado": "Sábado",
-  "domingo": "Domingo",
+  "monday": "Segunda-feira",
+  "tuesday": "Terça-feira", 
+  "wednesday": "Quarta-feira",
+  "thursday": "Quinta-feira",
+  "friday": "Sexta-feira",
+  "saturday": "Sábado",
+  "sunday": "Domingo",
 };
 
 const HorariosPublicos: React.FC = () => {
@@ -38,33 +38,39 @@ const HorariosPublicos: React.FC = () => {
       
       // Buscar todos os horários disponíveis com informações dos médicos
       const { data, error } = await supabase
-        .from('horarios_disponiveis')
+        .from('doctor_schedules')
         .select(`
           id,
-          dia_semana,
-          hora_inicio,
-          hora_fim,
-          medicos!inner (
+          day_of_week,
+          start_time,
+          end_time,
+          doctors!inner (
             id,
-            nome,
-            especialidade,
-            status_disponibilidade,
-            aprovado
+            specialty,
+            is_available,
+            is_approved,
+            profiles!inner(full_name)
           )
         `)
-        .eq('medicos.aprovado', true)
-        .eq('medicos.status_disponibilidade', true)
-        .order('dia_semana', { ascending: true });
+        .eq('doctors.is_approved', true)
+        .eq('doctors.is_available', true)
+        .eq('is_active', true)
+        .order('day_of_week', { ascending: true });
 
       if (error) throw error;
 
       // Transformar os dados para o formato esperado
       const horariosFormatados = (data || []).map(item => ({
         id: item.id,
-        dia_semana: item.dia_semana,
-        hora_inicio: item.hora_inicio,
-        hora_fim: item.hora_fim,
-        medico: item.medicos
+        dia_semana: item.day_of_week,
+        hora_inicio: item.start_time,
+        hora_fim: item.end_time,
+        medico: {
+          id: item.doctors.id,
+          nome: item.doctors.profiles.full_name,
+          especialidade: item.doctors.specialty,
+          status_disponibilidade: item.doctors.is_available
+        }
       }));
 
       setHorariosPublicos(horariosFormatados);
@@ -80,7 +86,7 @@ const HorariosPublicos: React.FC = () => {
   }, []);
 
   const agruparPorMedico = () => {
-    const grupos: { [key: number]: HorarioPublico[] } = {};
+    const grupos: { [key: string]: HorarioPublico[] } = {};
     
     horariosPublicos.forEach(horario => {
       const medicoId = horario.medico.id;
