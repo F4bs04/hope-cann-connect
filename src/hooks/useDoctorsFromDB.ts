@@ -14,9 +14,8 @@ export const useDoctorsFromDB = () => {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-
+        console.log('Starting to fetch doctors from database...');
+        
         const { data: doctorsData, error: fetchError } = await supabase
           .from('doctors')
           .select(`
@@ -32,6 +31,8 @@ export const useDoctorsFromDB = () => {
           `)
           .eq('is_approved', true)
           .eq('is_available', true);
+
+        console.log('Database fetch result:', { doctorsData, fetchError });
 
         if (fetchError) {
           console.error('Error fetching doctors:', fetchError);

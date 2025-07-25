@@ -38,11 +38,16 @@ export const processDoctorData = async (doctor: any): Promise<Doctor> => {
     }
   }
   
+  // Truncar biografia se muito longa para melhor exibição
+  const truncatedBio = doctor.biography && doctor.biography.length > 150 
+    ? doctor.biography.substring(0, 150) + '...'
+    : doctor.biography || 'Especialista em tratamentos canábicos.';
+
   return {
     id: doctor.id.toString(), // Convert UUID to string to match DoctorCard interface
     name: doctor.profiles?.full_name || "Médico",
     specialty: doctor.specialty || "Medicina Canábica",
-    bio: doctor.biography || 'Especialista em tratamentos canábicos.',
+    bio: truncatedBio,
     image: doctor.profiles?.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
     availability
   };
