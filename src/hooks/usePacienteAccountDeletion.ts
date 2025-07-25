@@ -1,8 +1,8 @@
 // Temporarily disabled hook
-export const usePacienteAccountDeletion = () => {
+export const usePacienteAccountDeletion = ({ paciente }: any) => {
   return { 
     isLoading: false,
     error: null,
-    deleteAccount: () => Promise.resolve({ success: false })
+    deleteAccount: async () => Promise.resolve({ success: false })
   };
 };

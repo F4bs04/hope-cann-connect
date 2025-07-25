@@ -155,6 +155,10 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     prontuarioDialogOpen,
     handleSaveProntuario,
     historicoPaciente,
+    consultas: pacientesData.pacientes || [], // Add missing consultas
+    selectedPaciente: null, // Add missing selectedPaciente
+    setSelectedPaciente: () => {}, // Add missing setSelectedPaciente
+    refetch: pacientesData.refetch || (() => {}) // Add missing refetch
   };
 
   return (

@@ -10,7 +10,7 @@ export const useHorariosManager = () => {
     updateHorario: () => {},
     deleteHorario: () => {},
     loadHorarios: () => {},
-    adicionarHorario: () => {},
-    removerHorario: () => {}
+    adicionarHorario: async (dia: string, horaInicio: string, horaFim: string) => Promise.resolve(false),
+    removerHorario: async (id: string) => Promise.resolve(false)
   };
 };

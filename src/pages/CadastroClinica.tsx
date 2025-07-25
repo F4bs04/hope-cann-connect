@@ -31,49 +31,12 @@ const CadastroClinica = () => {
 
   const onSubmit = async (values: ClinicaFormValues) => {
     try {
-      // First create the clinic
-      const { data: clinicData, error: clinicError } = await supabase
-        .from('clinicas')
-        .insert([{
-          nome: values.nome,
-          cnpj: values.cnpj,
-          email: values.email,
-          telefone: values.telefone,
-          endereco: values.endereco,
-          senha_hash: values.senha // This will trigger the hash_clinic_password trigger
-        }])
-        .select()
-        .single();
-
-      if (clinicError) throw clinicError;
-
-      // Get the current user
-      const userEmail = localStorage.getItem('userEmail');
-      const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .select('id')
-        .eq('email', userEmail)
-        .single();
-
-      if (userError) throw userError;
-
-      // Create clinic user association
-      const { error: clinicUserError } = await supabase
-        .from('clinic_users')
-        .insert([{
-          user_id: userData.id,
-          clinic_id: clinicData.id,
-          role: 'admin'
-        }]);
-
-      if (clinicUserError) throw clinicUserError;
-
+      // This functionality is disabled - clinics table doesn't exist in current schema
       toast({
-        title: "Clínica cadastrada com sucesso",
-        description: "Você será redirecionado para o dashboard da clínica.",
+        title: "Funcionalidade não disponível",
+        description: "O cadastro de clínicas está temporariamente desabilitado.",
+        variant: "destructive"
       });
-
-      navigate('/admin');
     } catch (error: any) {
       console.error('Error registering clinic:', error);
       toast({

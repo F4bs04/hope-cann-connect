@@ -7,6 +7,7 @@ export const usePacientesData = () => {
     searchTerm: '',
     setSearchTerm: () => {},
     addPaciente: () => Promise.resolve({ success: false }),
-    updatePaciente: () => Promise.resolve({ success: false })
+    updatePaciente: () => Promise.resolve({ success: false }),
+    refetch: () => {}
   };
 };
