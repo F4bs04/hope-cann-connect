@@ -15,7 +15,7 @@ interface DateTimeSelectionProps {
   setSelectedTime: (time: string) => void;
   onNext: () => void;
   onBack: () => void;
-  doctorId?: number | null;
+  doctorId?: string | null;
 }
 
 const DateTimeSelection = ({ 

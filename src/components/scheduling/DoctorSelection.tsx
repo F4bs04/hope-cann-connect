@@ -4,8 +4,8 @@ import { User, ChevronRight } from 'lucide-react';
 import DoctorSearch from '../DoctorSearch';
 
 interface DoctorSelectionProps {
-  selectedDoctor: number | null;
-  onSelectDoctor: (id: number) => void;
+  selectedDoctor: string | null;
+  onSelectDoctor: (id: string) => void;
   onNext: () => void;
 }
 
@@ -14,7 +14,7 @@ const DoctorSelection = ({ selectedDoctor, onSelectDoctor, onNext }: DoctorSelec
   const [isInitialized, setIsInitialized] = useState(false);
   
   // Use o useCallback para evitar recriações desnecessárias da função
-  const handleSelectDoctor = useCallback((id: number) => {
+  const handleSelectDoctor = useCallback((id: string) => {
     if (id !== selectedDoctor) {
       onSelectDoctor(id);
     }
