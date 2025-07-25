@@ -12,7 +12,7 @@ export const useMedicoDashboardData = () => {
       receitaGerada: 0,
       alertas: [],
       consultasSemana: [],
-      consultasMes: [],
+      consultasMes: 0,
       consultasRecentes: []
     },
     isLoading: false,
