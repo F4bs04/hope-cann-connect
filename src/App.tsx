@@ -23,6 +23,7 @@ import Agendar from "./pages/Agendar";
 import NotFound from "./pages/NotFound";
 import Notificacoes from "./pages/Notificacoes";
 import PerfilMedico from "./pages/PerfilMedico";
+import AuthCallback from "./pages/AuthCallback";
 
 function App() {
   const { isLoading } = useAuth();
@@ -37,6 +38,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/cadastro-medico" element={<CadastroMedico />} />
           <Route path="/complete-registro-medico" element={<CompleteRegistroMedico />} />

@@ -62,32 +62,42 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      // Usar rota específica para callback OAuth
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('Iniciando login com Google, redirect para:', redirectUrl);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
-          }
+          },
+          scopes: 'email profile'
         }
       });
       
       if (error) {
+        console.error('Erro no OAuth:', error);
         throw error;
       }
+      
+      console.log('OAuth iniciado com sucesso:', data);
+      // O redirecionamento será automático, não precisamos fazer nada aqui
+      
     } catch (error: any) {
       console.error("Google login error:", error);
+      setGoogleLoading(false); // Reset loading apenas em caso de erro
+      
       toast({
         title: "Erro ao fazer login com Google",
-        description: error.message || "Erro ao configurar login com Google.",
+        description: error.message || "Erro ao configurar login com Google. Verifique se os popups estão habilitados.",
         variant: "destructive"
       });
-    } finally {
-      setGoogleLoading(false);
     }
+    // Não resetar loading aqui pois o usuário será redirecionado
   };
 
   // Carregar avatar do localStorage
