@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import PacienteHeader from "@/components/paciente/PacienteHeader";
 import { PacienteSidebar } from '@/components/area-paciente/PacienteSidebar';
@@ -14,17 +14,8 @@ import SmartScheduling from '@/components/scheduling/SmartScheduling';
 import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { supabase } from "@/integrations/supabase/client";
 
-interface Paciente {
-  id: number;
-  id_usuario?: number; // Adicionado para consistência com PacientePerfilDetalhes
-  nome?: string;
-  email?: string;
-  cpf?: string;
-  data_nascimento?: string;
-  endereco?: string;
-  telefone?: string;
-  genero?: string;
-}
+// Importando interface do arquivo centralizado
+import { Paciente } from '@/components/area-paciente/perfil/Paciente.types';
 
 interface AreaPacienteProps {
   initialSection?: string;
@@ -57,28 +48,43 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
   }, []);
 
   useEffect(() => {
-    if (initialPaciente) {
-      // Certifique-se de que o ID está presente e é um número
-      const idAsNumber = typeof initialPaciente.id === 'string' ? parseInt(initialPaciente.id, 10) : initialPaciente.id;
-      if (isNaN(idAsNumber)) {
-        console.error("ID do paciente inválido:", initialPaciente.id);
-        // Tratar o caso de ID inválido, talvez redirecionar ou mostrar erro
-        setPacienteData(null); // ou alguma forma de estado de erro
-        return;
-      }
-      // Certifique-se de que id_usuario também é um número se existir
-      let idUsuarioAsNumber: number | undefined = undefined;
-      if (initialPaciente.id_usuario !== undefined && initialPaciente.id_usuario !== null) {
-        idUsuarioAsNumber = typeof initialPaciente.id_usuario === 'string' 
-          ? parseInt(initialPaciente.id_usuario, 10) 
-          : initialPaciente.id_usuario;
-        if (isNaN(idUsuarioAsNumber)) {
-          console.warn("ID de usuário do paciente inválido, será tratado como undefined:", initialPaciente.id_usuario);
-          idUsuarioAsNumber = undefined;
+    if (initialPaciente && initialPaciente.id) {
+      // O initialPaciente vem da tabela profiles, precisamos buscar os dados do patient
+      const fetchPatientData = async () => {
+        try {
+          const { data: patientData, error } = await supabase
+            .from('patients')
+            .select('*')
+            .eq('user_id', initialPaciente.id)
+            .single();
+
+          if (error) {
+            console.error("Erro ao buscar dados do paciente:", error);
+            return;
+          }
+
+          if (patientData) {
+            // Converter os dados para o formato esperado
+            const pacienteFormatted: Paciente = {
+              id: parseInt(patientData.id) || 0,
+              id_usuario: initialPaciente.id,
+              nome: initialPaciente.nome,
+              email: initialPaciente.email,
+              cpf: patientData.cpf,
+              data_nascimento: patientData.birth_date,
+              endereco: patientData.address,
+              telefone: initialPaciente.telefone,
+              genero: patientData.gender
+            };
+            
+            setPacienteData(pacienteFormatted);
+          }
+        } catch (error) {
+          console.error("Erro ao processar dados do paciente:", error);
         }
-      }
-      
-      setPacienteData({ ...initialPaciente, id: idAsNumber, id_usuario: idUsuarioAsNumber });
+      };
+
+      fetchPatientData();
     }
   }, [initialPaciente]);
   

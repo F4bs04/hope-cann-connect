@@ -2,7 +2,7 @@
 // Define Paciente interface here to be shared
 export interface Paciente {
   id: number;
-  id_usuario?: number;
+  id_usuario?: string; // UUID do usuário na tabela profiles
   nome?: string;
   email?: string;
   cpf?: string;
