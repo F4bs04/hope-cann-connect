@@ -224,84 +224,88 @@ export const useAuthStore = create<AuthState>()(
             .maybeSingle();
 
           if (profileError) throw profileError;
-          if (!profileData) throw new Error('Perfil não encontrado');
-
-        let profile: UserProfile = {
-          id: parseInt(profileData.id),
-          nome: profileData.full_name || '',
-          email: profileData.email,
-          tipo_usuario: profileData.role === 'doctor' ? 'medico' : 
-                       profileData.role === 'patient' ? 'paciente' : 'admin_clinica',
-        };
-
-        let permissions: string[] = [];
-        let isApproved = true;
-
-        if (profileData.role === 'doctor') {
-          const { data: doctorData, error: doctorError } = await supabase
-            .from('doctors')
-            .select('*')
-            .eq('user_id', profileData.id)
-            .maybeSingle();
-
-          if (doctorError) {
-            console.error('Erro ao buscar dados do médico:', doctorError);
-            throw new Error('Erro ao carregar dados do médico');
+          if (!profileData) {
+            // Redirecionar para cadastro complementar se perfil não encontrado
+            window.location.replace('/cadastro-complementar');
+            return;
           }
 
-          if (doctorData) {
-            profile = {
-              ...profile,
-              nome: profileData.full_name || '',
-              crm: doctorData.crm,
-              especialidade: doctorData.specialty,
-              telefone: profileData.phone,
-              // foto_perfil: doctorData.foto_perfil,
-              valor_por_consulta: doctorData.consultation_fee
-            };
-            
-            isApproved = doctorData.is_approved;
-            permissions = ['dashboard', 'agenda', 'pacientes', 'receitas'];
-            
-            set({ 
-              medicoId: parseInt(doctorData.id),
-              isApproved,
-              permissions 
-            });
-          } else {
-            // Médico sem dados: criar registro pendente ou bloquear acesso
-            console.warn('Usuário médico sem dados na tabela doctors');
-            throw new Error('Perfil de médico incompleto. Entre em contato com o administrador.');
-          }
-        } else if (profileData.role === 'patient') {
-          const { data: patientData } = await supabase
-            .from('patients')
-            .select('*')
-            .eq('user_id', profileData.id)
-            .maybeSingle();
+          let profile: UserProfile = {
+            id: parseInt(profileData.id),
+            nome: profileData.full_name || '',
+            email: profileData.email,
+            tipo_usuario: profileData.role === 'doctor' ? 'medico' : 
+                         profileData.role === 'patient' ? 'paciente' : 'admin_clinica',
+          };
 
-          if (patientData) {
-            profile = {
-              ...profile,
-              nome: profileData.full_name || '',
-              cpf: patientData.cpf,
-              telefone: profileData.phone,
-              data_nascimento: patientData.birth_date,
-              endereco: patientData.address,
-              genero: patientData.gender,
-              condicao_medica: patientData.medical_condition
-            };
-            
-            permissions = ['consultas', 'receitas', 'historico'];
-            
-            set({ 
-              pacienteId: parseInt(patientData.id),
-              permissions 
-            });
-          }
-        }
+          let permissions: string[] = [];
+          let isApproved = true;
 
-        set({ userProfile: profile });
+          if (profileData.role === 'doctor') {
+            const { data: doctorData, error: doctorError } = await supabase
+              .from('doctors')
+              .select('*')
+              .eq('user_id', profileData.id)
+              .maybeSingle();
+
+            if (doctorError) {
+              console.error('Erro ao buscar dados do médico:', doctorError);
+              throw new Error('Erro ao carregar dados do médico');
+            }
+
+            if (doctorData) {
+              profile = {
+                ...profile,
+                nome: profileData.full_name || '',
+                crm: doctorData.crm,
+                especialidade: doctorData.specialty,
+                telefone: profileData.phone,
+                // foto_perfil: doctorData.foto_perfil,
+                valor_por_consulta: doctorData.consultation_fee
+              };
+              
+              isApproved = doctorData.is_approved;
+              permissions = ['dashboard', 'agenda', 'pacientes', 'receitas'];
+              
+              set({ 
+                medicoId: parseInt(doctorData.id),
+                isApproved,
+                permissions 
+              });
+            } else {
+              // Médico sem dados: criar registro pendente ou bloquear acesso
+              console.warn('Usuário médico sem dados na tabela doctors');
+              throw new Error('Perfil de médico incompleto. Entre em contato com o administrador.');
+            }
+          } else if (profileData.role === 'patient') {
+            const { data: patientData } = await supabase
+              .from('patients')
+              .select('*')
+              .eq('user_id', profileData.id)
+              .maybeSingle();
+
+            if (patientData) {
+              profile = {
+                ...profile,
+                nome: profileData.full_name || '',
+                cpf: patientData.cpf,
+                telefone: profileData.phone,
+                data_nascimento: patientData.birth_date,
+                endereco: patientData.address,
+                genero: patientData.gender,
+                condicao_medica: patientData.medical_condition
+              };
+              
+              permissions = ['consultas', 'receitas', 'historico'];
+              
+              set({ 
+                pacienteId: parseInt(patientData.id),
+                permissions 
+              });
+            }
+          }
+
+          set({ userProfile: profile });
         } catch (error) {
           console.error('Erro ao carregar perfil:', error);
           throw error; // Re-throw para ser capturado na inicialização

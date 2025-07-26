@@ -9,6 +9,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 // Pages
 import Index from "./pages/Index";
 import RecuperarSenha from "./pages/RecuperarSenha";
+import CadastroComplementar from "./pages/CadastroComplementar";
 import PosAutenticacao from "./pages/PosAutenticacao";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
@@ -51,6 +52,7 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
         <Routes>
+          <Route path="/cadastro-complementar" element={<CadastroComplementar />} />
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/cadastro" element={<Cadastro />} />
