@@ -3,11 +3,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
 import { supabase } from '@/integrations/supabase/client';
 
-const SmartScheduling: React.FC<any> = () => {
+type Doctor = {
+  id: string;
+  name: string;
+};
+type TimeSlot = {
+  time: string;
+  available: boolean;
+};
+
+const SmartScheduling: React.FC = () => {
   const [doctorId, setDoctorId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [doctors, setDoctors] = useState<any[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const { timeSlots, loading: slotsLoading, error: slotsError } = useAvailableTimeSlots(doctorId, selectedDate);
   const [agendamentoSuccess, setAgendamentoSuccess] = useState(false);
@@ -17,10 +26,10 @@ const SmartScheduling: React.FC<any> = () => {
     async function fetchDoctors() {
       setLoadingDoctors(true);
       const { data, error } = await supabase
-        .from('doctors')
-        .select('id, name')
-        .eq('approved', true);
-      if (!error) setDoctors(data || []);
+        .from('medicos')
+        .select('id, nome')
+        .eq('aprovado', true);
+      if (!error && data) setDoctors(data.map((m: any) => ({ id: m.id, name: m.nome })));
       setLoadingDoctors(false);
     }
     fetchDoctors();
@@ -34,17 +43,18 @@ const SmartScheduling: React.FC<any> = () => {
       const [h, m] = selectedTime.split(':');
       scheduledAt.setHours(Number(h), Number(m), 0, 0);
       const { error } = await supabase
-        .from('appointments')
+        .from('consultas')
         .insert([{
-          doctor_id: doctorId,
-          patient_id: localStorage.getItem('userId'),
-          scheduled_at: scheduledAt.toISOString(),
-          status: 'scheduled',
+          id_medico: doctorId,
+          id_paciente: localStorage.getItem('userId') || '',
+          data_hora: scheduledAt.toISOString(),
+          status: 'agendada',
+          motivo: 'Consulta agendada via plataforma',
         }]);
       if (error) throw error;
       setAgendamentoSuccess(true);
-    } catch (err: any) {
-      setAgendamentoError(err.message);
+    } catch (err) {
+      setAgendamentoError(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -70,7 +80,7 @@ const SmartScheduling: React.FC<any> = () => {
                 onChange={e => setDoctorId(e.target.value)}
               >
                 <option value="">Escolha um médico</option>
-                {doctors.map((doc: any) => (
+                {doctors.map((doc) => (
                   <option key={doc.id} value={doc.id}>{doc.name}</option>
                 ))}
               </select>
@@ -100,7 +110,7 @@ const SmartScheduling: React.FC<any> = () => {
                 disabled={!doctorId || !selectedDate}
               >
                 <option value="">Escolha um horário</option>
-                {timeSlots.filter((slot: any) => slot.available).map((slot: any) => (
+                {(timeSlots as TimeSlot[]).filter((slot) => slot.available).map((slot) => (
                   <option key={slot.time} value={slot.time}>{slot.time}</option>
                 ))}
               </select>
