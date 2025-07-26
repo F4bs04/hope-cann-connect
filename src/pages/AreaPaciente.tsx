@@ -49,21 +49,29 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
 
   useEffect(() => {
     if (initialPaciente && initialPaciente.id) {
+      console.log("AreaPaciente: initialPaciente encontrado:", initialPaciente);
+      
       // O initialPaciente vem da tabela profiles, precisamos buscar os dados do patient
       const fetchPatientData = async () => {
         try {
+          console.log("AreaPaciente: Buscando dados do paciente para user_id:", initialPaciente.id);
+          
           const { data: patientData, error } = await supabase
             .from('patients')
             .select('*')
             .eq('user_id', initialPaciente.id)
             .single();
 
+          console.log("AreaPaciente: Resultado da busca:", { patientData, error });
+
           if (error) {
-            console.error("Erro ao buscar dados do paciente:", error);
+            console.error("AreaPaciente: Erro ao buscar dados do paciente:", error);
             return;
           }
 
           if (patientData) {
+            console.log("AreaPaciente: Dados do paciente encontrados:", patientData);
+            
             // Converter os dados para o formato esperado
             const pacienteFormatted: Paciente = {
               id: parseInt(patientData.id) || 0,
@@ -77,14 +85,19 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
               genero: patientData.gender
             };
             
+            console.log("AreaPaciente: Paciente formatado:", pacienteFormatted);
             setPacienteData(pacienteFormatted);
+          } else {
+            console.warn("AreaPaciente: Nenhum dado de paciente encontrado");
           }
         } catch (error) {
-          console.error("Erro ao processar dados do paciente:", error);
+          console.error("AreaPaciente: Erro ao processar dados do paciente:", error);
         }
       };
 
       fetchPatientData();
+    } else {
+      console.log("AreaPaciente: initialPaciente não encontrado ou sem ID:", initialPaciente);
     }
   }, [initialPaciente]);
   

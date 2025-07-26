@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 
 export interface UserProfile {
-  id: number;
+  id: string; // UUID como string
   nome: string;
   email: string;
   tipo_usuario: 'medico' | 'paciente' | 'admin_clinica';
@@ -105,6 +105,7 @@ export const useAuthStore = create<AuthState>()(
           
           if (session?.user) {
             console.log("[AuthStore] Sessão encontrada para usuário:", session.user.email);
+            console.log("[AuthStore] Dados da sessão:", session);
             try {
               await get().loadUserProfile(session.user.email!);
               set({ 
@@ -231,12 +232,14 @@ export const useAuthStore = create<AuthState>()(
           }
 
           let profile: UserProfile = {
-            id: parseInt(profileData.id),
+            id: profileData.id, // UUID como string
             nome: profileData.full_name || '',
             email: profileData.email,
             tipo_usuario: profileData.role === 'doctor' ? 'medico' : 
                          profileData.role === 'patient' ? 'paciente' : 'admin_clinica',
           };
+
+          console.log("[AuthStore] Profile inicial criado:", profile);
 
           let permissions: string[] = [];
           let isApproved = true;
@@ -305,6 +308,7 @@ export const useAuthStore = create<AuthState>()(
             }
           }
 
+          console.log("[AuthStore] Profile final:", profile);
           set({ userProfile: profile });
         } catch (error) {
           console.error('Erro ao carregar perfil:', error);
@@ -318,7 +322,7 @@ export const useAuthStore = create<AuthState>()(
         if (state.isAuthenticated && state.userProfile) {
           localStorage.setItem('isAuthenticated', 'true');
           localStorage.setItem('userEmail', state.userProfile.email);
-          localStorage.setItem('userId', state.userProfile.id.toString());
+          localStorage.setItem('userId', state.userProfile.id); // ID como string
           localStorage.setItem('userType', state.userProfile.tipo_usuario);
           localStorage.setItem('authTimestamp', Date.now().toString());
         }
