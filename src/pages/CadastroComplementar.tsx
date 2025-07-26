@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const CadastroComplementar = () => {
   const [nome, setNome] = useState('');
-  const [tipoUsuario, setTipoUsuario] = useState('paciente');
+  const [tipoUsuario, setTipoUsuario] = useState('patient');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -20,9 +20,9 @@ const CadastroComplementar = () => {
       if (!user) throw new Error('Usuário não autenticado');
       const { error } = await supabase.from('profiles').insert({
         id: user.id,
-        email: user.email,
+        email: user.email!,
         full_name: nome,
-        role: tipoUsuario
+        role: (tipoUsuario === 'paciente' ? 'patient' : 'doctor') as 'patient' | 'doctor'
       });
       if (error) throw error;
       toast({ title: 'Cadastro complementar realizado com sucesso!' });
@@ -58,8 +58,8 @@ const CadastroComplementar = () => {
               value={tipoUsuario}
               onChange={e => setTipoUsuario(e.target.value)}
             >
-              <option value="paciente">Paciente</option>
-              <option value="medico">Médico</option>
+              <option value="patient">Paciente</option>
+              <option value="doctor">Médico</option>
             </select>
             <button
               type="submit"

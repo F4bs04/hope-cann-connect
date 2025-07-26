@@ -2,6 +2,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Home, AlertTriangle } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const NotFound = () => {
   const location = useLocation();
