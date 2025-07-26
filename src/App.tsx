@@ -8,6 +8,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Pages
 import Index from "./pages/Index";
+import RecuperarSenha from "./pages/RecuperarSenha";
+import PosAutenticacao from "./pages/PosAutenticacao";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
 import CadastroMedico from "./pages/CadastroMedico";
@@ -31,6 +33,20 @@ function App() {
     return <LoadingScreen message="Inicializando aplicação..." />;
   }
 
+  // Redirecionamento por domínio
+  if (typeof window !== 'undefined' && window.location.hostname === 'hopecann.com.br') {
+    const path = window.location.pathname;
+    if (path === '/' || path === '/index') {
+      window.location.replace('/login');
+      return null;
+    }
+    if (path === '/admin') {
+      window.location.replace('/login');
+      return null;
+    }
+    // Adicione outros redirecionamentos conforme necessário
+  }
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
@@ -41,6 +57,8 @@ function App() {
           <Route path="/cadastro-medico" element={<CadastroMedico />} />
           <Route path="/complete-registro-medico" element={<CompleteRegistroMedico />} />
           <Route path="/cadastro-clinica" element={<CadastroClinica />} />
+          <Route path="/recuperarsenha" element={<RecuperarSenha />} />
+          <Route path="/pos-autenticacao" element={<PosAutenticacao />} />
           
           {/* Rotas protegidas */}
           <Route 

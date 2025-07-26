@@ -26,41 +26,21 @@ const NotFound = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20">
-      <div className="text-center p-8 max-w-md mx-auto">
-        <div className="mb-6">
-          {/* Logo da HopeCann */}
-          <div className="mb-6">
-            <img 
-              src="/lovable-uploads/cannabis-oil-hero.jpg" 
-              alt="HopeCann Logo" 
-              className="h-20 w-20 mx-auto rounded-full object-cover"
-            />
-          </div>
-          
-          <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-4xl font-bold text-foreground mb-2">404</h1>
-          <h2 className="text-2xl font-semibold text-foreground/80 mb-4">Página não encontrada</h2>
-          <p className="text-muted-foreground mb-6">
-            A página que você está procurando não existe ou foi movida.
-          </p>
-        </div>
-        
-        <div className="space-y-4">
-          <Button 
-            onClick={handleGoHome}
-            className="w-full"
-            size="lg"
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow py-12 bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto bg-white p-8 rounded-xl shadow-sm text-center">
+          <h1 className="text-3xl font-bold mb-4 text-hopecann-teal">Página não encontrada</h1>
+          <p className="text-gray-700 mb-6">A página que você tentou acessar não existe ou foi movida.</p>
+          <button
+            className="bg-hopecann-teal text-white px-6 py-2 rounded font-bold hover:bg-hopecann-teal-dark transition"
+            onClick={() => navigate('/')}
           >
-            <Home className="h-4 w-4 mr-2" />
-            Voltar ao Início
-          </Button>
-          
-          <p className="text-sm text-muted-foreground">
-            Você será redirecionado automaticamente em alguns segundos...
-          </p>
+            Voltar para a página inicial
+          </button>
         </div>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 };
