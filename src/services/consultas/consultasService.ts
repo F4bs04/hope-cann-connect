@@ -1,15 +1,40 @@
-// Consultas service temporarily disabled due to database schema updates
-export const getConsultas = async () => [];
-export const getConsultaById = async (id: any) => null;
-export const createConsulta = async (data: any) => ({ success: false, data: null, error: 'Disabled' });
-export const updateConsulta = async (id: any, data: any) => ({ success: false });
-export const deleteConsulta = async (id: any) => ({ success: false });
-export const getConsultasByMedico = async (id: any) => [];
-export const getConsultasByPaciente = async (id: any) => [];
+import { supabase } from '@/integrations/supabase/client';
 
-export const consultasService = {
-  getConsultas: async () => ({ success: false, data: [], message: 'Temporarily disabled' }),
-  createConsulta: async () => ({ success: false, message: 'Temporarily disabled' }),
-  updateConsulta: async () => ({ success: false, message: 'Temporarily disabled' }),
-  deleteConsulta: async () => ({ success: false, message: 'Temporarily disabled' })
+export const getConsultas = async () => {
+  const { data, error } = await supabase.from('appointments').select('*');
+  if (error) throw error;
+  return data;
+};
+
+export const getConsultaById = async (id) => {
+  const { data, error } = await supabase.from('appointments').select('*').eq('id', id).single();
+  if (error) throw error;
+  return data;
+};
+
+export const createConsulta = async (data) => {
+  const { error } = await supabase.from('appointments').insert([data]);
+  return { success: !error, error };
+};
+
+export const updateConsulta = async (id, data) => {
+  const { error } = await supabase.from('appointments').update(data).eq('id', id);
+  return { success: !error, error };
+};
+
+export const deleteConsulta = async (id) => {
+  const { error } = await supabase.from('appointments').delete().eq('id', id);
+  return { success: !error, error };
+};
+
+export const getConsultasByMedico = async (doctorId) => {
+  const { data, error } = await supabase.from('appointments').select('*').eq('doctor_id', doctorId);
+  if (error) throw error;
+  return data;
+};
+
+export const getConsultasByPaciente = async (patientId) => {
+  const { data, error } = await supabase.from('appointments').select('*').eq('patient_id', patientId);
+  if (error) throw error;
+  return data;
 };

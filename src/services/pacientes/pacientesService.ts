@@ -1,8 +1,39 @@
-// Pacientes service temporarily disabled due to database schema updates
-export const getPacientes = async () => [];
-export const getPacienteById = async (id: any) => null;
-export const createPaciente = async (data: any) => ({ success: false });
-export const updatePaciente = async (id: any, data: any) => ({ success: false });
-export const deletePaciente = async (id: any) => ({ success: false });
-export const searchPacientes = async (query: any) => [];
-export const getSaldoPacientes = async () => [];
+import { supabase } from '@/integrations/supabase/client';
+
+export const getPacientes = async () => {
+  const { data, error } = await supabase.from('patients').select('*');
+  if (error) throw error;
+  return data;
+};
+
+export const getPacienteById = async (id) => {
+  const { data, error } = await supabase.from('patients').select('*').eq('id', id).single();
+  if (error) throw error;
+  return data;
+};
+
+export const createPaciente = async (data) => {
+  const { error } = await supabase.from('patients').insert([data]);
+  return { success: !error, error };
+};
+
+export const updatePaciente = async (id, data) => {
+  const { error } = await supabase.from('patients').update(data).eq('id', id);
+  return { success: !error, error };
+};
+
+export const deletePaciente = async (id) => {
+  const { error } = await supabase.from('patients').delete().eq('id', id);
+  return { success: !error, error };
+};
+
+export const searchPacientes = async (query) => {
+  const { data, error } = await supabase.from('patients').select('*').ilike('nome', `%${query}%`);
+  if (error) throw error;
+  return data;
+};
+
+export const getSaldoPacientes = async () => {
+  // Exemplo: buscar saldo em outra tabela se existir
+  return [];
+};
