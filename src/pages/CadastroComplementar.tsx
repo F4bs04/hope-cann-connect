@@ -26,7 +26,7 @@ const CadastroComplementar = () => {
       });
       if (error) throw error;
       toast({ title: 'Cadastro complementar realizado com sucesso!' });
-      navigate('/');
+      window.location.replace('/');
     } catch (error: any) {
       toast({
         title: 'Erro ao salvar cadastro',
