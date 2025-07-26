@@ -62,7 +62,7 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/pos-autenticacao`;
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -142,7 +142,7 @@ const Login = () => {
                 Cadastre-se
               </a>
             </p>
-            <a href="#" className="text-sm text-hopecann-teal hover:underline mt-2 inline-block">
+            <a href="/recuperarsenha" className="text-sm text-hopecann-teal hover:underline mt-2 inline-block">
               Esqueceu sua senha?
             </a>
           </div>
