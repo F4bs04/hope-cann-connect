@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import 'react/jsx-runtime';
 import { supabase } from '@/integrations/supabase/client';
 
 const AtestadosPaciente: React.FC = () => {
@@ -7,7 +8,7 @@ const AtestadosPaciente: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAtestados = async () => {
+    async function fetchAtestados() {
       setLoading(true);
       setError(null);
       try {
@@ -17,7 +18,7 @@ const AtestadosPaciente: React.FC = () => {
           .from('documents')
           .select('*')
           .eq('patient_id', pacienteId)
-          .eq('document_type', 'atestado')
+          .eq('document_type', 'certificate')
           .order('issued_at', { ascending: false });
         if (error) throw error;
         setAtestados(data || []);
@@ -27,7 +28,7 @@ const AtestadosPaciente: React.FC = () => {
       } finally {
         setLoading(false);
       }
-    };
+    }
     fetchAtestados();
   }, []);
 

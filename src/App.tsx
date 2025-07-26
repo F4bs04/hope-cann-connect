@@ -28,7 +28,7 @@ import Notificacoes from "./pages/Notificacoes";
 import PerfilMedico from "./pages/PerfilMedico";
 
 function App() {
-  const { isLoading } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
 
   if (isLoading) {
     return <LoadingScreen message="Inicializando aplicação..." />;
@@ -37,11 +37,7 @@ function App() {
   // Redirecionamento por domínio
   if (typeof window !== 'undefined' && window.location.hostname === 'hopecann.com.br') {
     const path = window.location.pathname;
-    if (path === '/' || path === '/index') {
-      window.location.replace('/login');
-      return null;
-    }
-    if (path === '/admin') {
+    if ((path === '/' || path === '/index' || path === '/admin') && !isAuthenticated) {
       window.location.replace('/login');
       return null;
     }

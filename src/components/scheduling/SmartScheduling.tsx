@@ -1,22 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
+import { supabase } from '@/integrations/supabase/client';
 
 const SmartScheduling: React.FC<any> = () => {
-  // Importa hook e componentes necessários
-  // Permite ao paciente escolher médico, data e horário
-  const [doctorId, setDoctorId] = React.useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = React.useState<string | null>(null);
-  const [doctors, setDoctors] = React.useState<any[]>([]);
-  const [loadingDoctors, setLoadingDoctors] = React.useState(true);
-  const { timeSlots, loading: slotsLoading, error: slotsError } = require('@/hooks/useAvailableTimeSlots').useAvailableTimeSlots(doctorId, selectedDate);
-  const [agendamentoSuccess, setAgendamentoSuccess] = React.useState(false);
-  const [agendamentoError, setAgendamentoError] = React.useState<string | null>(null);
+  const [doctorId, setDoctorId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const { timeSlots, loading: slotsLoading, error: slotsError } = useAvailableTimeSlots(doctorId, selectedDate);
+  const [agendamentoSuccess, setAgendamentoSuccess] = useState(false);
+  const [agendamentoError, setAgendamentoError] = useState<string | null>(null);
 
   React.useEffect(() => {
     async function fetchDoctors() {
       setLoadingDoctors(true);
-      const { data, error } = await require('@/integrations/supabase/client').supabase
+      const { data, error } = await supabase
         .from('doctors')
         .select('id, name')
         .eq('approved', true);
@@ -33,7 +33,7 @@ const SmartScheduling: React.FC<any> = () => {
       const scheduledAt = new Date(selectedDate);
       const [h, m] = selectedTime.split(':');
       scheduledAt.setHours(Number(h), Number(m), 0, 0);
-      const { error } = await require('@/integrations/supabase/client').supabase
+      const { error } = await supabase
         .from('appointments')
         .insert([{
           doctor_id: doctorId,

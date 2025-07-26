@@ -13,11 +13,11 @@ const PedidosExamePaciente: React.FC = () => {
       try {
         const pacienteId = localStorage.getItem('userId');
         if (!pacienteId) throw new Error('Paciente não autenticado');
-        const { data, error } = await supabase
-          .from('documents')
-          .select('*')
-          .eq('patient_id', pacienteId)
-          .eq('document_type', 'pedido_exame')
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('patient_id', pacienteId)
+        .eq('document_type', 'exam_request');
           .order('issued_at', { ascending: false });
         if (error) throw error;
         setExames(data || []);
