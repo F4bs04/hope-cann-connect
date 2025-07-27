@@ -236,7 +236,7 @@ const Header = () => {
       <div className="hopecann-container flex justify-between items-center">
         <div className="flex items-center">
           <a href="https://hopecann.com.br" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2">
-            <img src="/lovable-uploads/79feadec-46eb-449d-b375-4fac34f5ad25.png" alt="Logo HopeCann" className="h-20" />
+            <img src="/lovable-uploads/hopecann-logo.png" alt="Logo HopeCann" className="h-16 w-auto" style={{maxHeight: '64px'}} />
           </a>
         </div>
 
