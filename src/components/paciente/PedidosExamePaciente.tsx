@@ -17,8 +17,8 @@ const PedidosExamePaciente: React.FC = () => {
         .from('documents')
         .select('*')
         .eq('patient_id', pacienteId)
-        .eq('document_type', 'exam_request');
-          .order('issued_at', { ascending: false });
+        .eq('document_type', 'exam_request')
+        .order('issued_at', { ascending: false });
         if (error) throw error;
         setExames(data || []);
       } catch (err: any) {
