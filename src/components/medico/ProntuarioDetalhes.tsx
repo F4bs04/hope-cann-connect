@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save, Edit } from 'lucide-react';
+import { ArrowLeft, Save, Edit, Download, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 import { Anamnese, SOAP } from '@/types/doctorScheduleTypes';
+import html2pdf from 'html2pdf.js';
 
 interface ProntuarioDetalhesProps {
   onBack: () => void;
@@ -16,6 +17,7 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
   const { toast } = useToast();
   const { selectedPaciente, historicoPaciente, handleSaveProntuario } = useDoctorSchedule();
   const [isEditing, setIsEditing] = useState(false);
+  const prontuarioRef = React.useRef<HTMLDivElement>(null);
   
   const [prontuarioData, setProntuarioData] = useState({
     condicoes_medicas: historicoPaciente?.condicoes_medicas || '',
@@ -62,19 +64,21 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
     }
   }, [historicoPaciente]);
 
-  const handleSave = () => {
-    if (selectedPaciente) {
-      // Combine all data into a single object for handleSaveProntuario
-      handleSaveProntuario({
+  const handleSave = async () => {
+    if (handleSaveProntuario) {
+      await handleSaveProntuario({
         ...prontuarioData,
-        id_paciente: selectedPaciente.id,
-        ultima_atualizacao: new Date().toISOString(),
         anamnese: anamneseData,
         soap: soapData,
-        // Include acompanhamento data inline
-        acompanhamento: {
+        consulta: {
+          data_consulta: new Date().toISOString(),
           sintomas: '',
-          efeitos_colaterais: '',
+          exame_fisico: '',
+          diagnostico: '',
+          tratamento: '',
+          observacoes: '',
+          prescricoes: '',
+          retorno: '',
           eficacia: '',
           notas_adicionais: '',
           id_paciente: selectedPaciente.id,
@@ -88,6 +92,39 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
         description: "As alterações foram salvas com sucesso.",
       });
     }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (prontuarioRef.current) {
+      try {
+        const element = prontuarioRef.current;
+        const opt = {
+          margin: 1,
+          filename: `prontuario-${selectedPaciente.nome.replace(/\s+/g, '-')}-${new Date().getTime()}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        
+        await html2pdf().set(opt).from(element).save();
+        
+        toast({
+          title: "Download concluído",
+          description: "O prontuário foi baixado como PDF",
+        });
+      } catch (error) {
+        console.error("Erro ao gerar PDF:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao gerar PDF",
+          description: "Não foi possível baixar o prontuário como PDF",
+        });
+      }
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   if (!selectedPaciente || !historicoPaciente) {
@@ -149,25 +186,33 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-          variant={isEditing ? "default" : "outline"}
-        >
-          {isEditing ? (
-            <>
-              <Save className="h-4 w-4 mr-2" /> Salvar Alterações
-            </>
-          ) : (
-            <>
-              <Edit className="h-4 w-4 mr-2" /> Editar Prontuário
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePrint}>
+            <Printer className="h-4 w-4 mr-2" /> Imprimir
+          </Button>
+          <Button variant="outline" onClick={handleDownloadPDF}>
+            <Download className="h-4 w-4 mr-2" /> Baixar PDF
+          </Button>
+          <Button
+            onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+            variant={isEditing ? "default" : "outline"}
+          >
+            {isEditing ? (
+              <>
+                <Save className="h-4 w-4 mr-2" /> Salvar Alterações
+              </>
+            ) : (
+              <>
+                <Edit className="h-4 w-4 mr-2" /> Editar Prontuário
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      <div className="space-y-8">
-        <div className="bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-4">Histórico Médico</h3>
+      <div ref={prontuarioRef} className="space-y-8 print:p-0">
+        <div className="bg-white p-6 rounded-lg border print:border-0 print:shadow-none">
+          <h3 className="text-lg font-semibold mb-4 print:text-xl print:font-bold">Histórico Médico</h3>
           <div className="grid gap-6">
             {renderField('Condições Médicas', prontuarioData.condicoes_medicas, 'condicoes_medicas', 'prontuario')}
             {renderField('Alergias', prontuarioData.alergias, 'alergias', 'prontuario')}
@@ -176,8 +221,8 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-4">Anamnese</h3>
+        <div className="bg-white p-6 rounded-lg border print:border-0 print:shadow-none">
+          <h3 className="text-lg font-semibold mb-4 print:text-xl print:font-bold">Anamnese</h3>
           <div className="grid gap-6">
             {renderField('Queixa Principal', anamneseData.queixa_principal, 'queixa_principal', 'anamnese')}
             {renderField('História da Doença Atual', anamneseData.historia_doenca_atual, 'historia_doenca_atual', 'anamnese')}
@@ -188,8 +233,8 @@ const ProntuarioDetalhes: React.FC<ProntuarioDetalhesProps> = ({ onBack }) => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-4">SOAP - Registro Orientado por Problemas</h3>
+        <div className="bg-white p-6 rounded-lg border print:border-0 print:shadow-none">
+          <h3 className="text-lg font-semibold mb-4 print:text-xl print:font-bold">SOAP - Registro Orientado por Problemas</h3>
           <div className="grid gap-6">
             {renderField('S - Subjetivo', soapData.subjetivo, 'subjetivo', 'soap')}
             {renderField('O - Objetivo', soapData.objetivo, 'objetivo', 'soap')}

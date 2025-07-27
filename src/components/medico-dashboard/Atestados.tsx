@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { getPacientes, createAtestado } from '@/services/supabaseService';
 import html2canvas from 'html2canvas';
+import html2pdf from 'html2pdf.js';
 import PdfUpload from '@/components/ui/pdf-upload';
 
 const Atestados: React.FC = () => {
@@ -153,6 +154,35 @@ const Atestados: React.FC = () => {
     setPdfFilePath(filePath);
   };
   
+  const handleDownloadPDF = async () => {
+    if (atestadoRef.current) {
+      try {
+        const element = atestadoRef.current;
+        const opt = {
+          margin: 1,
+          filename: `atestado-${nomePaciente.replace(/\s+/g, '-')}-${new Date().getTime()}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        
+        await html2pdf().set(opt).from(element).save();
+        
+        toast({
+          title: "Download concluído",
+          description: "O atestado foi baixado como PDF",
+        });
+      } catch (error) {
+        console.error("Erro ao gerar PDF:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao gerar PDF",
+          description: "Não foi possível baixar o atestado como PDF",
+        });
+      }
+    }
+  };
+
   const handleDownloadImage = async () => {
     if (atestadoRef.current) {
       try {
@@ -160,7 +190,7 @@ const Atestados: React.FC = () => {
         const image = canvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.href = image;
-        link.download = `atestado-${new Date().getTime()}.png`;
+        link.download = `atestado-${nomePaciente.replace(/\s+/g, '-')}-${new Date().getTime()}.png`;
         link.click();
         
         toast({
@@ -367,8 +397,11 @@ const Atestados: React.FC = () => {
               <Button variant="outline" onClick={handlePrint}>
                 <Printer className="h-4 w-4 mr-2" /> Imprimir
               </Button>
-              <Button onClick={handleDownloadImage}>
-                <Download className="h-4 w-4 mr-2" /> Baixar
+              <Button onClick={handleDownloadPDF}>
+                <Download className="h-4 w-4 mr-2" /> Baixar PDF
+              </Button>
+              <Button variant="outline" onClick={handleDownloadImage}>
+                <Download className="h-4 w-4 mr-2" /> Baixar Imagem
               </Button>
             </div>
           </div>

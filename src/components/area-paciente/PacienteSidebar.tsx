@@ -35,8 +35,16 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
     <Sidebar className="bg-[#F2F7FA] text-gray-800 min-w-[240px]">
       <SidebarHeader className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <User className="w-7 h-7 text-hopecann-teal flex-shrink-0" />
-          <h2 className="text-xl font-bold text-hopecann-teal truncate">HopeCann Saúde</h2>
+          <button 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <img 
+              src="/uploads/Logo.png" 
+              alt="HopeCann" 
+              className="h-10 w-auto flex-shrink-0" 
+            />
+          </button>
         </div>
       </SidebarHeader>
       <SidebarContent>

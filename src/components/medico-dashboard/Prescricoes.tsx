@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Printer, Check } from 'lucide-react';
+import { Printer, Check, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getPacientes, createReceita } from '@/services/supabaseService';
 import PdfUpload from '@/components/ui/pdf-upload';
+import html2pdf from 'html2pdf.js';
 
 const Prescricoes: React.FC = () => {
   const { toast } = useToast();
@@ -33,6 +34,8 @@ const Prescricoes: React.FC = () => {
   const [tipoReceita, setTipoReceita] = useState('simples');
   const [observacoes, setObservacoes] = useState('');
   const [assinado, setAssinado] = useState(false);
+  const [receitaRef, setReceitaRef] = useState<React.RefObject<HTMLDivElement>>(React.createRef());
+  const [lastGeneratedReceita, setLastGeneratedReceita] = useState<any>(null);
   
   useEffect(() => {
     const loadPacientes = async () => {
@@ -83,6 +86,19 @@ const Prescricoes: React.FC = () => {
       const newReceita = await createReceita(receitaData);
       
       if (newReceita) {
+        // Salvar dados da receita para exibição no PDF
+        const pacienteSelecionado = pacientes.find(p => p.id.toString() === pacienteId);
+        setLastGeneratedReceita({
+          ...receitaData,
+          paciente: pacienteSelecionado,
+          medicamento,
+          posologia,
+          tempoUso,
+          periodo,
+          observacoes,
+          tipoReceita,
+          dataEmissao: new Date().toISOString()
+        });
         setSuccess(true);
         return;
       }
@@ -164,33 +180,133 @@ const Prescricoes: React.FC = () => {
   const handlePdfUploadComplete = (filePath: string) => {
     setPdfFilePath(filePath);
   };
+
+  const handleDownloadPDF = async () => {
+    if (receitaRef.current && lastGeneratedReceita) {
+      try {
+        const element = receitaRef.current;
+        const pacienteNome = lastGeneratedReceita.paciente?.nome || 'paciente';
+        const opt = {
+          margin: 1,
+          filename: `receita-${pacienteNome.replace(/\s+/g, '-')}-${new Date().getTime()}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        
+        await html2pdf().set(opt).from(element).save();
+        
+        toast({
+          title: "Download concluído",
+          description: "A receita foi baixada como PDF",
+        });
+      } catch (error) {
+        console.error("Erro ao gerar PDF:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao gerar PDF",
+          description: "Não foi possível baixar a receita como PDF",
+        });
+      }
+    }
+  };
   
-  if (success) {
+  if (success && lastGeneratedReceita) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="bg-green-100 rounded-full p-4 mb-4">
-          <Check className="h-12 w-12 text-green-600" />
+      <div className="flex flex-col lg:flex-row gap-8">
+        <div className="lg:w-1/2">
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="bg-green-100 rounded-full p-4 mb-4">
+              <Check className="h-12 w-12 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Receita Gerada com Sucesso</h2>
+            <p className="text-gray-600 mb-6 text-center max-w-md">
+              A receita foi gerada e está disponível para impressão ou download.
+            </p>
+            <div className="flex flex-col gap-4 w-full max-w-md">
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="flex items-center justify-center"
+                onClick={() => window.print()}
+              >
+                <Printer className="mr-2 h-5 w-5" />
+                Imprimir Receita
+              </Button>
+              <Button 
+                size="lg"
+                className="flex items-center justify-center"
+                onClick={handleDownloadPDF}
+              >
+                <Download className="mr-2 h-5 w-5" />
+                Baixar PDF
+              </Button>
+              <Button 
+                variant="outline"
+                size="lg"
+                onClick={() => {
+                  setSuccess(false);
+                  setLastGeneratedReceita(null);
+                  resetForm();
+                }}
+              >
+                Criar Nova Receita
+              </Button>
+            </div>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold mb-2">Receita Gerada com Sucesso</h2>
-        <p className="text-gray-600 mb-6 text-center max-w-md">
-          A receita foi gerada e está disponível para impressão ou download.
-        </p>
-        <div className="flex gap-4">
-          <Button 
-            variant="outline" 
-            size="lg"
-            className="flex items-center"
-            onClick={() => window.print()}
-          >
-            <Printer className="mr-2 h-5 w-5" />
-            Imprimir Receita
-          </Button>
-          <Button 
-            size="lg"
-            onClick={() => setSuccess(false)}
-          >
-            Criar Nova Receita
-          </Button>
+        
+        <div className="lg:w-1/2 print:w-full bg-white p-6 border rounded-lg shadow-sm">
+          <div ref={receitaRef} className="p-6 print:p-0 min-h-[600px]">
+            <div className="text-center border-b pb-4 mb-6">
+              <h2 className="text-xl font-bold text-blue-800">RECEITA MÉDICA</h2>
+              <p className="text-sm text-gray-600 mt-1">Doc. Nº {Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</p>
+            </div>
+            
+            <div className="mb-6">
+              <p className="font-medium">Paciente: <span className="font-normal">{lastGeneratedReceita.paciente?.nome || 'Nome não informado'}</span></p>
+              <p className="font-medium mt-2">Data: <span className="font-normal">{new Date(lastGeneratedReceita.dataEmissao).toLocaleDateString('pt-BR')}</span></p>
+            </div>
+            
+            <div className="mb-8">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <h3 className="font-bold text-lg mb-3">PRESCRIÇÃO</h3>
+                
+                <div className="mb-4">
+                  <p className="font-medium text-blue-800 text-lg">{lastGeneratedReceita.medicamento}</p>
+                </div>
+                
+                <div className="mb-4">
+                  <p className="font-medium">Posologia:</p>
+                  <p className="ml-4">{lastGeneratedReceita.posologia}</p>
+                </div>
+                
+                <div className="mb-4">
+                  <p className="font-medium">Tempo de uso:</p>
+                  <p className="ml-4">{lastGeneratedReceita.tempoUso} {lastGeneratedReceita.periodo}</p>
+                </div>
+                
+                <div className="mb-4">
+                  <p className="font-medium">Tipo de receita:</p>
+                  <p className="ml-4 capitalize">{lastGeneratedReceita.tipoReceita}</p>
+                </div>
+                
+                {lastGeneratedReceita.observacoes && (
+                  <div className="mb-4">
+                    <p className="font-medium">Observações:</p>
+                    <p className="ml-4">{lastGeneratedReceita.observacoes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="mt-12 pt-8 border-t text-center">
+              <div className="w-64 mx-auto border-b border-black pb-1">
+                <p className="font-medium text-sm">Assinatura e Carimbo do Médico</p>
+              </div>
+              <p className="mt-2 text-sm">CRM: 12345 - RJ</p>
+            </div>
+          </div>
         </div>
       </div>
     );
