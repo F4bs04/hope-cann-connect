@@ -235,9 +235,9 @@ const Header = () => {
     <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-4'}`}>
       <div className="hopecann-container flex justify-between items-center">
         <div className="flex items-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <img src="/lovable-uploads/79feadec-46eb-449d-b375-4fac34f5ad25.png" alt="Clínica HopeCann Logo" className="h-20" />
-          </Link>
+          <a href="https://hopecann.com.br" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2">
+            <img src="/lovable-uploads/79feadec-46eb-449d-b375-4fac34f5ad25.png" alt="Logo HopeCann" className="h-20" />
+          </a>
         </div>
 
         {/* Desktop Navigation */}
