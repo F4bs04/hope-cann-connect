@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+type TimeSlot = {
+  time: string;
+  available: boolean;
+};
 export const useAvailableTimeSlots = (doctorId?: string, selectedDate?: Date) => {
-  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,11 +25,11 @@ export const useAvailableTimeSlots = (doctorId?: string, selectedDate?: Date) =>
 
         // Buscar horários cadastrados do médico para o dia da semana
         const { data: schedules, error: schError } = await supabase
-          .from('doctor_schedules')
-          .select('start_time, end_time')
-          .eq('doctor_id', doctorId)
-          .eq('day_of_week', dayOfWeek)
-          .eq('is_active', true);
+          .from('horarios_disponiveis')
+          .select('hora_inicio, hora_fim')
+          .eq('id_medico', doctorId)
+          .eq('dia_semana', dayOfWeek)
+          .eq('status_disponibilidade', true);
         if (schError) throw schError;
         if (!schedules || schedules.length === 0) {
           setTimeSlots([]);
@@ -36,8 +40,8 @@ export const useAvailableTimeSlots = (doctorId?: string, selectedDate?: Date) =>
         // Gerar todos os horários possíveis no intervalo
         const slots: string[] = [];
         schedules.forEach((sch: any) => {
-          let start = sch.start_time;
-          let end = sch.end_time;
+          let start = sch.hora_inicio;
+          let end = sch.hora_fim;
           let [hStart, mStart] = start.split(':').map(Number);
           let [hEnd, mEnd] = end.split(':').map(Number);
           let current = new Date(selectedDate);
@@ -52,15 +56,15 @@ export const useAvailableTimeSlots = (doctorId?: string, selectedDate?: Date) =>
 
         // Buscar consultas já agendadas para o médico e data
         const dateStr = selectedDate.toISOString().split('T')[0];
-        const { data: appointments, error: appError } = await supabase
-          .from('appointments')
-          .select('scheduled_at')
-          .eq('doctor_id', doctorId)
-          .gte('scheduled_at', dateStr + 'T00:00:00')
-          .lte('scheduled_at', dateStr + 'T23:59:59');
+        const { data: consultas, error: appError } = await supabase
+          .from('consultas')
+          .select('data_hora')
+          .eq('id_medico', doctorId)
+          .gte('data_hora', dateStr + 'T00:00:00')
+          .lte('data_hora', dateStr + 'T23:59:59');
         if (appError) throw appError;
-        const ocupados = appointments?.map((a: any) => {
-          const d = new Date(a.scheduled_at);
+        const ocupados = consultas?.map((a: any) => {
+          const d = new Date(a.data_hora);
           return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }) || [];
 
