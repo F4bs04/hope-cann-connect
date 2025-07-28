@@ -86,6 +86,21 @@ export const createFallbackDoctors = (): Doctor[] => {
  */
 export const fetchDoctorById = async (id: string): Promise<any> => {
   try {
+    // Validar se o ID é válido antes de fazer a query
+    if (!id || id === 'undefined' || id === 'null' || id === 'NaN') {
+      console.error('ID inválido fornecido para fetchDoctorById:', id);
+      return null;
+    }
+
+    // Validar se é um UUID válido ou número válido
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    const isValidNumber = !isNaN(Number(id)) && Number(id) > 0;
+    
+    if (!isValidUUID && !isValidNumber) {
+      console.error('Formato de ID inválido para fetchDoctorById:', id);
+      return null;
+    }
+
     // Buscar dados do médico no Supabase usando a tabela doctors
     const { data, error } = await supabase
       .from('doctors')

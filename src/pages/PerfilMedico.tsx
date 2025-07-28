@@ -46,10 +46,27 @@ const PerfilMedico = () => {
   const [hasUserRated, setHasUserRated] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      loadDoctorData();
-      loadRatings();
-      checkUserRating();
+    if (id && id !== 'undefined' && id !== 'null' && !isNaN(Number(id)) === false) {
+      // Validar se o ID é um UUID válido ou um número válido
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+      const isValidNumber = !isNaN(Number(id)) && Number(id) > 0;
+      
+      if (isValidUUID || isValidNumber) {
+        loadDoctorData();
+        loadRatings();
+        checkUserRating();
+      } else {
+        console.error('ID inválido fornecido:', id);
+        toast({
+          title: "ID inválido",
+          description: "O ID do médico fornecido não é válido.",
+          variant: "destructive"
+        });
+        navigate('/');
+      }
+    } else if (!id) {
+      console.error('Nenhum ID fornecido');
+      navigate('/');
     }
   }, [id, user]);
 

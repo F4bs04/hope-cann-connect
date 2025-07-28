@@ -53,33 +53,24 @@ const WhyChooseUs = () => {
               
             </div>
 
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-6 bg-[#F7FDFB] rounded-2xl border border-[#E3F5F5]">
+                <div className="flex items-center justify-center mb-3">
+                  <Stethoscope className="h-8 w-8 text-[#36B37E]" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-[#36B37E] mb-1">Médica Responsável</h3>
+                  <p className="text-xl font-semibold text-gray-800 mb-1">Dra. Danielle Aymar</p>
+                  <p className="text-sm text-gray-600">Especialista em Cannabis Medicinal</p>
+                </div>
+              </div>
+            </div>
+
             <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
               
               <p className="text-gray-600 text-center">
                 Tratamentos baseados em evidências científicas e protocolos avançados.
               </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-6 bg-[#F7FDFB] rounded-2xl border border-[#E3F5F5]">
-                <div className="flex items-center justify-center mb-2">
-                  <Stethoscope className="h-6 w-6 text-[#36B37E]" />
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-[#36B37E]">10+</p>
-                  <p className="text-sm text-gray-600">Médicos especializados</p>
-                </div>
-              </div>
-
-              <div className="p-6 bg-[#F7FDFB] rounded-2xl border border-[#E3F5F5]">
-                <div className="flex items-center justify-center mb-2">
-                  <Clock className="h-6 w-6 text-[#36B37E]" />
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-[#36B37E]">1500+</p>
-                  <p className="text-sm text-gray-600">Atendimento humanizado</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
