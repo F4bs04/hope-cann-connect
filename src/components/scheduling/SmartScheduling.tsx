@@ -146,12 +146,30 @@ const SmartScheduling: React.FC = () => {
       console.log('=== BUSCANDO MÉDICOS DISPONÍVEIS ===');
       
       try {
-        // Buscar médicos da tabela profiles com role = 'doctor'
+        // Buscar médicos fazendo join entre doctors e profiles
         const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, phone, specialty')
-          .eq('role', 'doctor')
-          .eq('is_active', true);
+          .from('doctors')
+          .select(`
+            id,
+            user_id,
+            crm,
+            specialty,
+            biography,
+            is_available,
+            is_approved,
+            profiles!inner(
+              id,
+              full_name,
+              email,
+              phone,
+              avatar_url,
+              is_active
+            )
+          `)
+          .eq('is_available', true)
+          .eq('is_approved', true)
+          .eq('profiles.is_active', true)
+          .eq('profiles.role', 'doctor');
           
         if (error) {
           console.error('Erro ao buscar médicos:', error);
@@ -159,17 +177,26 @@ const SmartScheduling: React.FC = () => {
           return;
         }
         
-        if (data) {
+        if (data && data.length > 0) {
           console.log('Médicos encontrados:', data);
-          setDoctors(data.map((doctor: any) => ({ 
-            id: doctor.id, 
-            name: `Dr. ${doctor.full_name}`,
+          const formattedDoctors = data.map((doctor: any) => ({
+            id: doctor.user_id, // Usar user_id para compatibilidade
+            name: doctor.profiles?.full_name || 'Nome não informado',
             specialty: doctor.specialty || 'Clínico Geral',
-            bio: `Médico especialista em ${doctor.specialty || 'medicina geral'}`,
-            email: doctor.email,
-            phone: doctor.phone,
-            isAvailable: true
-          })));
+            bio: doctor.biography || `Médico especialista em ${doctor.specialty || 'medicina geral'}`,
+            email: doctor.profiles?.email || '',
+            phone: doctor.profiles?.phone || '',
+            avatar: doctor.profiles?.avatar_url || '/placeholder.svg',
+            isAvailable: doctor.is_available && doctor.is_approved,
+            crm: doctor.crm
+          }));
+          
+          console.log('Médicos formatados:', formattedDoctors);
+          setDoctors(formattedDoctors);
+        } else {
+          console.log('Nenhum médico encontrado');
+          setDoctors([]);
+          toast.error('Nenhum médico disponível no momento');
         }
       } catch (err) {
         console.error('Erro ao buscar médicos:', err);
