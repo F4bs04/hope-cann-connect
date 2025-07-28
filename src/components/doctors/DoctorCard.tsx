@@ -26,7 +26,7 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
         <img 
           src={doctor.image} 
           alt={doctor.name} 
-          className="w-full h-full object-cover" 
+          className="w-full h-full object-cover object-top" 
           onError={e => {
             e.currentTarget.src = '/placeholder.svg';
           }} 

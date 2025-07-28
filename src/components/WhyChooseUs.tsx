@@ -49,7 +49,7 @@ const WhyChooseUs = () => {
           
           <div className="space-y-8">
             <div className="relative">
-              <img src="https://nxiaxpgyqpmnkmebvvap.supabase.co/storage/v1/object/public/images//Group.png" alt="Médica especialista" className="w-full rounded-2xl" />
+              <img src="/uploads/56a3d208-4531-4149-8970-665bc4fe0edd.png" alt="Médica especialista" className="w-full rounded-2xl" />
               
             </div>
 
