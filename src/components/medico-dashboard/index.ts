@@ -9,3 +9,4 @@ export { default as Laudos } from './Laudos';
 export { default as PedidosExame } from './PedidosExame';
 export { default as ConsultaView } from './ConsultaView';
 export { default as ConfiguracoesFinanceiras } from './ConfiguracoesFinanceiras';
+export { default as ConfiguracoesPerfil } from './ConfiguracoesPerfil';

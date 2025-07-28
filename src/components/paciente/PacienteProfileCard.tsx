@@ -1,9 +1,10 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Layout } from "lucide-react";
+import { User, Layout, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import ChangePasswordDialog from "@/components/profile/ChangePasswordDialog";
 
 interface PacienteProfileCardProps {
   nome: string;
@@ -60,6 +61,16 @@ const PacienteProfileCard: React.FC<PacienteProfileCardProps> = ({
             Editar Perfil
           </Button>
         )}
+        
+        <ChangePasswordDialog>
+          <Button 
+            variant="outline"
+            className="w-full"
+          >
+            <Key className="mr-2 h-4 w-4" />
+            Alterar Senha
+          </Button>
+        </ChangePasswordDialog>
         
         <Button 
           onClick={handleDashboardNavigation} 

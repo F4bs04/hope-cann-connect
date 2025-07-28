@@ -1,10 +1,18 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Stethoscope, LogOut } from 'lucide-react';
+import { Stethoscope, LogOut, Key, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import ChangePasswordDialog from '@/components/profile/ChangePasswordDialog';
 
 const MedicoHeader = () => {
   const navigate = useNavigate();
@@ -39,14 +47,30 @@ const MedicoHeader = () => {
           </div>
         </div>
         
-        <Button 
-          variant="outline" 
-          onClick={handleLogout}
-          className="text-gray-700 hover:text-gray-900"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Sair
-        </Button>
+        <div className="flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="text-gray-700 hover:text-gray-900">
+                <Settings className="w-4 h-4 mr-2" />
+                Perfil
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <ChangePasswordDialog>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <Key className="w-4 h-4 mr-2" />
+                  Alterar Senha
+                </DropdownMenuItem>
+              </ChangePasswordDialog>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );
