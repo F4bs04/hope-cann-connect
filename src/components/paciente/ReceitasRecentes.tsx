@@ -4,8 +4,10 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, Download, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { downloadDocument, getDocumentUrl } from '@/services/documentos/documentosService';
 
 interface Receita {
   id: number;
@@ -13,6 +15,9 @@ interface Receita {
   data: string;
   status: string;
   posologia: string;
+  observacoes?: string;
+  arquivo_pdf?: string;
+  data_validade?: string;
 }
 
 interface ReceitasRecentesProps {
@@ -21,9 +26,109 @@ interface ReceitasRecentesProps {
 }
 
 const ReceitasRecentes: React.FC<ReceitasRecentesProps> = ({ receitas, isLoading = false }) => {
-  const handleDownloadPDF = (receitaId: number) => {
-    // Implement PDF download logic here
-    console.log('Download PDF for receita:', receitaId);
+  const { toast } = useToast();
+
+  const handleDownloadPDF = async (receita: Receita) => {
+    try {
+      if (!receita.arquivo_pdf) {
+        // Se não há PDF anexado, gerar PDF automaticamente do conteúdo
+        await generateReceitaPDF(receita);
+        return;
+      }
+
+      // Download do PDF anexado
+      const success = await downloadDocument(
+        receita.arquivo_pdf, 
+        `receita_${receita.medicamento.replace(/\s+/g, '_')}_${receita.id}.pdf`
+      );
+
+      if (success) {
+        toast({
+          title: "Download concluído",
+          description: "O PDF da receita foi baixado com sucesso.",
+        });
+      } else {
+        throw new Error('Falha no download do arquivo');
+      }
+    } catch (error: any) {
+      console.error('Erro ao baixar PDF:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro no download",
+        description: error.message || "Não foi possível baixar o PDF da receita.",
+      });
+    }
+  };
+
+  const generateReceitaPDF = async (receita: Receita) => {
+    try {
+      // Importar html2pdf dinamicamente
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      // Criar conteúdo HTML da receita
+      const receitaHTML = `
+        <div style="padding: 40px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
+          <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 24px;">RECEITA MÉDICA</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${receita.id.toString().padStart(4, '0')}</p>
+          </div>
+          
+          <div style="margin-bottom: 30px;">
+            <p style="margin: 10px 0;"><strong>Data de Emissão:</strong> ${format(new Date(receita.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+            <p style="margin: 10px 0;"><strong>Validade:</strong> ${receita.data_validade ? format(new Date(receita.data_validade), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : '30 dias'}</p>
+          </div>
+          
+          <div style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+            <h3 style="color: #2563eb; margin-top: 0;">Medicamento Prescrito</h3>
+            <p style="font-size: 18px; font-weight: bold; margin: 10px 0;">${receita.medicamento}</p>
+            <p style="margin: 10px 0;"><strong>Posologia:</strong> ${receita.posologia}</p>
+            ${receita.observacoes ? `<p style="margin: 10px 0;"><strong>Observações:</strong> ${receita.observacoes}</p>` : ''}
+          </div>
+          
+          <div style="margin-top: 60px; text-align: center; border-top: 1px solid #000; padding-top: 20px;">
+            <div style="width: 300px; margin: 0 auto;">
+              <p style="font-weight: bold; margin: 0;">Assinatura e Carimbo do Médico</p>
+              <p style="margin: 10px 0 0 0; font-size: 14px;">CRM: 12345 - RJ</p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Criar elemento temporário
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = receitaHTML;
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      document.body.appendChild(tempDiv);
+      
+      // Configurações do PDF
+      const options = {
+        margin: 1,
+        filename: `receita_${receita.medicamento.replace(/\s+/g, '_')}_${receita.id}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      
+      // Gerar e baixar PDF
+      await html2pdf().set(options).from(tempDiv).save();
+      
+      // Limpar elemento temporário
+      document.body.removeChild(tempDiv);
+      
+      toast({
+        title: "PDF gerado",
+        description: "A receita foi gerada e baixada como PDF.",
+      });
+      
+    } catch (error: any) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro na geração do PDF",
+        description: "Não foi possível gerar o PDF da receita.",
+      });
+    }
   };
 
   if (isLoading) {
@@ -96,10 +201,11 @@ const ReceitasRecentes: React.FC<ReceitasRecentesProps> = ({ receitas, isLoading
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDownloadPDF(receita.id)}
+                  onClick={() => handleDownloadPDF(receita)}
                   className="flex-shrink-0 ml-3"
                 >
-                  Baixar PDF
+                  <Download className="h-4 w-4 mr-1" />
+                  {receita.arquivo_pdf ? 'Baixar PDF' : 'Gerar PDF'}
                 </Button>
               </div>
             ))
