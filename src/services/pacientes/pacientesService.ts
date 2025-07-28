@@ -1,9 +1,29 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export const getPacientes = async () => {
-  const { data, error } = await supabase.from('patients').select('*');
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select(`
+        *,
+        profiles (
+          full_name,
+          email,
+          avatar_url
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error getting patients:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getPacientes:', error);
+    return [];
+  }
 };
 
 export const getPacienteById = async (id) => {
@@ -28,12 +48,33 @@ export const deletePaciente = async (id) => {
 };
 
 export const searchPacientes = async (query) => {
-  const { data, error } = await supabase.from('patients').select('*').ilike('nome', `%${query}%`);
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select(`
+        *,
+        profiles (
+          full_name,
+          email,
+          avatar_url
+        )
+      `)
+      .or(`profiles.full_name.ilike.%${query}%,profiles.email.ilike.%${query}%,cpf.ilike.%${query}%`)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error searching patients:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in searchPacientes:', error);
+    return [];
+  }
 };
 
 export const getSaldoPacientes = async () => {
-  // Exemplo: buscar saldo em outra tabela se existir
+  // TODO: Implementar quando sistema financeiro for desenvolvido
   return [];
 };

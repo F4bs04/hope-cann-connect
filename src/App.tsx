@@ -8,7 +8,6 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Pages
 import Index from "./pages/Index";
-import RecuperarSenha from "./pages/RecuperarSenha";
 import CadastroComplementar from "./pages/CadastroComplementar";
 import PosAutenticacao from "./pages/PosAutenticacao";
 import Login from "./pages/Login";
@@ -27,6 +26,8 @@ import Agendar from "./pages/Agendar";
 import NotFound from "./pages/NotFound";
 import Notificacoes from "./pages/Notificacoes";
 import PerfilMedico from "./pages/PerfilMedico";
+import RecuperarSenha from "./pages/RecuperarSenha";
+import RedefinirSenha from "./pages/RedefinirSenha";
 
 function App() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -114,6 +115,10 @@ function App() {
           <Route path="/medico/:id" element={<PerfilMedico />} />
           <Route path="/tratamentos" element={<Tratamentos />} />
           <Route path="/contato" element={<Contato />} />
+          
+          {/* Rotas de autenticação */}
+          <Route path="/recuperarsenha" element={<RecuperarSenha />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

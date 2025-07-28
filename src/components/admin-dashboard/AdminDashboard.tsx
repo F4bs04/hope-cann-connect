@@ -101,22 +101,26 @@ const AdminDashboard: React.FC = () => {
         getMedicos()
       ]);
       
-      // Mapear dados dos pacientes para incluir campos derivados
-      const mappedPatients = (patientsData || []).map(patient => ({
-        ...patient,
-        nome: patient.profiles?.full_name || 'Paciente',
-        email: patient.profiles?.email,
-        telefone: patient.emergency_contact_phone,
-        data_nascimento: patient.birth_date
-      }));
+      // Mapear dados dos pacientes para incluir campos derivados - apenas dados reais
+      const mappedPatients = (patientsData || [])
+        .filter(patient => patient.profiles?.full_name) // Apenas pacientes com nome real
+        .map(patient => ({
+          ...patient,
+          nome: patient.profiles?.full_name,
+          email: patient.profiles?.email,
+          telefone: patient.emergency_contact_phone,
+          data_nascimento: patient.birth_date
+        }));
       
-      // Mapear dados dos médicos para incluir campos derivados
-      const mappedDoctors = (doctorsData || []).map(doctor => ({
-        ...doctor,
-        nome: doctor.profiles?.full_name || doctor.nome || 'Médico',
-        email: doctor.profiles?.email || doctor.email,
-        especialidade: doctor.specialty
-      }));
+      // Mapear dados dos médicos para incluir campos derivados - apenas dados reais
+      const mappedDoctors = (doctorsData || [])
+        .filter(doctor => doctor.profiles?.full_name && doctor.crm) // Apenas médicos com nome real e CRM
+        .map(doctor => ({
+          ...doctor,
+          nome: doctor.profiles?.full_name,
+          email: doctor.profiles?.email,
+          especialidade: doctor.specialty
+        }));
       
       setPatients(mappedPatients);
       setDoctors(mappedDoctors);
