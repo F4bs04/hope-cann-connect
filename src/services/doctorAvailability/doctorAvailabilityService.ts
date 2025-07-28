@@ -30,60 +30,59 @@ export class DoctorAvailabilityService {
     weeklySchedule: DoctorSchedule[]
   ): Promise<boolean> {
     try {
-      console.log('=== SALVANDO NO SUPABASE ===');
+      console.log('=== SALVANDO AGENDA NO SUPABASE ===');
       console.log('Doctor ID:', doctorId);
       console.log('Schedule:', weeklySchedule);
 
-      // Verificar se o médico existe na tabela doctors
-      const { data: doctor, error: doctorError } = await supabase
-        .from('doctors')
-        .select('id, user_id')
-        .eq('user_id', doctorId)
-        .single();
+      // Primeiro, deletar todos os horários existentes do médico
+      const { error: deleteError } = await supabase
+        .from('doctor_schedules')
+        .delete()
+        .eq('doctor_id', doctorId);
 
-      if (doctorError) {
-        console.log('Médico não encontrado na tabela doctors, tentando criar/atualizar via profiles');
-        
-        // Salvar diretamente na tabela profiles usando um campo de metadados
-        const scheduleJson = JSON.stringify({
-          doctor_schedule: weeklySchedule,
-          updated_at: new Date().toISOString()
-        });
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: (await supabase.from('profiles').select('full_name').eq('id', doctorId).single()).data?.full_name || 'Médico',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', doctorId);
-
-        if (profileError) {
-          console.error('Erro ao atualizar profile:', profileError);
-          throw new Error('Falha ao salvar no banco de dados');
-        }
-
-        // Usar localStorage como backup até implementarmos uma tabela específica
-        localStorage.setItem(`supabase_doctor_schedule_${doctorId}`, scheduleJson);
-        console.log('✅ Horários salvos no localStorage como backup');
-        
-        return true;
+      if (deleteError) {
+        console.error('Erro ao deletar horários existentes:', deleteError);
+        throw new Error('Falha ao limpar horários existentes');
       }
 
-      // Se o médico existe, tentar salvar usando uma abordagem alternativa
-      const scheduleJson = JSON.stringify({
-        doctor_schedule: weeklySchedule,
-        updated_at: new Date().toISOString()
+      // Preparar dados para inserção
+      const schedulesToInsert: any[] = [];
+      
+      weeklySchedule.forEach(daySchedule => {
+        if (daySchedule.isActive && daySchedule.slots.length > 0) {
+          daySchedule.slots.forEach(slot => {
+            if (slot.isActive) {
+              schedulesToInsert.push({
+                doctor_id: doctorId,
+                day_of_week: daySchedule.day,
+                start_time: slot.startTime,
+                end_time: slot.endTime,
+                is_active: true
+              });
+            }
+          });
+        }
       });
 
-      // Salvar no localStorage com prefixo do Supabase para indicar que deve ser sincronizado
-      localStorage.setItem(`supabase_doctor_schedule_${doctorId}`, scheduleJson);
+      console.log('Dados para inserção:', schedulesToInsert);
+
+      // Inserir novos horários se houver algum
+      if (schedulesToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from('doctor_schedules')
+          .insert(schedulesToInsert);
+
+        if (insertError) {
+          console.error('Erro ao inserir novos horários:', insertError);
+          throw new Error('Falha ao salvar novos horários');
+        }
+      }
       
-      console.log('✅ Horários salvos com sucesso (localStorage + Supabase ready)');
+      console.log('✅ Agenda salva com sucesso no Supabase!');
       return true;
 
     } catch (error) {
-      console.error('❌ Erro ao salvar horários:', error);
+      console.error('❌ Erro ao salvar agenda:', error);
       throw error;
     }
   }
@@ -93,27 +92,54 @@ export class DoctorAvailabilityService {
    */
   static async loadDoctorSchedule(doctorId: string): Promise<DoctorSchedule[]> {
     try {
-      console.log('=== CARREGANDO DO SUPABASE ===');
+      console.log('=== CARREGANDO AGENDA DO SUPABASE ===');
       console.log('Doctor ID:', doctorId);
 
-      // Tentar carregar do localStorage primeiro (nossa implementação atual)
-      const savedSchedule = localStorage.getItem(`supabase_doctor_schedule_${doctorId}`);
-      if (savedSchedule) {
-        try {
-          const parsed = JSON.parse(savedSchedule);
-          console.log('✅ Horários carregados do localStorage');
-          return parsed.doctor_schedule || [];
-        } catch (parseError) {
-          console.error('Erro ao parsear horários salvos:', parseError);
-        }
+      // Buscar horários do médico na tabela doctor_schedules
+      const { data: schedules, error } = await supabase
+        .from('doctor_schedules')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .eq('is_active', true)
+        .order('day_of_week')
+        .order('start_time');
+
+      if (error) {
+        console.error('Erro ao buscar agenda no Supabase:', error);
+        return this.getEmptySchedule();
       }
 
-      // Se não encontrou no localStorage, retornar agenda vazia
-      console.log('Nenhuma agenda salva encontrada');
-      return this.getEmptySchedule();
+      console.log('Horários encontrados no Supabase:', schedules);
+
+      // Se não há horários salvos, retornar agenda vazia
+      if (!schedules || schedules.length === 0) {
+        console.log('Nenhuma agenda configurada encontrada');
+        return this.getEmptySchedule();
+      }
+
+      // Converter dados do Supabase para o formato DoctorSchedule
+      const weeklySchedule = this.getEmptySchedule();
+      
+      schedules.forEach((schedule: any) => {
+        const daySchedule = weeklySchedule.find(day => day.day === schedule.day_of_week);
+        if (daySchedule) {
+          daySchedule.isActive = true;
+          daySchedule.slots.push({
+            id: schedule.id,
+            dayOfWeek: schedule.day_of_week,
+            startTime: schedule.start_time,
+            endTime: schedule.end_time,
+            isActive: schedule.is_active,
+            doctor_id: schedule.doctor_id
+          });
+        }
+      });
+
+      console.log('✅ Agenda carregada com sucesso do Supabase!');
+      return weeklySchedule;
 
     } catch (error) {
-      console.error('Erro ao carregar horários:', error);
+      console.error('Erro ao carregar agenda:', error);
       return this.getEmptySchedule();
     }
   }
@@ -145,8 +171,21 @@ export class DoctorAvailabilityService {
    */
   static async clearDoctorSchedule(doctorId: string): Promise<boolean> {
     try {
-      localStorage.removeItem(`supabase_doctor_schedule_${doctorId}`);
-      console.log('✅ Agenda limpa com sucesso');
+      console.log('=== LIMPANDO AGENDA DO SUPABASE ===');
+      console.log('Doctor ID:', doctorId);
+
+      // Deletar todos os horários do médico
+      const { error } = await supabase
+        .from('doctor_schedules')
+        .delete()
+        .eq('doctor_id', doctorId);
+
+      if (error) {
+        console.error('Erro ao limpar agenda no Supabase:', error);
+        throw new Error('Falha ao limpar agenda');
+      }
+
+      console.log('✅ Agenda limpa com sucesso no Supabase!');
       return true;
     } catch (error) {
       console.error('Erro ao limpar agenda:', error);
