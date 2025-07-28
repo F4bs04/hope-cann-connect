@@ -17,17 +17,7 @@ import DoctorCTA from '../components/DoctorCTA';
 import MedicalConditionsSection from '../components/MedicalConditionsSection';
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, userType, isLoading } = useAuth();
-
-  // Redirecionar usuários autenticados para suas áreas corretas
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && userType) {
-      const path = userType === 'medico' ? '/area-medico' :
-                   userType === 'admin_clinica' ? '/admin' : '/area-paciente';
-      navigate(path, { replace: true });
-    }
-  }, [isAuthenticated, userType, isLoading, navigate]);
+  const { isLoading } = useAuth();
 
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {

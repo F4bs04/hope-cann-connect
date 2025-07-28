@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Apenas redirecionar se estiver na página de login
+      // NÃO redirecionar da home page (/) - permitir que usuário escolha onde ir
       if (currentPath === '/login' && correctPath !== '/login') {
         console.log("[AuthContext] Redirecionando para:", correctPath);
         navigate(correctPath, { replace: true });
