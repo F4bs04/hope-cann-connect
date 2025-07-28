@@ -96,39 +96,73 @@ const AdminDashboard: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log('[AdminDashboard] Carregando dados...');
+      
       const [patientsData, doctorsData] = await Promise.all([
         getPacientes(),
         getMedicos()
       ]);
       
-      // Mapear dados dos pacientes para incluir campos derivados - apenas dados reais
+      console.log('[AdminDashboard] Dados brutos recebidos:');
+      console.log('Pacientes:', patientsData);
+      console.log('Médicos:', doctorsData);
+      
+      // Mapear dados dos pacientes - mostrar TODOS os pacientes reais do banco
       const mappedPatients = (patientsData || [])
-        .filter(patient => patient.profiles?.full_name) // Apenas pacientes com nome real
+        .filter(patient => {
+          // Filtro menos restritivo: aceitar se tem ID e não é um nome genérico
+          const hasValidData = patient.id && 
+            (patient.profiles?.full_name || patient.profiles?.email);
+          const isNotGeneric = !patient.profiles?.full_name?.includes('Paciente') &&
+            !patient.profiles?.full_name?.includes('User') &&
+            patient.profiles?.full_name !== 'Nome não informado';
+          return hasValidData && (isNotGeneric || !patient.profiles?.full_name);
+        })
         .map(patient => ({
           ...patient,
-          nome: patient.profiles?.full_name,
+          nome: patient.profiles?.full_name || patient.profiles?.email || 'Nome não informado',
           email: patient.profiles?.email,
           telefone: patient.emergency_contact_phone,
           data_nascimento: patient.birth_date
         }));
       
-      // Mapear dados dos médicos para incluir campos derivados - apenas dados reais
+      // Mapear dados dos médicos - mostrar TODOS os médicos reais do banco
       const mappedDoctors = (doctorsData || [])
-        .filter(doctor => doctor.profiles?.full_name && doctor.crm) // Apenas médicos com nome real e CRM
+        .filter(doctor => {
+          // Filtro menos restritivo: aceitar se tem ID e CRM válido
+          const hasValidData = doctor.id && doctor.crm;
+          const isNotGeneric = !doctor.profiles?.full_name?.includes('Médico') &&
+            !doctor.profiles?.full_name?.includes('User') &&
+            doctor.profiles?.full_name !== 'Nome não informado';
+          return hasValidData && (isNotGeneric || !doctor.profiles?.full_name);
+        })
         .map(doctor => ({
           ...doctor,
-          nome: doctor.profiles?.full_name,
+          nome: doctor.profiles?.full_name || doctor.profiles?.email || 'Nome não informado',
           email: doctor.profiles?.email,
           especialidade: doctor.specialty
         }));
       
+      console.log('[AdminDashboard] Dados filtrados e mapeados:');
+      console.log('Pacientes mapeados:', mappedPatients);
+      console.log('Médicos mapeados:', mappedDoctors);
+      
       setPatients(mappedPatients);
       setDoctors(mappedDoctors);
+      
+      if (mappedPatients.length === 0 && mappedDoctors.length === 0) {
+        console.warn('[AdminDashboard] Nenhum dado real encontrado após filtragem');
+        toast({
+          title: "Aviso",
+          description: "Nenhum paciente ou médico encontrado no banco de dados",
+          variant: "default"
+        });
+      }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('[AdminDashboard] Erro ao carregar dados:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados",
+        description: "Erro ao carregar dados do banco",
         variant: "destructive"
       });
     } finally {
@@ -154,18 +188,26 @@ const AdminDashboard: React.FC = () => {
     });
   };
 
-  const filteredPatients = patients.filter(patient =>
-    patient.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.cpf?.includes(searchTerm)
-  );
+  const filteredPatients = patients.filter(patient => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      patient.nome?.toLowerCase().includes(searchLower) ||
+      patient.email?.toLowerCase().includes(searchLower) ||
+      patient.cpf?.toLowerCase().includes(searchLower) ||
+      patient.profiles?.full_name?.toLowerCase().includes(searchLower)
+    );
+  });
 
-  const filteredDoctors = doctors.filter(doctor =>
-    doctor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doctor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doctor.crm?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doctor.especialidade?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDoctors = doctors.filter(doctor => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      doctor.nome?.toLowerCase().includes(searchLower) ||
+      doctor.email?.toLowerCase().includes(searchLower) ||
+      doctor.crm?.toLowerCase().includes(searchLower) ||
+      doctor.especialidade?.toLowerCase().includes(searchLower) ||
+      doctor.profiles?.full_name?.toLowerCase().includes(searchLower)
+    );
+  });
 
   const PatientCard = ({ patient }: { patient: Patient }) => (
     <Card className="hover:shadow-md transition-shadow">
