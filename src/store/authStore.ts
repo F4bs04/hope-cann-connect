@@ -276,9 +276,49 @@ export const useAuthStore = create<AuthState>()(
                 permissions 
               });
             } else {
-              // Médico sem dados: criar registro pendente ou bloquear acesso
-              console.warn('Usuário médico sem dados na tabela doctors');
-              throw new Error('Perfil de médico incompleto. Entre em contato com o administrador.');
+              // Médico sem dados: criar registro automaticamente para login social
+              console.warn('Usuário médico sem dados na tabela doctors - criando registro automático');
+              
+              try {
+                const { data: newDoctor, error: createError } = await supabase
+                  .from('doctors')
+                  .insert({
+                    user_id: profileData.id,
+                    crm: `TEMP_${Date.now()}`,
+                    cpf: `TEMP_${Date.now()}`,
+                    specialty: 'A definir',
+                    is_approved: false,
+                    consultation_fee: 100
+                  })
+                  .select()
+                  .single();
+
+                if (createError) {
+                  console.error('Erro ao criar registro de médico:', createError);
+                  throw new Error('Erro ao criar perfil de médico. Tente novamente.');
+                }
+
+                profile = {
+                  ...profile,
+                  nome: profileData.full_name || '',
+                  crm: 'PENDENTE',
+                  especialidade: 'A definir',
+                  telefone: profileData.phone,
+                  valor_por_consulta: 100
+                };
+                
+                isApproved = false;
+                permissions = ['dashboard', 'agenda', 'pacientes', 'receitas'];
+                
+                set({ 
+                  medicoId: parseInt(newDoctor.id),
+                  isApproved: false,
+                  permissions 
+                });
+              } catch (createError) {
+                console.error('Erro ao criar registro de médico:', createError);
+                throw new Error('Perfil de médico incompleto. Entre em contato com o administrador.');
+              }
             }
           } else if (profileData.role === 'patient') {
             const { data: patientData } = await supabase
@@ -305,6 +345,51 @@ export const useAuthStore = create<AuthState>()(
                 pacienteId: parseInt(patientData.id),
                 permissions 
               });
+            } else {
+              // Paciente sem dados: criar registro automaticamente para login social
+              console.warn('Usuário paciente sem dados na tabela patients - criando registro automático');
+              
+              try {
+                const { data: newPatient, error: createError } = await supabase
+                  .from('patients')
+                  .insert({
+                    user_id: profileData.id,
+                    cpf: 'PENDENTE',
+                    birth_date: '1990-01-01',
+                    gender: 'Não informado',
+                    address: 'A definir',
+                    medical_condition: 'Não informado'
+                  })
+                  .select()
+                  .single();
+
+                if (createError) {
+                  console.error('Erro ao criar registro de paciente:', createError);
+                  throw new Error('Erro ao criar perfil de paciente. Tente novamente.');
+                }
+
+                profile = {
+                  ...profile,
+                  nome: profileData.full_name || '',
+                  cpf: 'PENDENTE',
+                  telefone: profileData.phone,
+                  data_nascimento: '1990-01-01',
+                  endereco: 'A definir',
+                  genero: 'Não informado',
+                  condicao_medica: 'Não informado'
+                };
+                
+                permissions = ['consultas', 'receitas', 'historico'];
+                
+                set({ 
+                  pacienteId: parseInt(newPatient.id),
+                  permissions 
+                });
+              } catch (createError) {
+                console.error('Erro ao criar registro de paciente:', createError);
+                // Não bloquear o acesso, apenas logar o erro
+                permissions = ['consultas', 'receitas', 'historico'];
+              }
             }
           }
 

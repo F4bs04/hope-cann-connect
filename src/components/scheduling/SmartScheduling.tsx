@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Clock, User, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, User, Check, ArrowLeft, ArrowRight, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { createAppointmentNotification } from '@/services/notifications/notificationService';
 
 interface Doctor {
   id: string;
@@ -16,6 +17,7 @@ interface Doctor {
   avatar?: string;
   isAvailable?: boolean;
   email?: string;
+  consultationFee?: number;
 }
 
 interface TimeSlot {
@@ -157,6 +159,7 @@ const SmartScheduling: React.FC = () => {
             biography,
             is_available,
             is_approved,
+            consultation_fee,
             profiles!inner(
               id,
               full_name,
@@ -188,7 +191,8 @@ const SmartScheduling: React.FC = () => {
             phone: doctor.profiles?.phone || '',
             avatar: doctor.profiles?.avatar_url || '/placeholder.svg',
             isAvailable: doctor.is_available && doctor.is_approved,
-            crm: doctor.crm
+            crm: doctor.crm,
+            consultationFee: doctor.consultation_fee || 50 // Valor padrão se não definido
           }));
           
           console.log('Médicos formatados:', formattedDoctors);
@@ -547,9 +551,15 @@ const SmartScheduling: React.FC = () => {
                               {doctor.name}
                             </h3>
                             <p className="text-sm text-gray-600">{doctor.email}</p>
-                            <Badge variant="outline" className="mt-2">
-                              Disponível
-                            </Badge>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="outline">
+                                Disponível
+                              </Badge>
+                              <div className="flex items-center gap-1 text-hopecann-teal font-semibold">
+                                <DollarSign className="w-4 h-4" />
+                                <span>R$ {doctor.consultationFee || 50}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -719,6 +729,14 @@ const SmartScheduling: React.FC = () => {
                     <div>
                       <div className="font-medium">{selectedTime}</div>
                       <div className="text-sm text-gray-600">Horário da consulta</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="text-hopecann-teal" />
+                    <div>
+                      <div className="font-medium">R$ {selectedDoctor.consultationFee || 50}</div>
+                      <div className="text-sm text-gray-600">Valor da consulta</div>
                     </div>
                   </div>
                 </CardContent>

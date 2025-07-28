@@ -3,13 +3,14 @@ import React from 'react';
 import { User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useUnifiedAuth';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 interface PacienteHeaderProps {
   pacienteNome?: string;
 }
 
 const PacienteHeader: React.FC<PacienteHeaderProps> = ({ pacienteNome = "Paciente" }) => {
-  const { logout } = useAuth();
+  const { logout, userProfile } = useAuth();
 
   return (
     <header className="bg-white border-b border-gray-200 py-4 sticky top-0 z-10">
@@ -24,14 +25,19 @@ const PacienteHeader: React.FC<PacienteHeaderProps> = ({ pacienteNome = "Pacient
           </div>
         </div>
         
-        <Button 
-          variant="outline" 
-          onClick={logout}
-          className="text-gray-700 hover:text-gray-900 flex items-center gap-2"
-        >
-          <LogOut className="w-4 h-4" />
-          Sair
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Notifications */}
+          <NotificationCenter userId={userProfile?.id || ''} />
+          
+          <Button 
+            variant="outline" 
+            onClick={logout}
+            className="text-gray-700 hover:text-gray-900 flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Sair
+          </Button>
+        </div>
       </div>
     </header>
   );

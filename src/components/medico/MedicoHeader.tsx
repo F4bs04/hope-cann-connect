@@ -13,10 +13,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import ChangePasswordDialog from '@/components/profile/ChangePasswordDialog';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
+import { useAuth } from '@/hooks/useUnifiedAuth';
 
 const MedicoHeader = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { userProfile } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -48,6 +51,9 @@ const MedicoHeader = () => {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Notifications */}
+          <NotificationCenter userId={userProfile?.id || ''} />
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="text-gray-700 hover:text-gray-900">

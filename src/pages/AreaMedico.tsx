@@ -23,7 +23,8 @@ import {
   FileCheck,
   User,
   Clock,
-  MessageCircle
+  MessageCircle,
+  DollarSign
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
@@ -41,6 +42,7 @@ import ConsultaView from '@/components/medico-dashboard/ConsultaView';
 import ProntuarioAba from '@/components/medico/ProntuarioAba';
 import AgendaSlotsManager from '@/components/medico/AgendaSlotsManager';
 import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
+import ConfiguracoesFinanceiras from '@/components/medico-dashboard/ConfiguracoesFinanceiras';
 import EditProfileDialog from '@/components/medico/EditProfileDialog';
 import MedicoHeader from '@/components/medico/MedicoHeader';
 import ChatsList from '@/components/medico/ChatsList';
@@ -194,6 +196,8 @@ const AreaMedicoContent: React.FC = () => {
         ) : (
           <div>Lista de chats temporariamente desabilitado</div>
         );
+      case 'financeiro':
+        return <ConfiguracoesFinanceiras />;
       default:
         return <DashboardHome onOpenConsulta={handleOpenConsulta} />;
     }
@@ -323,6 +327,16 @@ const AreaMedicoContent: React.FC = () => {
                   className="text-white hover:bg-[#009E9B]"
                 >
                   <Activity className="w-5 h-5 mr-2" /> Pedidos de Exame
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={() => navigateToSection('financeiro')}
+                  isActive={currentSection === 'financeiro'}
+                  className="text-white hover:bg-[#009E9B]"
+                >
+                  <DollarSign className="w-5 h-5 mr-2" /> Painel Financeiro
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
