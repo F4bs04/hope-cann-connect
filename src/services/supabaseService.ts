@@ -26,6 +26,7 @@ export const {
 } = pacientesService;
 
 export const {
+  getMedicos,
   getSaldoMedico,
   getSaldoMedicos,
   getTransacoesMedico,

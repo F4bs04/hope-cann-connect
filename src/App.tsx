@@ -19,6 +19,7 @@ import CadastroClinica from "./pages/CadastroClinica";
 import AreaMedico from "./pages/AreaMedico";
 import AreaPaciente from "./pages/AreaPaciente";
 import AreaClinica from "./pages/AreaClinica";
+import AreaAdmin from "./pages/AreaAdmin";
 import Medicos from "./pages/Medicos";
 import Tratamentos from "./pages/Tratamentos";
 import Contato from "./pages/Contato";
@@ -80,6 +81,14 @@ function App() {
             element={
               <ProtectedRoute allowedUserTypes={['admin_clinica']}>
                 <AreaClinica />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin-panel/*" 
+            element={
+              <ProtectedRoute allowedUserTypes={['admin', 'admin_clinica']}>
+                <AreaAdmin />
               </ProtectedRoute>
             } 
           />
