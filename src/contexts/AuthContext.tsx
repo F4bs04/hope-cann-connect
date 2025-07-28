@@ -58,6 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentPath = window.location.pathname;
       const correctPath = getCorrectPath();
       
+      // Verificar se é um fluxo de recuperação de senha
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPasswordRecovery = urlParams.get('type') === 'recovery' || 
+                                 currentPath === '/redefinir-senha' ||
+                                 urlParams.has('access_token');
+      
+      // Não redirecionar durante fluxo de recuperação de senha
+      if (isPasswordRecovery) {
+        console.log("[AuthContext] Fluxo de recuperação de senha detectado, não redirecionando");
+        return;
+      }
+      
       // Apenas redirecionar se estiver na página de login
       if (currentPath === '/login' && correctPath !== '/login') {
         console.log("[AuthContext] Redirecionando para:", correctPath);

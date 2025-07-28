@@ -5,6 +5,7 @@ import { ProtectedRoute } from "@/components/auth/NewProtectedRoute";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import PasswordRecoveryHandler from "@/components/auth/PasswordRecoveryHandler";
 
 // Pages
 import Index from "./pages/Index";
@@ -49,6 +50,7 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
+        <PasswordRecoveryHandler />
         <Routes>
           <Route path="/cadastro-complementar" element={<CadastroComplementar />} />
           <Route path="/" element={<Index />} />

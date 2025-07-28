@@ -110,7 +110,7 @@ const RedefinirSenha = () => {
     
     try {
       const { error } = await supabase.auth.updateUser({
-        password: values.password
+        password: values.password,
       });
 
       if (error) {
@@ -120,20 +120,32 @@ const RedefinirSenha = () => {
       setSuccess(true);
       toast({
         title: 'Senha redefinida com sucesso!',
-        description: 'Sua senha foi alterada. Você será redirecionado para o login.',
+        description: 'Sua senha foi atualizada. Você será redirecionado para o login.',
         variant: 'default',
       });
 
-      // Redirecionar para login após 3 segundos
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      // Fazer logout para limpar a sessão de recuperação e redirecionar para login
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        navigate('/login', { replace: true });
+      }, 2000);
 
     } catch (error: any) {
       console.error('Erro ao redefinir senha:', error);
+      
+      let errorMessage = 'Erro inesperado ao redefinir senha.';
+      
+      if (error.message?.includes('Password should be at least')) {
+        errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+      } else if (error.message?.includes('Unable to validate email address')) {
+        errorMessage = 'Não foi possível validar o email. Tente novamente.';
+      } else if (error.message?.includes('Invalid session')) {
+        errorMessage = 'Sessão de recuperação expirada. Solicite uma nova recuperação de senha.';
+      }
+
       toast({
         title: 'Erro ao redefinir senha',
-        description: error.message || 'Ocorreu um erro inesperado.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
