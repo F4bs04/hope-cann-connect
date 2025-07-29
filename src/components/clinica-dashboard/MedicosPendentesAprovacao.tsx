@@ -23,20 +23,49 @@ export const MedicosPendentesAprovacao: React.FC = () => {
 
   const fetchPendentes = async () => {
     setLoading(true);
-    // Usar dados simulados por enquanto
-    const medicosSimulados: MedicoPendente[] = [
-      {
-        id: '1',
-        nome: 'Dr. Carlos Oliveira',
-        especialidade: 'Cardiologia',
-        crm: '345678-MG',
-        cpf: '123.456.789-00',
-        telefone: '(31) 99999-9999',
-        data_cadastro: new Date().toISOString()
+    try {
+      // Buscar médicos não aprovados do Supabase
+      const { data: medicosData, error } = await supabase
+        .from('doctors')
+        .select(`
+          id,
+          crm,
+          cpf,
+          specialty,
+          created_at,
+          profiles!inner(
+            full_name,
+            email,
+            phone
+          )
+        `)
+        .eq('is_approved', false)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar médicos pendentes:', error);
+        setMedicosPendentes([]);
+        return;
       }
-    ];
-    setMedicosPendentes(medicosSimulados);
-    setLoading(false);
+
+      // Mapear dados para o formato esperado
+      const medicosPendentes: MedicoPendente[] = medicosData?.map(medico => ({
+        id: medico.id,
+        nome: medico.profiles?.full_name || 'Nome não informado',
+        especialidade: medico.specialty || 'Especialidade não informada',
+        crm: medico.crm || 'CRM não informado',
+        cpf: medico.cpf || 'CPF não informado',
+        telefone: medico.profiles?.phone || 'Telefone não informado',
+        data_cadastro: medico.created_at
+      })) || [];
+
+      setMedicosPendentes(medicosPendentes);
+    } catch (error) {
+      console.error('Erro ao buscar médicos pendentes:', error);
+      setMedicosPendentes([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -46,6 +75,19 @@ export const MedicosPendentesAprovacao: React.FC = () => {
   // Aprovar médico
   const handleAprovar = async (medicoId: string) => {
     try {
+      // Atualizar status no Supabase
+      const { error } = await supabase
+        .from('doctors')
+        .update({ 
+          is_approved: true,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', medicoId);
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Médico aprovado",
         description: "O médico foi aprovado com sucesso!",
@@ -66,6 +108,19 @@ export const MedicosPendentesAprovacao: React.FC = () => {
   // Rejeitar médico
   const handleRejeitar = async (medicoId: string) => {
     try {
+      // Atualizar status no Supabase (marcar como não disponível)
+      const { error } = await supabase
+        .from('doctors')
+        .update({ 
+          is_available: false,
+          is_approved: false
+        })
+        .eq('id', medicoId);
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Médico rejeitado",
         description: "O médico foi rejeitado.",
