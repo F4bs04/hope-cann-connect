@@ -33,36 +33,52 @@ export function DoctorRoadmap() {
   React.useEffect(() => {
     const fetchDoctorsAchievements = async () => {
       try {
-        // Dados simulados para achievements
-        const consultasSimuladas = [
-          { id_medico: 1, medicos: { id: 1, nome: 'Dr. João Silva', foto_perfil: '/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png' } },
-          { id_medico: 2, medicos: { id: 2, nome: 'Dra. Maria Santos', foto_perfil: '/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png' } }
-        ];
-        const consultasData = consultasSimuladas;
+        // Buscar médicos aprovados
+        const { data: doctors, error: doctorsError } = await supabase
+          .from('doctors')
+          .select(`
+            id,
+            profiles!inner(full_name, avatar_url)
+          `)
+          .eq('is_approved', true);
 
-        // Simulated data, no error handling needed
+        if (doctorsError) {
+          console.error('Erro ao buscar médicos:', doctorsError);
+          return;
+        }
 
+        // Buscar consultas por médico
+        const { data: appointments, error: appointmentsError } = await supabase
+          .from('appointments')
+          .select('doctor_id, status')
+          .eq('status', 'completed');
+
+        if (appointmentsError) {
+          console.error('Erro ao buscar consultas:', appointmentsError);
+        }
+
+        // Processar dados dos médicos
         const doctorsMap = new Map();
         
-        consultasData.forEach(consulta => {
-          if (!consulta.medicos) return;
-          
-          const medico = consulta.medicos;
-          if (!doctorsMap.has(medico.id)) {
-            doctorsMap.set(medico.id, {
-              id: medico.id,
-              nome: medico.nome,
-              foto_perfil: medico.foto_perfil,
-              total_consultas: 0,
-              total_pacientes: 0
-            });
-          }
-          
-          const doctorStats = doctorsMap.get(medico.id);
-          doctorStats.total_consultas += 1;
+        doctors?.forEach(doctor => {
+          doctorsMap.set(doctor.id, {
+            id: doctor.id,
+            nome: doctor.profiles.full_name,
+            foto_perfil: doctor.profiles.avatar_url,
+            total_consultas: 0,
+            total_pacientes: 0
+          });
         });
 
-        // Convert map to array and sort by total_consultas
+        // Contar consultas por médico
+        appointments?.forEach(appointment => {
+          const doctorStats = doctorsMap.get(appointment.doctor_id);
+          if (doctorStats) {
+            doctorStats.total_consultas += 1;
+          }
+        });
+
+        // Converter para array e ordenar por total de consultas
         const doctorsArray = Array.from(doctorsMap.values())
           .map(doctor => ({
             ...doctor,
