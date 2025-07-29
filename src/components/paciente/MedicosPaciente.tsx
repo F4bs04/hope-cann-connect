@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import ChatsPacienteList from './ChatsList';
-import ChatPaciente from './ChatPaciente';
+// Chat components removidos temporariamente - aguardando implementação do schema
 
 interface MedicosPacienteProps {
   pacienteId: number;
@@ -18,26 +17,13 @@ const MedicosPaciente: React.FC<MedicosPacienteProps> = ({ pacienteId }) => {
     setSelectedChat(null);
   };
 
-  if (selectedChat) {
-    return (
-      <ChatPaciente
-        medicoId={selectedChat.id_medico}
-        pacienteId={pacienteId}
-        medicoNome={selectedChat.medicos?.nome || 'Médico'}
-        medicoEspecialidade={selectedChat.medicos?.especialidade || ''}
-        medicoFoto={selectedChat.medicos?.foto_perfil}
-        onBack={handleBackToChats}
-      />
-    );
-  }
-
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Conversas com Médicos</h2>
-      <ChatsPacienteList 
-        pacienteId={pacienteId} 
-        onSelectChat={handleSelectChat} 
-      />
+      <div className="text-center py-8 text-gray-500">
+        <p>Sistema de chat em desenvolvimento</p>
+        <p className="text-sm">Em breve você poderá conversar com seus médicos</p>
+      </div>
     </div>
   );
 };
