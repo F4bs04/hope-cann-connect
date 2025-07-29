@@ -53,7 +53,7 @@ const ChatsList: React.FC<ChatsListProps> = ({ medicoId, onSelectChat }) => {
     
     setLoading(true);
     try {
-      const data = await getChatsAtivos(medicoId);
+      const data = await getChatsAtivos(medicoId.toString());
       // Safely handle potentially invalid data structures
       const processedChats = data.map((chat: any) => ({
         ...chat,
