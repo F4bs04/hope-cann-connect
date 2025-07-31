@@ -18,7 +18,7 @@ import TermosResponsabilidade from './TermosResponsabilidade';
 import UploadCertificado from './UploadCertificado';
 import FotoPerfil from './FotoPerfil';
 import { DiaHorario } from '@/hooks/useMedicoRegistro';
-import { CadastroMedicoFormValues } from '@/schemas/cadastroMedicoSchema';
+import { CadastroMedicoFormValues } from '@/schemas/cadastroSchema';
 import { UseFormReturn } from 'react-hook-form';
 
 interface RegistroMedicoFormProps {

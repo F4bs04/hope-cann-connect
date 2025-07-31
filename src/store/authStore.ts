@@ -93,6 +93,19 @@ export const useAuthStore = create<AuthState>()(
         console.log("[AuthStore] Iniciando inicialização...");
         set({ isLoading: true });
         
+        // Timeout de segurança para evitar travamentos
+        const initTimeout = setTimeout(() => {
+          console.warn("[AuthStore] Timeout na inicialização - finalizando com estado padrão");
+          set({ 
+            isInitialized: true,
+            isLoading: false,
+            isAuthenticated: false,
+            session: null,
+            user: null,
+            userProfile: null
+          });
+        }, 10000); // 10 segundos de timeout
+        
         try {
           // Verificar sessão do Supabase 
           console.log("[AuthStore] Verificando sessão do Supabase...");
@@ -155,6 +168,9 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('[AuthStore] Erro:', error);
         } finally {
+          // Limpar timeout
+          clearTimeout(initTimeout);
+          
           // SEMPRE finalizar o loading
           console.log("[AuthStore] Inicialização finalizada");
           set({ 

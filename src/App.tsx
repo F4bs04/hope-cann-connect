@@ -7,6 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import PasswordRecoveryHandler from "@/components/auth/PasswordRecoveryHandler";
 
+console.log('[App.tsx] Componente App carregado');
+
 // Pages
 import Index from "./pages/Index";
 import CadastroComplementar from "./pages/CadastroComplementar";
@@ -31,11 +33,18 @@ import RecuperarSenha from "./pages/RecuperarSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
 
 function App() {
+  console.log('[App.tsx] Renderizando App component');
+  
   const { isLoading, isAuthenticated } = useAuth();
+  
+  console.log('[App.tsx] Estado Auth:', { isLoading, isAuthenticated });
 
   if (isLoading) {
+    console.log('[App.tsx] Mostrando loading screen...');
     return <LoadingScreen message="Inicializando aplicação..." />;
   }
+
+  console.log('[App.tsx] Continuando renderização normal...');
 
   // Redirecionamento por domínio
   if (typeof window !== 'undefined' && window.location.hostname === 'hopecann.com.br') {
@@ -46,6 +55,8 @@ function App() {
     }
     // Adicione outros redirecionamentos conforme necessário
   }
+
+  console.log('[App.tsx] Retornando JSX...');
 
   return (
     <ErrorBoundary>

@@ -217,7 +217,7 @@ const Header = () => {
         return {
           to: "/admin",
           icon: <BriefcaseMedical size={18} />,
-          text: "Área da Clínica"
+          text: "Área do Admin"
         };
       default: // default is paciente
         return {
