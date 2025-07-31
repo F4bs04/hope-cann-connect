@@ -4,8 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/authStore';
-import { cadastroMedicoSchema, type CadastroMedicoFormValues } from '@/schemas/cadastroMedicoSchema';
-import { supabase } from '@/lib/supabase';
+import { cadastroMedicoFormSchema, type CadastroMedicoFormValues } from '@/schemas/cadastroMedicoSchema';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface DiaHorario {
   dia: string;
@@ -25,13 +25,12 @@ export const useMedicoRegistro = () => {
   const [horarios, setHorarios] = useState<DiaHorario[]>([]);
   
   const form = useForm<CadastroMedicoFormValues>({
-    resolver: zodResolver(cadastroMedicoSchema),
+    resolver: zodResolver(cadastroMedicoFormSchema),
     defaultValues: {
       telefone: '',
       crm: '',
       especialidade: '',
-      valorConsulta: 100,
-      aceitaTermos: false
+      termoConciencia: false
     }
   });
 
@@ -103,7 +102,6 @@ export const useMedicoRegistro = () => {
           .update({
             crm: data.crm,
             specialty: data.especialidade,
-            consultation_fee: data.valorConsulta,
             is_approved: false // Resetar aprovação para revisão
           })
           .eq('user_id', user.id);
@@ -118,7 +116,6 @@ export const useMedicoRegistro = () => {
             crm: data.crm,
             cpf: 'PENDENTE', // Será preenchido posteriormente
             specialty: data.especialidade,
-            consultation_fee: data.valorConsulta,
             is_approved: false
           });
 
@@ -169,7 +166,7 @@ export const useMedicoRegistro = () => {
     id: user.id,
     email: user.email || '',
     name: userProfile?.nome || user.user_metadata?.full_name || user.email?.split('@')[0] || '',
-    photoUrl: userProfile?.avatar_url || user.user_metadata?.avatar_url || null
+    photoUrl: userProfile?.foto_perfil || user.user_metadata?.avatar_url || null
   } : null;
 
   return {
