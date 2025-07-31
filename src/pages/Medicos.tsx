@@ -10,11 +10,11 @@ import { useDoctors } from '@/hooks/useDoctors';
 
 const Medicos = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   const navigate = useNavigate();
   const { doctors, isLoading, dbStatus } = useDoctors();
   
-  const handleSelectDoctor = (id: number) => {
+  const handleSelectDoctor = (id: string) => {
     setSelectedDoctor(id);
     navigate(`/medico/${id}`);
   };
@@ -46,10 +46,10 @@ const Medicos = () => {
               
               <div className="lg:w-3/4">
                 <DoctorSearch 
-                  onSelectDoctor={(id: string) => handleSelectDoctor(parseInt(id))} 
+                  onSelectDoctor={handleSelectDoctor} 
                   initialDoctors={[]}
                   isInitialLoading={isLoading}
-                  selectedDoctor={selectedDoctor?.toString() || null}
+                  selectedDoctor={selectedDoctor}
                 />
               </div>
             </div>
