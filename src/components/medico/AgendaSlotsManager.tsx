@@ -300,59 +300,7 @@ export default function AgendaSlotsManager() {
                 <Save className="w-4 h-4 mr-2" />
                 {saving ? 'Salvando...' : 'Salvar Agenda'}
               </Button>
-              
-              {/* Botões de teste para debug */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  onClick={() => {
-                    console.log('=== TESTE BÁSICO ===');
-                    console.log('User:', user);
-                    console.log('UserProfile:', userProfile);
-                    console.log('WeeklySchedule:', weeklySchedule);
-                    console.log('IsAuthenticated:', isAuthenticated);
-                    toast.info('Teste: Botão funcionando!');
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                >
-                  Teste Básico
-                </Button>
-                
-                <Button 
-                  onClick={() => {
-                    console.log('=== TESTE LOCALSTORAGE ===');
-                    try {
-                      // Testar se localStorage funciona
-                      const testKey = 'test_storage_' + Date.now();
-                      const testData = { test: 'data', timestamp: Date.now() };
-                      
-                      console.log('Testando localStorage...');
-                      localStorage.setItem(testKey, JSON.stringify(testData));
-                      
-                      const retrieved = localStorage.getItem(testKey);
-                      if (retrieved) {
-                        const parsed = JSON.parse(retrieved);
-                        console.log('✅ LocalStorage funcionando:', parsed);
-                        toast.success('LocalStorage OK!');
-                        
-                        // Limpar teste
-                        localStorage.removeItem(testKey);
-                      } else {
-                        throw new Error('Falha ao recuperar dados de teste');
-                      }
-                    } catch (error) {
-                      console.error('❌ Erro no localStorage:', error);
-                      toast.error('Erro no localStorage: ' + (error instanceof Error ? error.message : 'Desconhecido'));
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                >
-                  Teste Storage
-                </Button>
-              </div>
+
             </div>
           </CardContent>
         </Card>
