@@ -169,7 +169,7 @@ export const useMedicoRegistro = () => {
     id: user.id,
     email: user.email || '',
     name: userProfile?.nome || user.user_metadata?.full_name || user.email?.split('@')[0] || '',
-    photoUrl: userProfile?.avatar_url || user.user_metadata?.avatar_url || null
+    photoUrl: user.user_metadata?.avatar_url || null
   } : null;
 
   return {

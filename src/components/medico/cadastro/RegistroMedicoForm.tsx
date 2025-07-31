@@ -28,9 +28,9 @@ interface RegistroMedicoFormProps {
   certificadoNome: string | null;
   termoDialogOpen: boolean;
   horarios: DiaHorario[];
-  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, type: 'certificado' | 'foto') => void;
-  handleTelefoneChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleCRMChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleFileChange: (file: File | null, type: 'certificado' | 'foto') => void;
+  handleTelefoneChange: (value: string) => void;
+  handleCRMChange: (value: string) => void;
   onSubmit: (data: CadastroMedicoFormValues) => void;
   setHorarios: React.Dispatch<React.SetStateAction<DiaHorario[]>>;
   setTermoDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -75,7 +75,7 @@ const RegistroMedicoForm: React.FC<RegistroMedicoFormProps> = ({
                     placeholder="000000/UF" 
                     {...field} 
                     onChange={(e) => {
-                      handleCRMChange(e);
+                      handleCRMChange(e.target.value);
                       field.onChange(e);
                     }}
                   />
@@ -96,7 +96,7 @@ const RegistroMedicoForm: React.FC<RegistroMedicoFormProps> = ({
                     placeholder="(11) 99999-9999"
                     {...field} 
                     onChange={(e) => {
-                      handleTelefoneChange(e);
+                      handleTelefoneChange(e.target.value);
                       field.onChange(e);
                     }}
                   />
@@ -154,7 +154,7 @@ const RegistroMedicoForm: React.FC<RegistroMedicoFormProps> = ({
 
         <FormField
           control={form.control}
-          name="termoConciencia"
+          name="aceitaTermos"
           render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
               <FormControl>

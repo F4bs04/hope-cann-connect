@@ -12,7 +12,7 @@ import { useFormContext } from 'react-hook-form';
 
 interface FotoPerfilProps {
   fotoPreview: string | null;
-  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, type: 'certificado' | 'foto') => void;
+  handleFileChange: (file: File | null, type: 'certificado' | 'foto') => void;
 }
 
 const FotoPerfil = ({ fotoPreview, handleFileChange }: FotoPerfilProps) => {
@@ -49,7 +49,7 @@ const FotoPerfil = ({ fotoPreview, handleFileChange }: FotoPerfilProps) => {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => handleFileChange(e, 'foto')}
+                onChange={(e) => handleFileChange(e.target.files?.[0] || null, 'foto')}
               />
               <span className="text-sm text-gray-500">Clique para enviar uma foto</span>
             </div>
