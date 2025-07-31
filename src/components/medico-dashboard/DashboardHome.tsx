@@ -9,6 +9,7 @@ import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useMedicoDashboardData } from '@/hooks/useMedicoDashboardData';
 import { useMedicoData } from '@/hooks/useMedicoData';
+import { useAuth } from '@/hooks/useUnifiedAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -20,6 +21,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
   const navigate = useNavigate();
   const { data: dashboardData, isLoading: dashboardLoading } = useMedicoDashboardData();
   const { medicoProfile, isLoading: medicoLoading } = useMedicoData();
+  const { userProfile } = useAuth();
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -76,10 +78,9 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
               Saldo para consultas: {formatCurrency(dashboardData.receitaGerada)}
             </span>
           </div>
-          <Bell className="h-6 w-6 text-gray-400" />
           <div className="h-10 w-10 rounded-full bg-teal-500 overflow-hidden">
             <img 
-              src={medicoProfile?.foto_perfil || "/lovable-uploads/4187ef44-3d50-43dc-afd3-3632726fbd1f.png"}
+              src={userProfile?.avatar_url || "/lovable-uploads/4187ef44-3d50-43dc-afd3-3632726fbd1f.png"}
               alt="Perfil do médico" 
               className="h-full w-full object-cover"
             />

@@ -152,15 +152,15 @@ const HomeScheduling = () => {
         };
         console.log("[HomeScheduling] Objeto final consultaParaSalvar antes de enviar para createConsulta:", JSON.stringify(consultaParaSalvar, null, 2));
 
-        const { data: createdConsulta, error: createConsultaError } = await createConsulta(consultaParaSalvar);
-        console.log("[HomeScheduling] Resultado de createConsulta recebido:", { createdConsulta, createConsultaError });
+        const createResult = await createConsulta(consultaParaSalvar);
+        console.log("[HomeScheduling] Resultado de createConsulta recebido:", createResult);
 
-        if (createdConsulta && !createConsultaError) {
+        if (createResult && createResult.success) {
           toast({ title: "Agendamento Concluído!", description: "Sua consulta foi agendada com sucesso." });
           setStep(4); 
         } else {
-           console.error("[HomeScheduling] Falha ao criar consulta. Erro retornado por createConsulta:", JSON.stringify(createConsultaError, null, 2));
-           toast({ title: "Erro no Agendamento", description: typeof createConsultaError === 'string' ? createConsultaError : "Não foi possível agendar sua consulta. Verifique os logs.", variant: "destructive" });
+           console.error("[HomeScheduling] Falha ao criar consulta. Erro retornado por createConsulta:", JSON.stringify(createResult.error, null, 2));
+           toast({ title: "Erro no Agendamento", description: typeof createResult.error === 'string' ? createResult.error : "Não foi possível agendar sua consulta. Verifique os logs.", variant: "destructive" });
         }
       } catch (error: any) {
         console.error("[HomeScheduling] Erro geral (catch) ao agendar consulta (usuário logado):", error);

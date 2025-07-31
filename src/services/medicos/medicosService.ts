@@ -166,7 +166,8 @@ export const getMedicosByEspecialidade = async (especialidade: string): Promise<
           avatar_url
         )
       `)
-      .eq('especialidade', especialidade)
+      .eq('specialty', especialidade)
+      .eq('is_approved', true)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -194,7 +195,7 @@ export const searchMedicos = async (searchTerm: string): Promise<Doctor[]> => {
           avatar_url
         )
       `)
-      .or(`nome.ilike.%${searchTerm}%,crm.ilike.%${searchTerm}%,especialidade.ilike.%${searchTerm}%`)
+      .or(`specialty.ilike.%${searchTerm}%,crm.ilike.%${searchTerm}%`)
       .order('created_at', { ascending: false });
 
     if (error) {

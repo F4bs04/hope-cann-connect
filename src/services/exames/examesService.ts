@@ -33,7 +33,7 @@ export const saveTemplateExame = async (data) => {
 };
 
 export const updateTemplateUsage = async (id) => {
-  const { error } = await supabase.from('exam_templates').update({ usage_count: supabase.raw('usage_count + 1') }).eq('id', id);
+  const { error } = await supabase.from('exam_templates').update({ usage_count: 1 }).eq('id', id);
   return { success: !error, error };
 };
 

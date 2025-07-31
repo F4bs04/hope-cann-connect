@@ -22,29 +22,24 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getSaldoMedicos, getTransacoesMedicos } from "@/services/supabaseService";
 
-// Tipos para médicos
-interface MedicoBase {
-  id: number;
-  nome: string;
-  especialidade: string;
+// Interface para médicos do Supabase
+interface MedicoSupabase {
+  id: string;
+  user_id: string;
   crm: string;
-}
-
-// Tipo para médicos locais (usados inicialmente)
-interface MedicoLocal extends MedicoBase {
-  foto: string;
-}
-
-// Tipo para médicos do Supabase
-interface MedicoSupabase extends MedicoBase {
-  foto_perfil: string | null;
-  biografia: string | null;
   cpf: string;
-  id_clinica: number | null;
-  id_usuario: number | null;
-  status_disponibilidade: boolean | null;
-  telefone: string;
-  valor_por_consulta: number | null;
+  specialty: string;
+  biography: string | null;
+  consultation_fee: number | null;
+  is_available: boolean;
+  is_approved: boolean;
+  created_at: string;
+  profiles: {
+    full_name: string;
+    email: string;
+    phone: string | null;
+    avatar_url: string | null;
+  };
 }
 
 // Tipo para o saldo dos médicos
@@ -84,66 +79,14 @@ interface DashCardData {
   sub: string;
 }
 
-// Simulação de médicos cadastrados (poderá ser substituído por dados reais depois)
-const MEDICOS_CADASTRADOS: MedicoLocal[] = [
-  {
-    id: 1,
-    nome: "Dr. Ricardo Silva",
-    especialidade: "Neurologista",
-    crm: "12345-SP",
-    foto: "/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png"
-  },
-  {
-    id: 2,
-    nome: "Dra. Ana Santos",
-    especialidade: "Psiquiatra",
-    crm: "54321-RJ",
-    foto: "/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png"
-  },
-  {
-    id: 3,
-    nome: "Dr. Carlos Mendes",
-    especialidade: "Neurologista",
-    crm: "67890-MG",
-    foto: "/lovable-uploads/8e0e4c0d-f012-449c-9784-9be7170458f5.png"
-  },
-];
-
-// Dados simulados para os cards do dashboard que serão substituídos por dados reais
-const DASH_DATA_INITIAL: DashCardData[] = [
-  {
-    title: "Receitas emitidas",
-    value: "0",
-    icon: <FileText className="w-8 h-8 text-[#9b87f5] bg-[#F1F0FB] rounded-full p-1.5" />,
-    sub: "Último mês",
-  },
-  {
-    title: "Pacientes ativos",
-    value: "0",
-    icon: <Users className="w-8 h-8 text-[#33C3F0] bg-[#D3E4FD] rounded-full p-1.5" />,
-    sub: "Hoje",
-  },
-  {
-    title: "Médicos na clínica",
-    value: "0",
-    icon: <User className="w-8 h-8 text-[#6E59A5] bg-[#E5DEFF] rounded-full p-1.5" />,
-    sub: "Equipe total",
-  },
-  {
-    title: "Consultas marcadas",
-    value: "0",
-    icon: <Stethoscope className="w-8 h-8 text-[#0FA0CE] bg-[#F1F1F1] rounded-full p-1.5" />,
-    sub: "Semana atual",
-  },
-];
 
 import { MedicosPendentesAprovacao } from "./MedicosPendentesAprovacao";
 import { DashboardCharts } from "./DashboardCharts";
 import { DoctorRoadmap } from "./DoctorRoadmap";
 
 const ClinicaDashboard: React.FC = () => {
-  const [dashData, setDashData] = useState<DashCardData[]>(DASH_DATA_INITIAL);
-  const [medicos, setMedicos] = useState<MedicoLocal[]>([]);
+  const [dashData, setDashData] = useState<DashCardData[]>([]);
+  const [medicos, setMedicos] = useState<MedicoSupabase[]>([]);
   const [saldoMedicos, setSaldoMedicos] = useState<SaldoMedico[]>([]);
   const [ultimasTransacoes, setUltimasTransacoes] = useState<TransacaoMedico[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,33 +95,116 @@ const ClinicaDashboard: React.FC = () => {
     const fetchDados = async () => {
       setLoading(true);
       try {
-        const clinicaEmail = localStorage.getItem('userEmail');
-        if (!clinicaEmail) {
-          setLoading(false);
-          return;
+        // Buscar médicos aprovados
+        const { data: medicosData, error: medicosError } = await supabase
+          .from('doctors')
+          .select(`
+            *,
+            profiles!inner(
+              full_name,
+              email,
+              phone,
+              avatar_url
+            )
+          `)
+          .eq('is_approved', true)
+          .order('created_at', { ascending: false });
+
+        if (medicosError) {
+          console.error('Erro ao buscar médicos:', medicosError);
+        } else {
+          setMedicos(medicosData || []);
         }
 
-        // Buscar dados da clínica
-        const { data: clinicaData, error: clinicaError } = await supabase
-          .from('clinics')
+        // Buscar consultas para estatísticas
+        const { data: consultasData, error: consultasError } = await supabase
+          .from('appointments')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        // Buscar pacientes
+        const { data: pacientesData, error: pacientesError } = await supabase
+          .from('patients')
           .select('id')
-          .eq('email', clinicaEmail)
-          .single();
+          .order('created_at', { ascending: false });
 
-        if (clinicaError) throw clinicaError;
+        // Buscar prescriptions (receitas)
+        const { data: prescriptionsData, error: prescriptionsError } = await supabase
+          .from('prescriptions')
+          .select('id')
+          .eq('is_active', true);
 
-        if (clinicaData) {
-          // Por enquanto usando dados simulados já que a nova estrutura não tem essas tabelas ainda
-          setMedicos(MEDICOS_CADASTRADOS);
+        // Calcular estatísticas
+        const totalMedicos = medicosData?.length || 0;
+        const totalConsultas = consultasData?.length || 0;
+        const totalPacientes = pacientesData?.length || 0;
+        const totalReceitas = prescriptionsData?.length || 0;
 
-          // Atualizar os cards com dados simulados
-          const newDashData = [...DASH_DATA_INITIAL];
-          newDashData[0].value = String(MEDICOS_CADASTRADOS.length); // Total de médicos
-          newDashData[1].value = "15"; // Consultas simuladas
-          newDashData[2].value = "8"; // Pacientes simulados
+        // Consultas desta semana
+        const agora = new Date();
+        const inicioSemana = new Date(agora.setDate(agora.getDate() - agora.getDay()));
+        const consultasSemana = consultasData?.filter(consulta => 
+          new Date(consulta.created_at) >= inicioSemana
+        ).length || 0;
 
-          setDashData(newDashData);
+        // Atualizar os cards com dados reais
+        const newDashData: DashCardData[] = [
+          {
+            title: "Receitas emitidas",
+            value: String(totalReceitas),
+            icon: <FileText className="w-8 h-8 text-[#9b87f5] bg-[#F1F0FB] rounded-full p-1.5" />,
+            sub: "Total ativo",
+          },
+          {
+            title: "Pacientes ativos",
+            value: String(totalPacientes),
+            icon: <Users className="w-8 h-8 text-[#33C3F0] bg-[#D3E4FD] rounded-full p-1.5" />,
+            sub: "Cadastrados",
+          },
+          {
+            title: "Médicos na clínica",
+            value: String(totalMedicos),
+            icon: <User className="w-8 h-8 text-[#6E59A5] bg-[#E5DEFF] rounded-full p-1.5" />,
+            sub: "Aprovados",
+          },
+          {
+            title: "Consultas marcadas",
+            value: String(consultasSemana),
+            icon: <Stethoscope className="w-8 h-8 text-[#0FA0CE] bg-[#F1F1F1] rounded-full p-1.5" />,
+            sub: "Esta semana",
+          },
+        ];
+
+        setDashData(newDashData);
+
+        // Buscar transações financeiras
+        const { data: transacoesData, error: transacoesError } = await supabase
+          .from('financial_transactions')
+          .select(`
+            *,
+            doctors!inner(
+              profiles!inner(full_name)
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (!transacoesError && transacoesData) {
+          const transacoesMapeadas: TransacaoMedico[] = transacoesData.map(t => ({
+            id: parseInt(t.id) || 0,
+            id_medico: 0, // Não usado no novo schema
+            valor: Number(t.amount) || 0,
+            tipo: t.transaction_type || 'credit',
+            descricao: t.description || '',
+            data_transacao: t.created_at,
+            status: 'concluida',
+            medicos: {
+              nome: t.doctors?.profiles?.full_name || 'Médico não identificado'
+            }
+          }));
+          setUltimasTransacoes(transacoesMapeadas);
         }
+
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
       } finally {
@@ -372,14 +398,16 @@ const ClinicaDashboard: React.FC = () => {
                   key={medico.id}
                 >
                   <img
-                    src={medico.foto || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`}
+                    src={medico.profiles?.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`}
                     className="h-14 w-14 rounded-full border-2 border-[#E5DEFF] object-cover shadow"
-                    alt={medico.nome}
+                    alt={medico.profiles?.full_name || 'Médico'}
                   />
                   <div>
-                    <div className="font-medium text-md text-[#403E43]">{medico.nome}</div>
-                    <div className="text-sm text-[#7E69AB]">{medico.especialidade}</div>
-                    <div className="text-xs text-gray-500">CRM: {medico.crm}</div>
+                    <div className="font-medium text-md text-[#403E43]">
+                      {medico.profiles?.full_name || 'Nome não informado'}
+                    </div>
+                    <div className="text-sm text-[#7E69AB]">{medico.specialty || 'Especialidade não informada'}</div>
+                    <div className="text-xs text-gray-500">CRM: {medico.crm || 'N/A'}</div>
                   </div>
                 </div>
               ))}
@@ -388,45 +416,24 @@ const ClinicaDashboard: React.FC = () => {
         </Card>
       </div>
       
-      {/* Tabela resumida de receitas */}
+      {/* Últimas receitas emitidas */}
       <div className="mt-10">
         <Card>
           <CardHeader>
             <CardTitle>Últimas Receitas Emitidas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-[#F1F1F1]">
-                  <tr>
-                    <th className="p-2 text-left">Paciente</th>
-                    <th className="p-2 text-left">Medicamento</th>
-                    <th className="p-2 text-left">Prescritor</th>
-                    <th className="p-2 text-left">Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td className="p-2">Maria Souza</td>
-                    <td className="p-2">CBD 5%</td>
-                    <td className="p-2">Dra. Paula Menezes</td>
-                    <td className="p-2">20/04/2025</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="p-2">Fernando Lima</td>
-                    <td className="p-2">CBD:THC 20:1</td>
-                    <td className="p-2">Dr. Carlos Silva</td>
-                    <td className="p-2">19/04/2025</td>
-                  </tr>
-                  <tr>
-                    <td className="p-2">Alice Moraes</td>
-                    <td className="p-2">CBD 3%</td>
-                    <td className="p-2">Dr. Júlio Viana</td>
-                    <td className="p-2">18/04/2025</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            {loading ? (
+              <div className="h-40 flex items-center justify-center">
+                <p className="text-gray-400">Carregando receitas...</p>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500">Sistema de receitas em desenvolvimento</p>
+                <p className="text-sm text-gray-400">As receitas emitidas aparecerão aqui em breve</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

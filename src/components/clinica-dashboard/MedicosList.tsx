@@ -69,36 +69,54 @@ export const MedicosList = () => {
   const fetchMedicos = async () => {
     setIsLoading(true);
     try {
-      // Usar dados simulados por enquanto
-      const medicosSimulados: MedicoInfo[] = [
-        {
-          id: '1',
-          nome: 'Dr. João Silva',
-          crm: '123456-SP',
-          especialidade: 'Neurologia',
-          biografia: 'Especialista em neurologia com 15 anos de experiência',
-          telefone: '(11) 99999-9999',
-          valor_por_consulta: 300,
-          status: 'Aprovado',
-          aprovado: true,
-          foto_perfil: '/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png',
-          data_aprovacao: new Date().toISOString()
-        },
-        {
-          id: '2',
-          nome: 'Dra. Maria Santos',
-          crm: '789012-RJ',
-          especialidade: 'Psiquiatria',
-          biografia: 'Especialista em psiquiatria',
-          telefone: '(21) 88888-8888',
-          valor_por_consulta: 250,
-          status: 'Pendente',
-          aprovado: false,
-          foto_perfil: '/lovable-uploads/735ca9f0-ba32-4b6d-857a-70a6d3f845f0.png',
-          data_aprovacao: null
-        }
-      ];
-      setMedicos(medicosSimulados);
+      const { data: doctors, error } = await supabase
+        .from('doctors')
+        .select(`
+          id,
+          crm,
+          specialty,
+          biography,
+          consultation_fee,
+          is_available,
+          is_approved,
+          approved_at,
+          cpf,
+          profiles!inner(full_name, email, phone, avatar_url)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar médicos:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar médicos",
+          description: "Não foi possível carregar a lista de médicos.",
+        });
+        return;
+      }
+
+      const medicosFormatados: MedicoInfo[] = (doctors || []).map(doctor => ({
+        id: doctor.id,
+        nome: doctor.profiles?.full_name || 'Nome não informado',
+        crm: doctor.crm,
+        especialidade: doctor.specialty,
+        biografia: doctor.biography || 'Biografia não informada',
+        telefone: doctor.profiles?.phone || 'Telefone não informado',
+        valor_por_consulta: Number(doctor.consultation_fee) || 0,
+        status: doctor.is_approved ? 'Aprovado' : 'Pendente',
+        aprovado: doctor.is_approved,
+        foto_perfil: doctor.profiles?.avatar_url,
+        data_aprovacao: doctor.approved_at
+      }));
+
+      setMedicos(medicosFormatados);
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao carregar os médicos.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -114,14 +132,38 @@ export const MedicosList = () => {
     
     setIsLoading(true);
     try {
-      // Simular remoção
+      const { error } = await supabase
+        .from('doctors')
+        .update({ 
+          is_available: false,
+          is_approved: false 
+        })
+        .eq('id', medicoParaRemover.id);
+
+      if (error) {
+        console.error('Erro ao remover médico:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao remover médico",
+          description: "Não foi possível remover o médico. Tente novamente.",
+        });
+        return;
+      }
+
       toast({
         title: "Médico removido",
         description: `${medicoParaRemover.nome} foi removido da clínica com sucesso.`,
-        variant: "default"
       });
       
-      setMedicos(medicos.filter(m => m.id !== medicoParaRemover.id));
+      // Recarregar lista
+      await fetchMedicos();
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao remover o médico.",
+      });
     } finally {
       setDialogOpen(false);
       setMedicoParaRemover(null);
