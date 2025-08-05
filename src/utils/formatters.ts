@@ -1,74 +1,77 @@
-export const formatTelefone = (value: string) => {
-  const digitsOnly = value.replace(/\D/g, '');
+/**
+ * Utility functions for formatting data across the application
+ */
+
+/**
+ * Formats a monetary value to Brazilian Real currency format
+ * @param value - The numeric value to format
+ * @returns Formatted currency string (e.g., "R$ 150,00")
+ */
+export const formatCurrency = (value: number): string => {
+  if (value === null || value === undefined || isNaN(value)) {
+    return 'A definir';
+  }
   
-  if (digitsOnly.length <= 2) {
-    return digitsOnly.replace(/(\d{2})/, '($1');
-  } else if (digitsOnly.length <= 7) {
-    return digitsOnly.replace(/(\d{2})(\d+)/, '($1) $2');
-  } else if (digitsOnly.length <= 10) {
-    return digitsOnly.replace(/(\d{2})(\d{4})(\d+)/, '($1) $2-$3');
-  } else {
-    return digitsOnly.replace(/(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
+};
+
+/**
+ * Formats a date to Brazilian format
+ * @param date - Date string or Date object
+ * @returns Formatted date string (e.g., "15/03/2024")
+ */
+export const formatDate = (date: string | Date): string => {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(dateObj);
+};
+
+/**
+ * Formats a CPF to the standard Brazilian format
+ * @param cpf - CPF string with or without formatting
+ * @returns Formatted CPF string (e.g., "123.456.789-00")
+ */
+export const formatCPF = (cpf: string): string => {
+  if (!cpf) return '';
+  
+  const cleaned = cpf.replace(/\D/g, '');
+  
+  if (cleaned.length !== 11) return cpf;
+  
+  return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+};
+
+/**
+ * Formats a phone number to Brazilian format
+ * @param phone - Phone number string
+ * @returns Formatted phone string
+ */
+export const formatPhone = (phone: string): string => {
+  if (!phone) return '';
+  
+  const cleaned = phone.replace(/\D/g, '');
+  
+  if (cleaned.length === 11) {
+    return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  } else if (cleaned.length === 10) {
+    return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
   }
+  
+  return phone;
 };
 
-export const formatCRM = (value: string) => {
-  return value
-    .replace(/\D/g, '')
-    .replace(/(\d{6})(\d)/, '$1/$2');
-};
-
-export const formatarCPF = (cpfValue?: string) => {
-  if (!cpfValue) return 'Não informado';
-  // Remove non-digits
-  const cleanedCpf = cpfValue.replace(/\D/g, '');
-  // Apply CPF mask
-  if (cleanedCpf.length === 11) {
-    return cleanedCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  }
-  return cpfValue; // Return original if not a valid CPF length after cleaning
-};
-
-export const formatarDataParaDisplay = (data?: string) => {
-  if (!data) return 'Não informado';
-  try {
-    // Check if data is already in yyyy-MM-dd format (common from date inputs or DB)
-    if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
-      const [year, month, day] = data.split('-');
-      // Ensure parts are valid before formatting
-      if (parseInt(month, 10) > 0 && parseInt(month, 10) <= 12 && parseInt(day, 10) > 0 && parseInt(day, 10) <= 31) {
-        return `${day}/${month}/${year}`;
-      }
-    }
-    // Check if data is already in dd/MM/yyyy format
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(data)) {
-       const [day, month, year] = data.split('/');
-       if (parseInt(month, 10) > 0 && parseInt(month, 10) <= 12 && parseInt(day, 10) > 0 && parseInt(day, 10) <= 31) {
-        return data; // Already in correct display format
-      }
-    }
-    
-    // Attempt to parse other valid date strings or Date objects
-    // Adjust for timezone offset, as Date constructor interprets yyyy-MM-dd as UTC midnight
-    const dateObj = new Date(data);
-    if (isNaN(dateObj.getTime())) return 'Data inválida';
-    
-    // If the input string for new Date() does not include timezone info,
-    // it might be parsed as local or UTC depending on the string format and browser.
-    // For "YYYY-MM-DD", it's UTC. We add offset to get local day correct.
-    let adjustedDate = dateObj;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(data) || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(data)) {
-        const offset = dateObj.getTimezoneOffset();
-        adjustedDate = new Date(dateObj.getTime() + offset * 60 * 1000);
-    }
-    
-    const day = String(adjustedDate.getDate()).padStart(2, '0');
-    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-    const year = adjustedDate.getFullYear();
-    return `${day}/${month}/${year}`;
-
-  } catch (e) {
-    console.error("Erro ao formatar data para display:", e);
-    return data; // Fallback to original data string if formatting fails
-  }
-};
+// Legacy aliases for backward compatibility
+export const formatarCPF = formatCPF;
+export const formatTelefone = formatPhone;
+export const formatarDataParaDisplay = formatDate;

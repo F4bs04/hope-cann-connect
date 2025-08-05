@@ -60,7 +60,7 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
             .from('patients')
             .select('*')
             .eq('user_id', initialPaciente.id)
-            .single();
+            .maybeSingle();
 
           console.log("AreaPaciente: Resultado da busca:", { patientData, error });
 
@@ -88,7 +88,20 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
             console.log("AreaPaciente: Paciente formatado:", pacienteFormatted);
             setPacienteData(pacienteFormatted);
           } else {
-            console.warn("AreaPaciente: Nenhum dado de paciente encontrado");
+            // Criar perfil básico de paciente quando não existe na tabela patients
+            console.log("AreaPaciente: Criando perfil básico de paciente");
+            const pacienteBasico: Paciente = {
+              id: 0, // Temporário, será criado quando necessário
+              id_usuario: initialPaciente.id,
+              nome: initialPaciente.nome,
+              email: initialPaciente.email,
+              cpf: '',
+              data_nascimento: '',
+              endereco: '',
+              telefone: initialPaciente.telefone || '',
+              genero: ''
+            };
+            setPacienteData(pacienteBasico);
           }
         } catch (error) {
           console.error("AreaPaciente: Erro ao processar dados do paciente:", error);

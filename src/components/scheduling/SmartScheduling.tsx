@@ -3,6 +3,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, User, Check, ArrowLeft, ArrowRight, DollarSign } from 'lucide-react';
+import { formatCurrency } from "@/utils/formatters";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -192,7 +193,7 @@ const SmartScheduling: React.FC = () => {
             avatar: doctor.profiles?.avatar_url || '/placeholder.svg',
             isAvailable: doctor.is_available && doctor.is_approved,
             crm: doctor.crm,
-            consultationFee: doctor.consultation_fee || 50 // Valor padrão se não definido
+            consultationFee: doctor.consultation_fee || 0 // Usar valor real do médico
           }));
           
           console.log('Médicos formatados:', formattedDoctors);
@@ -735,7 +736,7 @@ const SmartScheduling: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <DollarSign className="text-hopecann-teal" />
                     <div>
-                      <div className="font-medium">R$ {selectedDoctor.consultationFee || 50}</div>
+                      <div className="font-medium">{formatCurrency(selectedDoctor.consultationFee || 0)}</div>
                       <div className="text-sm text-gray-600">Valor da consulta</div>
                     </div>
                   </div>

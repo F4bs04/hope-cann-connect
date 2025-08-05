@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Clock } from 'lucide-react';
 import { getAvailabilityText, getAvailabilityColor } from "@/utils/doctorUtils";
+import { formatCurrency } from "@/utils/formatters";
 
 // Doctor type definition
 export interface Doctor {
@@ -13,6 +14,7 @@ export interface Doctor {
   bio: string;
   image: string;
   availability: string[];
+  consultationFee?: number;
 }
 
 interface DoctorCardProps {
@@ -41,6 +43,11 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
       <CardContent className="flex-grow pt-6">
         <h3 className="text-xl font-semibold mb-1">{doctor.name}</h3>
         <p className="text-hopecann-teal mb-3">{doctor.specialty}</p>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-lg font-medium text-primary">
+            {formatCurrency(doctor.consultationFee || 0)}
+          </span>
+        </div>
         <p className="text-gray-600 mb-4 line-clamp-3">{doctor.bio}</p>
       </CardContent>
       <CardFooter className="pt-0">
