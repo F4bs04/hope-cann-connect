@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { usePacientesData } from '@/hooks/usePacientesData';
 import { searchAllPatients, addPatientToDoctor } from '@/services/pacientes/pacientesService';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 interface PacientesProps {
@@ -111,17 +112,56 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
       return;
     }
     
+    console.log('[Pacientes] Iniciando cadastro de paciente...');
+    
+    // Primeiro, vamos criar um profile temporário se necessário
+    const tempUserId = crypto.randomUUID(); // Gerar um UUID temporário
+    
+    try {
+      // Criar um profile temporário para o paciente
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .insert([{
+          id: tempUserId,
+          email: email || `temp-${tempUserId}@temp.com`,
+          full_name: nome,
+          role: 'patient',
+          is_active: true
+        }])
+        .select()
+        .single();
+      
+      if (profileError) {
+        console.error('[Pacientes] Erro ao criar profile:', profileError);
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar perfil",
+          description: "Erro ao criar perfil do paciente",
+        });
+        return;
+      }
+      
+      console.log('[Pacientes] Profile criado:', profileData);
+    } catch (profileErr) {
+      console.error('[Pacientes] Erro inesperado ao criar profile:', profileErr);
+    }
+    
     const pacienteData = {
       birth_date: dataNascimento,
       gender: genero,
       address: endereco,
       cpf,
       medical_condition: condicao,
+      emergency_contact_name: nome,
       emergency_contact_phone: telefone,
-      user_id: null // Will be handled when patient creates account
+      user_id: tempUserId
     };
     
+    console.log('[Pacientes] Dados do paciente:', pacienteData);
+    
     const result = await addPaciente(pacienteData);
+    
+    console.log('[Pacientes] Resultado do cadastro:', result);
     
     if (result.success) {
       toast({
@@ -131,10 +171,11 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
       resetForm();
       setOpenDialog(false);
     } else {
+      console.error('[Pacientes] Erro detalhado:', result.error);
       toast({
         variant: "destructive",
         title: "Erro ao cadastrar",
-        description: "Não foi possível cadastrar o paciente",
+        description: result.error?.message || "Não foi possível cadastrar o paciente",
       });
     }
   };
@@ -290,19 +331,19 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
                     required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="idade" className="text-right">
-                    Idade*
-                  </Label>
-                  <Input
-                    id="idade"
-                    type="number"
-                    value={idade}
-                    onChange={(e) => setIdade(e.target.value)}
-                    className="mt-1"
-                    required
-                  />
-                </div>
+                 <div>
+                   <Label htmlFor="dataNascimento" className="text-right">
+                     Data de Nascimento*
+                   </Label>
+                   <Input
+                     id="dataNascimento"
+                     type="date"
+                     value={dataNascimento}
+                     onChange={(e) => setDataNascimento(e.target.value)}
+                     className="mt-1"
+                     required
+                   />
+                 </div>
               </div>
               
               <div>
@@ -343,48 +384,35 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="genero" className="text-right">
-                    Gênero
-                  </Label>
-                  <Select value={genero} onValueChange={setGenero}>
-                    <SelectTrigger id="genero" className="mt-1">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="masculino">Masculino</SelectItem>
-                      <SelectItem value="feminino">Feminino</SelectItem>
-                      <SelectItem value="outro">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="dataNascimento" className="text-right">
-                    Data de Nascimento
-                  </Label>
-                  <Input
-                    id="dataNascimento"
-                    type="date"
-                    value={dataNascimento}
-                    onChange={(e) => setDataNascimento(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="cpf" className="text-right">
-                  CPF
-                </Label>
-                <Input
-                  id="cpf"
-                  value={cpf}
-                  onChange={(e) => setCpf(e.target.value)}
-                  className="mt-1"
-                  placeholder="000.000.000-00"
-                />
-              </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                   <Label htmlFor="genero" className="text-right">
+                     Gênero
+                   </Label>
+                   <Select value={genero} onValueChange={setGenero}>
+                     <SelectTrigger id="genero" className="mt-1">
+                       <SelectValue placeholder="Selecione" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="masculino">Masculino</SelectItem>
+                       <SelectItem value="feminino">Feminino</SelectItem>
+                       <SelectItem value="outro">Outro</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+                 <div>
+                   <Label htmlFor="cpf" className="text-right">
+                     CPF
+                   </Label>
+                   <Input
+                     id="cpf"
+                     value={cpf}
+                     onChange={(e) => setCpf(e.target.value)}
+                     className="mt-1"
+                     placeholder="000.000.000-00"
+                   />
+                 </div>
+               </div>
               
               <div>
                 <Label htmlFor="endereco" className="text-right">

@@ -31,14 +31,21 @@ export const usePacientesData = () => {
 
   const addPaciente = async (pacienteData) => {
     try {
+      console.log('[usePacientesData] addPaciente chamado com:', pacienteData);
       const result = await createPaciente(pacienteData);
+      console.log('[usePacientesData] createPaciente retornou:', result);
+      
       if (result.success && medicoIdString && result.data) {
+        console.log('[usePacientesData] Adicionando relacionamento médico-paciente...');
         // Add relationship between doctor and patient
-        await addPatientToDoctor(medicoIdString, result.data.id);
+        const relationResult = await addPatientToDoctor(medicoIdString, result.data.id);
+        console.log('[usePacientesData] Resultado do relacionamento:', relationResult);
+        
         await fetchPacientes();
       }
       return result;
     } catch (err) {
+      console.error('[usePacientesData] Erro em addPaciente:', err);
       return { success: false, error: err };
     }
   };
