@@ -326,6 +326,33 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_patients: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          id: string
+          notes: string | null
+          patient_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       doctor_schedules: {
         Row: {
           created_at: string
@@ -379,7 +406,10 @@ export type Database = {
           id: string
           is_approved: boolean
           is_available: boolean
+          is_suspended: boolean
           specialty: string
+          suspended_at: string | null
+          suspended_reason: string | null
           updated_at: string
           user_id: string
         }
@@ -394,7 +424,10 @@ export type Database = {
           id?: string
           is_approved?: boolean
           is_available?: boolean
+          is_suspended?: boolean
           specialty: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
           updated_at?: string
           user_id: string
         }
@@ -409,7 +442,10 @@ export type Database = {
           id?: string
           is_approved?: boolean
           is_available?: boolean
+          is_suspended?: boolean
           specialty?: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -780,7 +816,9 @@ export type Database = {
       prescriptions: {
         Row: {
           appointment_id: string | null
+          arquivo_pdf: string | null
           created_at: string
+          data_validade: string | null
           doctor_id: string
           dosage: string
           duration: string
@@ -791,16 +829,22 @@ export type Database = {
           instructions: string | null
           is_active: boolean
           issued_at: string
+          medicamento: string | null
           medication_name: string
           notes: string | null
+          observacoes: string | null
           patient_id: string
+          posologia: string | null
           product_id: string | null
+          status: string | null
           updated_at: string
           verification_code: string
         }
         Insert: {
           appointment_id?: string | null
+          arquivo_pdf?: string | null
           created_at?: string
+          data_validade?: string | null
           doctor_id: string
           dosage: string
           duration: string
@@ -811,16 +855,22 @@ export type Database = {
           instructions?: string | null
           is_active?: boolean
           issued_at?: string
+          medicamento?: string | null
           medication_name: string
           notes?: string | null
+          observacoes?: string | null
           patient_id: string
+          posologia?: string | null
           product_id?: string | null
+          status?: string | null
           updated_at?: string
           verification_code: string
         }
         Update: {
           appointment_id?: string | null
+          arquivo_pdf?: string | null
           created_at?: string
+          data_validade?: string | null
           doctor_id?: string
           dosage?: string
           duration?: string
@@ -831,10 +881,14 @@ export type Database = {
           instructions?: string | null
           is_active?: boolean
           issued_at?: string
+          medicamento?: string | null
           medication_name?: string
           notes?: string | null
+          observacoes?: string | null
           patient_id?: string
+          posologia?: string | null
           product_id?: string | null
+          status?: string | null
           updated_at?: string
           verification_code?: string
         }

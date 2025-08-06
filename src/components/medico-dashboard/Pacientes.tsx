@@ -9,18 +9,30 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { getPacientes, createPaciente } from '@/services/supabaseService';
+import { usePacientesData } from '@/hooks/usePacientesData';
+import { searchAllPatients, addPatientToDoctor } from '@/services/pacientes/pacientesService';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PacientesProps {
-  onSelectPatient: (patientId: number) => void;
+  onSelectPatient: (patientId: string) => void;
 }
 
 const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [patients, setPatients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { medicoId } = useAuth();
+  const { 
+    pacientes: patients, 
+    isLoading: loading, 
+    addPaciente, 
+    setSearchTerm,
+    addPatientToDoctor: addExistingPatient 
+  } = usePacientesData();
+  
   const [openDialog, setOpenDialog] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchingPatients, setSearchingPatients] = useState(false);
+  const [patientSearch, setPatientSearch] = useState('');
   
   // Form state
   const [nome, setNome] = useState('');
@@ -31,22 +43,51 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
   const [genero, setGenero] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
   const [endereco, setEndereco] = useState('');
-
-  useEffect(() => {
-    const loadPatients = async () => {
-      setLoading(true);
-      const data = await getPacientes();
-      setPatients(data);
-      setLoading(false);
-    };
-    
-    loadPatients();
-  }, []);
+  const [cpf, setCpf] = useState('');
   
-  const filteredPatients = patients.filter(patient => 
-    patient.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.condicao?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSearchExistingPatients = async (query: string) => {
+    if (query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setSearchingPatients(true);
+    try {
+      const results = await searchAllPatients(query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error searching patients:', error);
+    } finally {
+      setSearchingPatients(false);
+    }
+  };
+
+  const handleAddExistingPatient = async (patient: any) => {
+    try {
+      const result = await addExistingPatient(patient.id, 'Paciente adicionado via busca');
+      if (result.success) {
+        toast({
+          title: "Paciente adicionado",
+          description: `${patient.profiles?.full_name || 'Paciente'} foi adicionado à sua lista`,
+        });
+        setShowSearchDialog(false);
+        setPatientSearch('');
+        setSearchResults([]);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro ao adicionar paciente",
+          description: "Não foi possível adicionar o paciente à sua lista",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro ao adicionar o paciente",
+      });
+    }
+  };
   
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,32 +102,40 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
       return;
     }
     
-    if (!idade || isNaN(Number(idade))) {
+    if (!dataNascimento) {
       toast({
         variant: "destructive",
-        title: "Idade inválida",
-        description: "Por favor, insira uma idade válida",
+        title: "Data de nascimento obrigatória",
+        description: "Por favor, insira a data de nascimento",
       });
       return;
     }
     
     const pacienteData = {
-      nome,
-      idade: parseInt(idade),
-      condicao,
-      telefone,
-      email,
-      genero,
-      data_nascimento: dataNascimento || null,
-      endereco,
+      birth_date: dataNascimento,
+      gender: genero,
+      address: endereco,
+      cpf,
+      medical_condition: condicao,
+      emergency_contact_phone: telefone,
+      user_id: null // Will be handled when patient creates account
     };
     
-    const newPatient = await createPaciente(pacienteData);
+    const result = await addPaciente(pacienteData);
     
-    if (newPatient) {
-      setPatients([...patients, newPatient]);
+    if (result.success) {
+      toast({
+        title: "Paciente cadastrado",
+        description: "Paciente cadastrado com sucesso",
+      });
       resetForm();
       setOpenDialog(false);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro ao cadastrar",
+        description: "Não foi possível cadastrar o paciente",
+      });
     }
   };
   
@@ -99,6 +148,7 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
     setGenero('');
     setDataNascimento('');
     setEndereco('');
+    setCpf('');
   };
   
   return (
@@ -114,28 +164,35 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Buscar paciente por nome ou condição..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar nos seus pacientes..."
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
         
-        <Button 
-          className="bg-[#00B3B0] hover:bg-[#009E9B]"
-          onClick={() => setOpenDialog(true)}
-        >
-          <UserPlus className="h-4 w-4 mr-2" /> Novo Paciente
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setShowSearchDialog(true)}
+          >
+            <Search className="h-4 w-4 mr-2" /> Buscar Existente
+          </Button>
+          <Button 
+            className="bg-[#00B3B0] hover:bg-[#009E9B]"
+            onClick={() => setOpenDialog(true)}
+          >
+            <UserPlus className="h-4 w-4 mr-2" /> Novo Paciente
+          </Button>
+        </div>
       </div>
       
       {loading ? (
         <div className="text-center py-10">
           <p>Carregando pacientes...</p>
         </div>
-      ) : filteredPatients.length > 0 ? (
+      ) : patients.length > 0 ? (
         <div className="grid gap-4">
-          {filteredPatients.map(patient => (
+          {patients.map(patient => (
             <Card 
               key={patient.id}
               className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
@@ -149,28 +206,30 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
                   
                   <div className="p-4 flex-1">
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
-                      <h3 className="font-medium text-lg">{patient.nome}</h3>
-                      <span className="text-sm text-gray-500 md:ml-4">{patient.idade} anos</span>
+                      <h3 className="font-medium text-lg">{patient.profiles?.full_name || 'Nome não informado'}</h3>
+                      <span className="text-sm text-gray-500 md:ml-4">
+                        {patient.birth_date ? new Date().getFullYear() - new Date(patient.birth_date).getFullYear() : 'Idade não informada'} anos
+                      </span>
                     </div>
                     
-                    <p className="text-gray-600 mb-4">{patient.condicao}</p>
+                    <p className="text-gray-600 mb-4">{patient.medical_condition || 'Condição não informada'}</p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                      {patient.telefone && (
+                      {patient.emergency_contact_phone && (
                         <div className="flex items-center">
                           <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                          {patient.telefone}
+                          {patient.emergency_contact_phone}
                         </div>
                       )}
-                      {patient.email && (
+                      {patient.profiles?.email && (
                         <div className="flex items-center">
                           <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                          {patient.email}
+                          {patient.profiles.email}
                         </div>
                       )}
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                        Última consulta: {new Date(patient.ultima_consulta).toLocaleDateString()}
+                        Cadastrado: {new Date(patient.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -315,6 +374,19 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
               </div>
               
               <div>
+                <Label htmlFor="cpf" className="text-right">
+                  CPF
+                </Label>
+                <Input
+                  id="cpf"
+                  value={cpf}
+                  onChange={(e) => setCpf(e.target.value)}
+                  className="mt-1"
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              
+              <div>
                 <Label htmlFor="endereco" className="text-right">
                   Endereço
                 </Label>
@@ -334,6 +406,66 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
               <Button type="submit">Cadastrar Paciente</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Search Existing Patients Dialog */}
+      <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Buscar Paciente Existente</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Label htmlFor="patientSearch">
+              Digite o nome, email ou CPF do paciente
+            </Label>
+            <Input
+              id="patientSearch"
+              value={patientSearch}
+              onChange={(e) => {
+                setPatientSearch(e.target.value);
+                handleSearchExistingPatients(e.target.value);
+              }}
+              placeholder="Buscar paciente..."
+              className="mt-2"
+            />
+            
+            {searchingPatients && (
+              <p className="text-sm text-gray-500 mt-2">Buscando...</p>
+            )}
+            
+            {searchResults.length > 0 && (
+              <div className="mt-4 max-h-60 overflow-y-auto">
+                <h4 className="font-medium mb-2">Resultados encontrados:</h4>
+                {searchResults.map((patient) => (
+                  <div key={patient.id} className="border rounded p-3 mb-2 flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">{patient.profiles?.full_name || 'Nome não informado'}</p>
+                      <p className="text-sm text-gray-600">{patient.profiles?.email || 'Email não informado'}</p>
+                      <p className="text-sm text-gray-600">{patient.cpf || 'CPF não informado'}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddExistingPatient(patient)}
+                    >
+                      Adicionar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {patientSearch.length >= 3 && !searchingPatients && searchResults.length === 0 && (
+              <p className="text-sm text-gray-500 mt-2">Nenhum paciente encontrado</p>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShowSearchDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

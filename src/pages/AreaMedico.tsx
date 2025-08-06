@@ -112,8 +112,9 @@ const AreaMedicoContent: React.FC = () => {
     navigateToSection('consulta');
   };
 
-  const handleOpenPatient = (patientId: number) => {
-    setSelectedPatient(patientId);
+  const handleOpenPatient = (patientId: string | number) => {
+    const patientIdNumber = typeof patientId === 'string' ? parseInt(patientId) : patientId;
+    setSelectedPatient(patientIdNumber);
     setShowProntuarioAba(true);
     navigateToSection('prontuario');
   };

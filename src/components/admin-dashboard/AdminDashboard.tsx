@@ -29,7 +29,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getPacientes, getMedicos } from '@/services/supabaseService';
+import { getMedicos } from '@/services/supabaseService';
+import { getPacientes as getPacientesOriginal } from '@/services/pacientes/pacientesService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Patient {
@@ -100,7 +101,7 @@ const AdminDashboard: React.FC = () => {
       console.log('[AdminDashboard] Carregando dados...');
       
       const [patientsData, doctorsData] = await Promise.all([
-        getPacientes(),
+        getPacientesOriginal(), // Get all patients without doctor filter
         getMedicos()
       ]);
       
@@ -111,19 +112,26 @@ const AdminDashboard: React.FC = () => {
       // Mapear dados dos pacientes - mostrar TODOS os pacientes reais do banco
       const mappedPatients = (patientsData || [])
         .filter(patient => {
-          // Filtro menos restritivo: aceitar se tem ID e não é um nome genérico
-          const hasValidData = patient.id && 
-            (patient.profiles?.full_name || patient.profiles?.email);
-          const isNotGeneric = !patient.profiles?.full_name?.includes('Paciente') &&
-            !patient.profiles?.full_name?.includes('User') &&
-            patient.profiles?.full_name !== 'Nome não informado';
-          return hasValidData && (isNotGeneric || !patient.profiles?.full_name);
+          // Filtro básico - verificar se é um objeto válido e não é um erro
+          return patient && typeof patient === 'object' && patient.id && !patient.error;
         })
         .map(patient => ({
-          ...patient,
+          id: patient.id,
+          address: patient.address || '',
+          birth_date: patient.birth_date || '',
+          cpf: patient.cpf || '',
+          created_at: patient.created_at,
+          emergency_contact_name: patient.emergency_contact_name || '',
+          emergency_contact_phone: patient.emergency_contact_phone || '',
+          gender: patient.gender || '',
+          medical_condition: patient.medical_condition || '',
+          updated_at: patient.updated_at,
+          user_id: patient.user_id || '',
+          profiles: patient.profiles,
+          // Campos derivados para compatibilidade
           nome: patient.profiles?.full_name || patient.profiles?.email || 'Nome não informado',
-          email: patient.profiles?.email,
-          telefone: patient.emergency_contact_phone,
+          email: patient.profiles?.email || 'Email não informado',
+          telefone: patient.emergency_contact_phone || 'Não informado',
           data_nascimento: patient.birth_date
         }));
       
