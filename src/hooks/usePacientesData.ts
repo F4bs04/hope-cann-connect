@@ -85,13 +85,13 @@ export const usePacientesData = () => {
 
   const filteredPacientes = pacientes.filter(paciente => {
     if (!searchTerm) return true;
-    const fullName = paciente.profiles?.full_name || '';
-    const email = paciente.profiles?.email || '';
+    const fullName = paciente.full_name || '';
     const cpf = paciente.cpf || '';
+    const medicalCondition = paciente.medical_condition || '';
     return (
       fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cpf.includes(searchTerm)
+      cpf.includes(searchTerm) ||
+      medicalCondition.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 

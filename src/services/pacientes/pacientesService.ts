@@ -28,12 +28,7 @@ export const getPacientes = async (doctorIdString?: string) => {
         .from('doctor_patients')
         .select(`
           patients!inner (
-            *,
-            profiles (
-              full_name,
-              email,
-              avatar_url
-            )
+            *
           )
         `)
         .eq('doctor_id', doctorUuid)
@@ -51,12 +46,7 @@ export const getPacientes = async (doctorIdString?: string) => {
       const { data, error } = await supabase
         .from('patients')
         .select(`
-          *,
-          profiles (
-            full_name,
-            email,
-            avatar_url
-          )
+          *
         `)
         .order('created_at', { ascending: false });
 
@@ -180,15 +170,8 @@ export const searchAllPatients = async (query: string) => {
   try {
     const { data, error } = await supabase
       .from('patients')
-      .select(`
-        *,
-        profiles (
-          full_name,
-          email,
-          avatar_url
-        )
-      `)
-      .or(`full_name.ilike.%${query}%,profiles.full_name.ilike.%${query}%,profiles.email.ilike.%${query}%,cpf.ilike.%${query}%`)
+      .select('*')
+      .or(`full_name.ilike.%${query}%,cpf.ilike.%${query}%`)
       .order('created_at', { ascending: false });
 
     if (error) {
