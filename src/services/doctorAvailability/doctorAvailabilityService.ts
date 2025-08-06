@@ -23,16 +23,57 @@ export interface DoctorSchedule {
 export class DoctorAvailabilityService {
   
   /**
+   * Buscar doctor_id pelo user_id
+   */
+  private static async getDoctorIdFromUserId(userId: string): Promise<string | null> {
+    try {
+      const { data: doctorData, error } = await supabase
+        .from('doctors')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (error || !doctorData) {
+        console.error('Médico não encontrado para user_id:', userId, error);
+        return null;
+      }
+
+      return doctorData.id;
+    } catch (error) {
+      console.error('Erro ao buscar doctor_id:', error);
+      return null;
+    }
+  }
+  
+  /**
    * Salvar agenda completa do médico no Supabase
+   * Aceita user_id e converte internamente para doctor_id
    */
   static async saveDoctorSchedule(
-    doctorId: string, 
+    userIdOrDoctorId: string, 
     weeklySchedule: DoctorSchedule[]
   ): Promise<boolean> {
     try {
       console.log('=== SALVANDO AGENDA NO SUPABASE ===');
-      console.log('Doctor ID:', doctorId);
+      console.log('Input ID:', userIdOrDoctorId);
       console.log('Schedule:', weeklySchedule);
+
+      // Converter user_id para doctor_id se necessário
+      let doctorId = userIdOrDoctorId;
+      
+      // Tentar buscar o doctor_id se o ID fornecido for um user_id
+      const resolvedDoctorId = await this.getDoctorIdFromUserId(userIdOrDoctorId);
+      if (resolvedDoctorId) {
+        doctorId = resolvedDoctorId;
+        console.log('Convertido user_id para doctor_id:', doctorId);
+      } else {
+        // Se não encontrou, assumir que já é um doctor_id
+        console.log('Usando ID como doctor_id:', doctorId);
+      }
+
+      if (!doctorId) {
+        throw new Error('ID do médico inválido ou médico não encontrado');
+      }
 
       // Primeiro, deletar todos os horários existentes do médico
       const { error: deleteError } = await supabase
@@ -89,11 +130,29 @@ export class DoctorAvailabilityService {
 
   /**
    * Carregar agenda do médico do Supabase
+   * Aceita user_id e converte internamente para doctor_id
    */
-  static async loadDoctorSchedule(doctorId: string): Promise<DoctorSchedule[]> {
+  static async loadDoctorSchedule(userIdOrDoctorId: string): Promise<DoctorSchedule[]> {
     try {
       console.log('=== CARREGANDO AGENDA DO SUPABASE ===');
-      console.log('Doctor ID:', doctorId);
+      console.log('Input ID:', userIdOrDoctorId);
+
+      // Converter user_id para doctor_id se necessário
+      let doctorId = userIdOrDoctorId;
+      
+      // Tentar buscar o doctor_id se o ID fornecido for um user_id
+      const resolvedDoctorId = await this.getDoctorIdFromUserId(userIdOrDoctorId);
+      if (resolvedDoctorId) {
+        doctorId = resolvedDoctorId;
+        console.log('Convertido user_id para doctor_id:', doctorId);
+      } else {
+        console.log('Usando ID como doctor_id:', doctorId);
+      }
+
+      if (!doctorId) {
+        console.log('Médico não encontrado, retornando agenda vazia');
+        return this.getEmptySchedule();
+      }
 
       // Buscar horários do médico na tabela doctor_schedules
       const { data: schedules, error } = await supabase
@@ -168,11 +227,25 @@ export class DoctorAvailabilityService {
 
   /**
    * Limpar agenda do médico
+   * Aceita user_id e converte internamente para doctor_id
    */
-  static async clearDoctorSchedule(doctorId: string): Promise<boolean> {
+  static async clearDoctorSchedule(userIdOrDoctorId: string): Promise<boolean> {
     try {
       console.log('=== LIMPANDO AGENDA DO SUPABASE ===');
-      console.log('Doctor ID:', doctorId);
+      console.log('Input ID:', userIdOrDoctorId);
+
+      // Converter user_id para doctor_id se necessário
+      let doctorId = userIdOrDoctorId;
+      
+      const resolvedDoctorId = await this.getDoctorIdFromUserId(userIdOrDoctorId);
+      if (resolvedDoctorId) {
+        doctorId = resolvedDoctorId;
+        console.log('Convertido user_id para doctor_id:', doctorId);
+      }
+
+      if (!doctorId) {
+        throw new Error('ID do médico inválido ou médico não encontrado');
+      }
 
       // Deletar todos os horários do médico
       const { error } = await supabase

@@ -155,11 +155,18 @@ export default function AgendaSlotsManager() {
       return;
     }
 
+    // Verificar se há pelo menos um horário para salvar
+    const hasSlots = weeklySchedule.some(day => day.slots.length > 0);
+    if (!hasSlots) {
+      toast.error('Adicione pelo menos um horário antes de salvar.');
+      return;
+    }
+
     try {
       setSaving(true);
       console.log('Iniciando salvamento no Supabase com userId:', userId);
       
-      // Salvar usando o serviço do Supabase
+      // Salvar usando o serviço do Supabase (que agora converte user_id para doctor_id)
       const success = await DoctorAvailabilityService.saveDoctorSchedule(userId, weeklySchedule);
       
       if (success) {
@@ -172,7 +179,17 @@ export default function AgendaSlotsManager() {
     } catch (error) {
       console.error('❌ Erro ao salvar agenda:', error);
       console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
-      toast.error('Erro ao salvar horários: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+      
+      let errorMessage = 'Erro desconhecido';
+      if (error instanceof Error) {
+        if (error.message.includes('médico não encontrado')) {
+          errorMessage = 'Perfil de médico não encontrado. Verifique se você completou seu cadastro.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast.error('Erro ao salvar horários: ' + errorMessage);
     } finally {
       setSaving(false);
       console.log('=== FIM SAVESCHEDULE (SUPABASE) ===');
