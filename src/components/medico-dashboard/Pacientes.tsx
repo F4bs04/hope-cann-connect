@@ -114,38 +114,6 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
     
     console.log('[Pacientes] Iniciando cadastro de paciente...');
     
-    // Primeiro, vamos criar um profile temporário se necessário
-    const tempUserId = crypto.randomUUID(); // Gerar um UUID temporário
-    
-    try {
-      // Criar um profile temporário para o paciente
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .insert([{
-          id: tempUserId,
-          email: email || `temp-${tempUserId}@temp.com`,
-          full_name: nome,
-          role: 'patient',
-          is_active: true
-        }])
-        .select()
-        .single();
-      
-      if (profileError) {
-        console.error('[Pacientes] Erro ao criar profile:', profileError);
-        toast({
-          variant: "destructive",
-          title: "Erro ao criar perfil",
-          description: "Erro ao criar perfil do paciente",
-        });
-        return;
-      }
-      
-      console.log('[Pacientes] Profile criado:', profileData);
-    } catch (profileErr) {
-      console.error('[Pacientes] Erro inesperado ao criar profile:', profileErr);
-    }
-    
     const pacienteData = {
       birth_date: dataNascimento,
       gender: genero,
@@ -154,7 +122,7 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
       medical_condition: condicao,
       emergency_contact_name: nome,
       emergency_contact_phone: telefone,
-      user_id: tempUserId
+      user_id: null // Paciente criado pelo médico, sem conta ainda
     };
     
     console.log('[Pacientes] Dados do paciente:', pacienteData);
