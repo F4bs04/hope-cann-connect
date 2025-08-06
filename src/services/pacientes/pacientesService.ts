@@ -83,16 +83,37 @@ export const createPaciente = async (data) => {
   try {
     console.log('[createPaciente] Dados recebidos:', data);
     
-    // Verificar se o usuário é um médico
+    // Verificar se o usuário é um médico aprovado
     const { data: doctorData, error: doctorError } = await supabase
       .from('doctors')
-      .select('id')
+      .select('id, is_approved, is_suspended')
       .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+      .eq('is_approved', true)
+      .eq('is_suspended', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
     
+    console.log('[createPaciente] Dados do médico:', doctorData);
+    console.log('[createPaciente] Erro ao buscar médico:', doctorError);
+    
     if (doctorError || !doctorData) {
-      console.error('[createPaciente] Médico não encontrado:', doctorError);
-      return { success: false, error: 'Médico não encontrado' };
+      console.error('[createPaciente] Médico não encontrado ou não aprovado:', doctorError);
+      return { 
+        success: false, 
+        error: doctorError?.code === 'PGRST116' 
+          ? 'Médico não aprovado ou não encontrado' 
+          : 'Erro ao verificar dados do médico' 
+      };
+    }
+    
+    // Verificação adicional para garantir que o médico está aprovado
+    if (!doctorData.is_approved || doctorData.is_suspended) {
+      console.error('[createPaciente] Médico não está aprovado ou está suspenso');
+      return { 
+        success: false, 
+        error: 'Médico não aprovado para criar pacientes' 
+      };
     }
     
     // Preparar dados do paciente (médicos criam pacientes sem user_id)
