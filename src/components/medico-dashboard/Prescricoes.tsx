@@ -14,6 +14,8 @@ import { getPacientes, createReceita } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 import PdfUpload from '@/components/ui/pdf-upload';
 import html2pdf from 'html2pdf.js';
+import DocumentConfirmationDialog from '@/components/ui/document-confirmation-dialog';
+import { createDocumentNotification } from '@/services/notifications/notificationService';
 
 const Prescricoes: React.FC = () => {
   const { toast } = useToast();
@@ -37,6 +39,9 @@ const Prescricoes: React.FC = () => {
   const [assinado, setAssinado] = useState(false);
   const [receitaRef, setReceitaRef] = useState<React.RefObject<HTMLDivElement>>(React.createRef());
   const [lastGeneratedReceita, setLastGeneratedReceita] = useState<any>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pendingReceitaData, setPendingReceitaData] = useState<any>(null);
   
   useEffect(() => {
     const loadPacientes = async () => {
@@ -60,54 +65,7 @@ const Prescricoes: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Se estamos na aba de anexo PDF e temos um arquivo anexado
-    if (activeTab === 'pdf' && pdfFilePath) {
-      if (!pacienteId) {
-        toast({
-          variant: "destructive",
-          title: "Paciente obrigatório",
-          description: "Por favor, selecione um paciente para associar ao PDF",
-        });
-        return;
-      }
-      
-      // Calcular data de validade para PDF (30 dias)
-      const dataValidade = new Date();
-      dataValidade.setDate(dataValidade.getDate() + 30);
-      
-      // Criar receita com referência ao PDF
-      const receitaData = {
-        id_paciente: parseInt(pacienteId),
-        medicamento: "Receita via PDF anexado",
-        posologia: "Ver documento anexo",
-        observacoes: "Documento PDF anexado pelo médico",
-        data_validade: dataValidade.toISOString(),
-        status: 'ativa',
-        arquivo_pdf: pdfFilePath
-      };
-      
-      const newReceita = await createReceita(receitaData);
-      
-      if (newReceita) {
-        // Salvar dados da receita para exibição no PDF
-        const pacienteSelecionado = pacientes.find(p => p.id.toString() === pacienteId);
-        setLastGeneratedReceita({
-          ...receitaData,
-          paciente: pacienteSelecionado,
-          medicamento,
-          posologia,
-          tempoUso,
-          periodo,
-          observacoes,
-          tipoReceita,
-          dataEmissao: new Date().toISOString()
-        });
-        setSuccess(true);
-        return;
-      }
-    }
-    
-    // Validações para o formulário normal
+    // Validações básicas
     if (!pacienteId) {
       toast({
         variant: "destructive",
@@ -116,52 +74,134 @@ const Prescricoes: React.FC = () => {
       });
       return;
     }
+
+    // Preparar dados baseado na aba ativa
+    let receitaData;
+    let pacienteSelecionado = pacientes.find(p => p.id.toString() === pacienteId);
+
+    if (activeTab === 'pdf' && pdfFilePath) {
+      // PDF anexado
+      const dataValidade = new Date();
+      dataValidade.setDate(dataValidade.getDate() + 30);
+      
+      receitaData = {
+        id_paciente: parseInt(pacienteId),
+        medicamento: "Receita via PDF anexado",
+        posologia: "Ver documento anexo",
+        observacoes: "Documento PDF anexado pelo médico",
+        data_validade: dataValidade.toISOString(),
+        status: 'ativa',
+        arquivo_pdf: pdfFilePath,
+        paciente: pacienteSelecionado,
+        tipoReceita: 'pdf',
+        tempoUso: '',
+        periodo: '',
+        dataEmissao: new Date().toISOString()
+      };
+    } else {
+      // Formulário normal - validações específicas
+      if (!medicamento) {
+        toast({
+          variant: "destructive",
+          title: "Medicamento obrigatório",
+          description: "Por favor, insira um medicamento",
+        });
+        return;
+      }
+      
+      if (!posologia) {
+        toast({
+          variant: "destructive",
+          title: "Posologia obrigatória",
+          description: "Por favor, insira a posologia",
+        });
+        return;
+      }
+      
+      if (!assinado) {
+        toast({
+          variant: "destructive",
+          title: "Assinatura obrigatória",
+          description: "Por favor, assine digitalmente a prescrição",
+        });
+        return;
+      }
+
+      const dataValidade = new Date();
+      dataValidade.setDate(dataValidade.getDate() + 30);
+      
+      receitaData = {
+        id_paciente: parseInt(pacienteId),
+        medicamento,
+        posologia,
+        observacoes: `Tempo de uso: ${tempoUso} ${periodo}. ${permiteSubstituicao === 'sim' ? 'Permite substituição. ' : 'Não permite substituição. '}${observacoes ? observacoes : ''}`,
+        data_validade: dataValidade.toISOString(),
+        status: 'ativa',
+        paciente: pacienteSelecionado,
+        tipoReceita,
+        tempoUso,
+        periodo,
+        dataEmissao: new Date().toISOString()
+      };
+    }
+
+    // Mostrar dialog de confirmação
+    setPendingReceitaData(receitaData);
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmDocument = async () => {
+    if (!pendingReceitaData) return;
+
+    setIsGeneratingPdf(true);
     
-    if (!medicamento) {
+    try {
+      // Criar receita no banco
+      const newReceita = await createReceita(pendingReceitaData);
+      
+      if (newReceita) {
+        // Criar notificação para o paciente
+        if (pendingReceitaData.paciente?.user_id) {
+          const { data: user } = await supabase.auth.getUser();
+          const doctorName = user?.user?.user_metadata?.full_name || 'Médico';
+          
+          if (newReceita && 'data' in newReceita && newReceita.data?.id) {
+            await createDocumentNotification(
+              pendingReceitaData.paciente.user_id,
+              doctorName,
+              'receita',
+              newReceita.data.id.toString()
+            );
+          }
+        }
+        
+        // Preparar dados para exibição e PDF
+        setLastGeneratedReceita(pendingReceitaData);
+        setSuccess(true);
+        setShowConfirmDialog(false);
+        setPendingReceitaData(null);
+        
+        // Gerar e abrir PDF automaticamente
+        setTimeout(async () => {
+          await generateAndOpenPDF();
+        }, 1000);
+        
+        toast({
+          title: "Receita criada com sucesso",
+          description: "O documento foi gerado e uma notificação foi enviada ao paciente",
+        });
+        
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Erro ao criar receita:', error);
       toast({
         variant: "destructive",
-        title: "Medicamento obrigatório",
-        description: "Por favor, insira um medicamento",
+        title: "Erro ao criar receita",
+        description: "Não foi possível criar a receita. Tente novamente.",
       });
-      return;
-    }
-    
-    if (!posologia) {
-      toast({
-        variant: "destructive",
-        title: "Posologia obrigatória",
-        description: "Por favor, insira a posologia",
-      });
-      return;
-    }
-    
-    if (!assinado) {
-      toast({
-        variant: "destructive",
-        title: "Assinatura obrigatória",
-        description: "Por favor, assine digitalmente a prescrição",
-      });
-      return;
-    }
-    
-    // Calculate validity date (30 days)
-    const dataValidade = new Date();
-    dataValidade.setDate(dataValidade.getDate() + 30);
-    
-    const receitaData = {
-      id_paciente: parseInt(pacienteId),
-      medicamento,
-      posologia,
-      observacoes: `Tempo de uso: ${tempoUso} ${periodo}. ${permiteSubstituicao === 'sim' ? 'Permite substituição. ' : 'Não permite substituição. '}${observacoes ? observacoes : ''}`,
-      data_validade: dataValidade.toISOString(),
-      status: 'ativa'
-    };
-    
-    const newReceita = await createReceita(receitaData);
-    
-    if (newReceita) {
-      setSuccess(true);
-      resetForm();
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
   
@@ -184,11 +224,49 @@ const Prescricoes: React.FC = () => {
     setPdfFilePath(filePath);
   };
 
+  const generateAndOpenPDF = async () => {
+    if (receitaRef.current && lastGeneratedReceita) {
+      try {
+        const element = receitaRef.current;
+        const pacienteNome = lastGeneratedReceita.paciente?.full_name || lastGeneratedReceita.paciente?.nome || 'paciente';
+        const opt = {
+          margin: 1,
+          filename: `receita-${pacienteNome.replace(/\s+/g, '-')}-${new Date().getTime()}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        
+        // Gerar PDF como blob
+        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+        
+        // Criar URL do blob e abrir em nova aba
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+        
+        // Limpar URL após um tempo
+        setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+        
+        toast({
+          title: "PDF gerado com sucesso",
+          description: "O documento foi aberto em uma nova aba",
+        });
+      } catch (error) {
+        console.error("Erro ao gerar PDF:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao gerar PDF",
+          description: "Não foi possível gerar o PDF",
+        });
+      }
+    }
+  };
+
   const handleDownloadPDF = async () => {
     if (receitaRef.current && lastGeneratedReceita) {
       try {
         const element = receitaRef.current;
-        const pacienteNome = lastGeneratedReceita.paciente?.nome || 'paciente';
+        const pacienteNome = lastGeneratedReceita.paciente?.full_name || lastGeneratedReceita.paciente?.nome || 'paciente';
         const opt = {
           margin: 1,
           filename: `receita-${pacienteNome.replace(/\s+/g, '-')}-${new Date().getTime()}.pdf`,
@@ -267,7 +345,7 @@ const Prescricoes: React.FC = () => {
             </div>
             
             <div className="mb-6">
-              <p className="font-medium">Paciente: <span className="font-normal">{lastGeneratedReceita.paciente?.nome || 'Nome não informado'}</span></p>
+              <p className="font-medium">Paciente: <span className="font-normal">{lastGeneratedReceita.paciente?.full_name || lastGeneratedReceita.paciente?.nome || 'Nome não informado'}</span></p>
               <p className="font-medium mt-2">Data: <span className="font-normal">{new Date(lastGeneratedReceita.dataEmissao).toLocaleDateString('pt-BR')}</span></p>
             </div>
             
@@ -345,7 +423,7 @@ const Prescricoes: React.FC = () => {
                 <SelectContent>
                   {pacientes.map(paciente => (
                     <SelectItem key={paciente.id} value={paciente.id.toString()}>
-                      {paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado'} ({paciente.birth_date ? new Date().getFullYear() - new Date(paciente.birth_date).getFullYear() : 'N/A'} anos)
+                      {paciente.full_name || 'Nome não informado'} ({paciente.birth_date ? new Date().getFullYear() - new Date(paciente.birth_date).getFullYear() : 'N/A'} anos)
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -542,6 +620,23 @@ const Prescricoes: React.FC = () => {
         <p>Este sistema está em conformidade com as regulamentações da ANVISA</p>
         <p>© 2025 Sistema de Prescrição Digital. Todos os direitos reservados.</p>
       </div>
+
+      <DocumentConfirmationDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        onConfirm={handleConfirmDocument}
+        documentData={pendingReceitaData || {
+          paciente: { full_name: '' },
+          medicamento: '',
+          posologia: '',
+          observacoes: '',
+          tipoReceita: '',
+          tempoUso: '',
+          periodo: ''
+        }}
+        documentType="receita"
+        isGenerating={isGeneratingPdf}
+      />
     </div>
   );
 };

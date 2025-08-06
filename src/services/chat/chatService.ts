@@ -177,11 +177,8 @@ export const getChatsAtivos = async (doctorId: string) => {
       .from('patients')
       .select(`
         id,
-        profiles (
-          full_name,
-          email,
-          avatar_url
-        )
+        full_name,
+        user_id
       `)
       .in('id', patientIds);
 
@@ -197,9 +194,9 @@ export const getChatsAtivos = async (doctorId: string) => {
         ...chat,
         pacientes: {
           id: patient?.id,
-          nome: patient?.profiles?.full_name || 'Paciente',
-          email: patient?.profiles?.email,
-          avatar: patient?.profiles?.avatar_url
+          nome: patient?.full_name || 'Paciente',
+          email: patient?.user_id,
+          avatar: null
         },
         data_inicio: chat.last_message_at,
         data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 dias a partir de agora

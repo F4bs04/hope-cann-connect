@@ -3,40 +3,108 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, MessageCircle } from 'lucide-react';
+import { Send, MessageCircle, FileText, Pill } from 'lucide-react';
 import { useAuth } from '@/hooks/useUnifiedAuth';
+import { chatService } from '@/services/chat/chatService';
+import { getPacientes } from '@/services/supabaseService';
+import ReceitaDialog from './ReceitaDialog';
 
-// Componente simplificado de chat
+// Componente de chat integrado com sistema de receitas
 const ChatMedico = () => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [receitaDialogOpen, setReceitaDialogOpen] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   
   const { userProfile } = useAuth();
 
   useEffect(() => {
-    // Por enquanto, retornamos array vazio
-    // TODO: Implementar quando o sistema de chat estiver integrado com o schema atual
-    setPatients([]);
-    setLoading(false);
+    loadPatients();
   }, [userProfile]);
 
-  const handleSendMessage = () => {
-    if (!message.trim() || !selectedPatient) return;
+  const loadPatients = async () => {
+    if (!userProfile?.id) return;
+    
+    setLoading(true);
+    try {
+      // Buscar pacientes do médico
+      const patientsData = await getPacientes(userProfile.id);
+      setPatients(patientsData);
+      
+      // Buscar chats ativos
+      const chatsResult = await chatService.getActiveChats(userProfile.id);
+      if (chatsResult.success) {
+        // Combinar pacientes com chats ativos
+        const patientsWithChats = patientsData.map(patient => {
+          const activeChat = chatsResult.data.find(chat => 
+            chat.patient_id === patient.id
+          );
+          return {
+            ...patient,
+            hasActiveChat: !!activeChat,
+            lastMessageAt: activeChat?.last_message_at
+          };
+        });
+        setPatients(patientsWithChats);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar pacientes:', error);
+      setPatients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Mock - adicionar mensagem localmente
-    const newMessage = {
-      id: Date.now(),
-      sender_id: userProfile?.id,
-      message: message.trim(),
-      created_at: new Date().toISOString(),
-      sender_type: 'doctor'
-    };
+  const handleSelectPatient = async (patient: any) => {
+    setSelectedPatient(patient);
+    
+    if (!userProfile?.id) return;
+    
+    // Criar/obter chat_id
+    const chatResult = await chatService.startChat(userProfile.id, patient.id);
+    if (chatResult.success) {
+      setCurrentChatId(chatResult.chatId);
+      
+      // Carregar mensagens do chat
+      const messagesResult = await chatService.getChatMessages(chatResult.chatId);
+      if (messagesResult.success) {
+        setMessages(messagesResult.data);
+        
+        // Marcar mensagens como lidas
+        await chatService.markMessageAsRead(chatResult.chatId, userProfile.id);
+      }
+    }
+  };
 
-    setMessages(prev => [...prev, newMessage]);
+  const handleSendMessage = async () => {
+    if (!message.trim() || !selectedPatient || !currentChatId || !userProfile?.id) return;
+
+    const messageText = message.trim();
     setMessage('');
+
+    // Enviar mensagem
+    const result = await chatService.sendMessage(currentChatId, userProfile.id, messageText);
+    
+    if (result.success) {
+      // Adicionar mensagem localmente para feedback imediato
+      const newMessage = {
+        id: Date.now().toString(),
+        chat_id: currentChatId,
+        sender_id: userProfile.id,
+        message: messageText,
+        created_at: new Date().toISOString(),
+        is_read: false,
+        sender: {
+          full_name: userProfile.full_name || 'Médico',
+          email: userProfile.email
+        }
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+    }
   };
 
   if (loading) {
@@ -70,15 +138,29 @@ const ChatMedico = () => {
                 {patients.map((patient) => (
                   <div
                     key={patient.id}
-                    onClick={() => setSelectedPatient(patient)}
+                    onClick={() => handleSelectPatient(patient)}
                     className={`p-3 rounded-lg cursor-pointer transition-colors ${
                       selectedPatient?.id === patient.id
                         ? 'bg-hopecann-teal/10 border border-hopecann-teal'
                         : 'hover:bg-gray-50'
                     }`}
                   >
-                    <p className="font-medium">{patient.nome}</p>
-                    <p className="text-sm text-gray-500">Última mensagem...</p>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{patient.full_name || 'Nome não informado'}</p>
+                        <p className="text-sm text-gray-500">
+                          {patient.hasActiveChat ? 'Chat ativo' : 'Clique para iniciar conversa'}
+                        </p>
+                        {patient.lastMessageAt && (
+                          <p className="text-xs text-gray-400">
+                            {new Date(patient.lastMessageAt).toLocaleDateString('pt-BR')}
+                          </p>
+                        )}
+                      </div>
+                      {patient.hasActiveChat && (
+                        <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -90,8 +172,21 @@ const ChatMedico = () => {
       {/* Área de Chat */}
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>
-            {selectedPatient ? `Chat com ${selectedPatient.nome}` : 'Selecione uma conversa'}
+          <CardTitle className="flex items-center justify-between">
+            <span>
+              {selectedPatient ? `Chat com ${selectedPatient.full_name || 'Paciente'}` : 'Selecione uma conversa'}
+            </span>
+            {selectedPatient && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setReceitaDialogOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Pill className="h-4 w-4" />
+                Criar Receita
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col h-[500px]">
@@ -106,27 +201,38 @@ const ChatMedico = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${
-                      msg.sender_type === 'doctor' ? 'justify-end' : 'justify-start'
-                    }`}
-                  >
+                {messages.map((msg) => {
+                  const isFromDoctor = msg.sender_id === userProfile?.id;
+                  return (
                     <div
-                      className={`max-w-[80%] p-3 rounded-lg ${
-                        msg.sender_type === 'doctor'
-                          ? 'bg-hopecann-teal text-white'
-                          : 'bg-gray-100'
-                      }`}
+                      key={msg.id}
+                      className={`flex ${isFromDoctor ? 'justify-end' : 'justify-start'}`}
                     >
-                      <p>{msg.message}</p>
-                      <p className="text-xs opacity-75 mt-1">
-                        {new Date(msg.created_at).toLocaleTimeString()}
-                      </p>
+                      <div
+                        className={`max-w-[80%] p-3 rounded-lg ${
+                          isFromDoctor
+                            ? 'bg-hopecann-teal text-white'
+                            : 'bg-gray-100'
+                        }`}
+                      >
+                        <p>{msg.message}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs opacity-75">
+                            {new Date(msg.created_at).toLocaleTimeString('pt-BR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                          {isFromDoctor && (
+                            <span className="text-xs opacity-75">
+                              {msg.is_read ? '✓✓' : '✓'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
@@ -147,6 +253,12 @@ const ChatMedico = () => {
           )}
         </CardContent>
       </Card>
+
+      <ReceitaDialog 
+        open={receitaDialogOpen}
+        onOpenChange={setReceitaDialogOpen}
+        selectedPaciente={selectedPatient}
+      />
     </div>
   );
 };
