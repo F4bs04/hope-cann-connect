@@ -84,15 +84,18 @@ export const createPaciente = async (data) => {
     console.log('[createPaciente] Dados recebidos:', data);
     
     // Verificar se o usuário é um médico aprovado
+    const { data: user } = await supabase.auth.getUser();
+    console.log('[createPaciente] Current user:', user.user?.id);
+    
     const { data: doctorData, error: doctorError } = await supabase
       .from('doctors')
       .select('id, is_approved, is_suspended')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+      .eq('user_id', user.user?.id)
       .eq('is_approved', true)
       .eq('is_suspended', false)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
     
     console.log('[createPaciente] Dados do médico:', doctorData);
     console.log('[createPaciente] Erro ao buscar médico:', doctorError);
