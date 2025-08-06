@@ -125,13 +125,28 @@ export const createPaciente = async (data) => {
       user_id: null, // Pacientes criados por médicos não têm user_id
     };
     
+    console.log('[createPaciente] Dados a serem inseridos:', patientData);
+    console.log('[createPaciente] Current auth.uid():', user.user?.id);
+    
     const { data: result, error } = await supabase
       .from('patients')
       .insert([patientData])
       .select();
     
+    console.log('[createPaciente] Resultado da inserção:', { result, error });
+    
     if (error) {
       console.error('[createPaciente] Error creating patient:', error);
+      
+      // Tentar diagnóstico adicional
+      const { data: testDoctor } = await supabase
+        .from('doctors')
+        .select('id, user_id, is_approved, is_suspended')
+        .eq('user_id', user.user?.id)
+        .single();
+      
+      console.log('[createPaciente] Doctor verification for debugging:', testDoctor);
+      
       return { success: false, error };
     }
     
