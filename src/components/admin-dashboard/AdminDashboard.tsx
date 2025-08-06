@@ -112,28 +112,54 @@ const AdminDashboard: React.FC = () => {
       // Mapear dados dos pacientes - mostrar TODOS os pacientes reais do banco
       const mappedPatients = (patientsData || [])
         .filter(patient => {
-          // Filtro básico - verificar se é um objeto válido e não é um erro
-          return patient && typeof patient === 'object' && patient.id && !patient.error;
+          // Filtro básico - verificar se é um objeto válido e tem as propriedades necessárias
+          return patient && 
+                 typeof patient === 'object' && 
+                 'id' in patient && 
+                 'user_id' in patient &&
+                 typeof patient.id === 'string';
         })
-        .map(patient => ({
-          id: patient.id,
-          address: patient.address || '',
-          birth_date: patient.birth_date || '',
-          cpf: patient.cpf || '',
-          created_at: patient.created_at,
-          emergency_contact_name: patient.emergency_contact_name || '',
-          emergency_contact_phone: patient.emergency_contact_phone || '',
-          gender: patient.gender || '',
-          medical_condition: patient.medical_condition || '',
-          updated_at: patient.updated_at,
-          user_id: patient.user_id || '',
-          profiles: patient.profiles,
-          // Campos derivados para compatibilidade
-          nome: patient.profiles?.full_name || patient.profiles?.email || 'Nome não informado',
-          email: patient.profiles?.email || 'Email não informado',
-          telefone: patient.emergency_contact_phone || 'Não informado',
-          data_nascimento: patient.birth_date
-        }));
+        .map(patient => {
+          // Type assertion after filtering ensures patient is valid
+          const validPatient = patient as {
+            id: string;
+            address?: string;
+            birth_date?: string;
+            cpf?: string;
+            created_at: string;
+            emergency_contact_name?: string;
+            emergency_contact_phone?: string;
+            gender?: string;
+            medical_condition?: string;
+            updated_at: string;
+            user_id: string;
+            profiles?: {
+              full_name?: string;
+              email?: string;
+              avatar_url?: string;
+            };
+          };
+          
+          return {
+            id: validPatient.id,
+            address: validPatient.address || '',
+            birth_date: validPatient.birth_date || '',
+            cpf: validPatient.cpf || '',
+            created_at: validPatient.created_at,
+            emergency_contact_name: validPatient.emergency_contact_name || '',
+            emergency_contact_phone: validPatient.emergency_contact_phone || '',
+            gender: validPatient.gender || '',
+            medical_condition: validPatient.medical_condition || '',
+            updated_at: validPatient.updated_at,
+            user_id: validPatient.user_id || '',
+            profiles: validPatient.profiles,
+            // Campos derivados para compatibilidade
+            nome: validPatient.profiles?.full_name || validPatient.profiles?.email || 'Nome não informado',
+            email: validPatient.profiles?.email || 'Email não informado',
+            telefone: validPatient.emergency_contact_phone || 'Não informado',
+            data_nascimento: validPatient.birth_date
+          };
+        });
       
       // Mapear dados dos médicos - mostrar TODOS os médicos reais do banco
       const mappedDoctors = (doctorsData || [])

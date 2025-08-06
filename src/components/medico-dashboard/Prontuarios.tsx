@@ -60,13 +60,18 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
     const getPacienteData = async () => {
       try {
         const pacientesData = await getPacientes();
-        const paciente = pacientesData.find((p: any) => p.id === prontuario.id_paciente);
+        const paciente = pacientesData.find((p: any) => 
+          p && typeof p === 'object' && 'id' in p && p.id === prontuario.id_paciente
+        );
         
         if (paciente) {
+          // Type assertion after filtering ensures paciente is valid
+          const validPaciente = paciente as { id: string; profiles?: { full_name?: string } };
+          
           // Atualiza o contexto global com o paciente selecionado
           setSelectedPaciente({
-            id: paciente.id,
-            nome: 'Paciente Simulado',
+            id: validPaciente.id,
+            nome: validPaciente.profiles?.full_name || 'Paciente Simulado',
             idade: 35,
             condicao: 'Condição Simulada',
             ultimaConsulta: new Date().toISOString()
