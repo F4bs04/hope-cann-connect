@@ -7,6 +7,7 @@ import { Search, Plus, FileText, Calendar, User, Clock, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { getProntuarios, getPacientes } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 import NovoProntuario from './NovoProntuario';
 import ProntuarioDetalhes from '@/components/medico/ProntuarioDetalhes';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
@@ -29,8 +30,12 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const prontuariosData = await getProntuarios();
-      setProntuarios(prontuariosData);
+      try {
+        const prontuariosData = await getProntuarios();
+        setProntuarios(prontuariosData);
+      } catch (error) {
+        console.error('Erro ao carregar prontuários:', error);
+      }
       setLoading(false);
     };
     
@@ -59,26 +64,38 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
     // Primeiro, precisamos obter o paciente completo pelo ID
     const getPacienteData = async () => {
       try {
-        const pacientesData = await getPacientes();
+        // Buscar o UUID do médico logado
+        const { data: user } = await supabase.auth.getUser();
+        if (!user?.user?.id) {
+          throw new Error('Usuário não autenticado');
+        }
+
+        const pacientesData = await getPacientes(user.user.id);
         const paciente = pacientesData.find((p: any) => 
           p && typeof p === 'object' && 'id' in p && p.id === prontuario.id_paciente
         );
         
         if (paciente) {
           // Type assertion after filtering ensures paciente is valid
-          const validPaciente = paciente as { id: string; profiles?: { full_name?: string } };
+          const validPaciente = paciente as { 
+            id: string; 
+            profiles?: { full_name?: string };
+            emergency_contact_name?: string;
+            birth_date?: string;
+            medical_condition?: string;
+          };
           
           // Atualiza o contexto global com o paciente selecionado
           setSelectedPaciente({
             id: validPaciente.id,
-            nome: validPaciente.profiles?.full_name || 'Paciente Simulado',
-            idade: 35,
-            condicao: 'Condição Simulada',
+            nome: validPaciente.profiles?.full_name || validPaciente.emergency_contact_name || 'Nome não informado',
+            idade: validPaciente.birth_date ? new Date().getFullYear() - new Date(validPaciente.birth_date).getFullYear() : 0,
+            condicao: validPaciente.medical_condition || 'Condição não informada',
             ultimaConsulta: new Date().toISOString()
           });
           
           // Notifica o componente pai
-          onSelectPatient('1');
+          onSelectPatient(validPaciente.id);
           
           // Mostrar os detalhes
           setShowDetails(true);

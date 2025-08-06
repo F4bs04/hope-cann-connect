@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Printer, Check, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getPacientes, createReceita } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 import PdfUpload from '@/components/ui/pdf-upload';
 import html2pdf from 'html2pdf.js';
 
@@ -40,18 +41,20 @@ const Prescricoes: React.FC = () => {
   useEffect(() => {
     const loadPacientes = async () => {
       setLoading(true);
-      const data = await getPacientes();
-      setPacientes(data);
+      try {
+        // Buscar o UUID do médico logado
+        const { data: user } = await supabase.auth.getUser();
+        if (user?.user?.id) {
+          const data = await getPacientes(user.user.id);
+          setPacientes(data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar pacientes:', error);
+      }
       setLoading(false);
     };
     
     loadPacientes();
-    
-    // Carregar ID do médico do localStorage
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      setMedicoUserId(parseInt(userId));
-    }
   }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -342,7 +345,7 @@ const Prescricoes: React.FC = () => {
                 <SelectContent>
                   {pacientes.map(paciente => (
                     <SelectItem key={paciente.id} value={paciente.id.toString()}>
-                      {paciente.nome} ({paciente.idade} anos)
+                      {paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado'} ({paciente.birth_date ? new Date().getFullYear() - new Date(paciente.birth_date).getFullYear() : 'N/A'} anos)
                     </SelectItem>
                   ))}
                 </SelectContent>

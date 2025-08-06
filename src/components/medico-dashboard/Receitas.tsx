@@ -22,19 +22,30 @@ const Receitas: React.FC = () => {
   useEffect(() => {
     const loadReceitas = async () => {
       setLoading(true);
-      const data = await getReceitas();
-      setReceitas(data);
+      try {
+        const data = await getReceitas();
+        setReceitas(data);
+      } catch (error) {
+        console.error('Erro ao carregar receitas:', error);
+      }
       setLoading(false);
     };
     
     loadReceitas();
   }, []);
   
-  const filteredReceitas = receitas.filter(receita => 
-    (receita.pacientes_app?.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    receita.medicamento?.toLowerCase().includes(searchQuery.toLowerCase())) &&
-    (selectedTab === 'todas' || receita.status === selectedTab)
-  );
+  const filteredReceitas = receitas.filter(receita => {
+    const patientName = receita.patients?.profiles?.full_name || 
+                       receita.patients?.emergency_contact_name || 
+                       receita.pacientes_app?.nome || 
+                       'Nome não informado';
+    
+    return (
+      (patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      receita.medicamento?.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      (selectedTab === 'todas' || receita.status === selectedTab)
+    );
+  });
 
   const handleDownload = async (receita: any) => {
     if (receita.arquivo_pdf) {
@@ -149,7 +160,12 @@ const Receitas: React.FC = () => {
                     
                     <div className="p-4 flex-1">
                       <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
-                        <h3 className="font-medium text-lg">{receita.pacientes_app?.nome}</h3>
+                        <h3 className="font-medium text-lg">
+                          {receita.patients?.profiles?.full_name || 
+                           receita.patients?.emergency_contact_name || 
+                           receita.pacientes_app?.nome || 
+                           'Nome não informado'}
+                        </h3>
                         <div className="flex flex-wrap gap-2 mt-1 md:mt-0">
                           {isPdf && (
                             <span className="text-sm bg-blue-100 text-blue-600 px-2 py-1 rounded">PDF Anexado</span>

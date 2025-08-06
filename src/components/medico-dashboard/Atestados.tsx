@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { getPacientes, createAtestado } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 import html2canvas from 'html2canvas';
 import html2pdf from 'html2pdf.js';
 import PdfUpload from '@/components/ui/pdf-upload';
@@ -40,25 +41,27 @@ const Atestados: React.FC = () => {
   useEffect(() => {
     const loadPacientes = async () => {
       setLoading(true);
-      const data = await getPacientes();
-      setPacientes(data);
+      try {
+        // Buscar o UUID do médico logado
+        const { data: user } = await supabase.auth.getUser();
+        if (user?.user?.id) {
+          const data = await getPacientes(user.user.id);
+          setPacientes(data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar pacientes:', error);
+      }
       setLoading(false);
     };
     
     loadPacientes();
-    
-    // Carregar ID do médico do localStorage
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      setMedicoUserId(parseInt(userId));
-    }
   }, []);
 
   useEffect(() => {
     if (pacienteId) {
       const paciente = pacientes.find(p => p.id.toString() === pacienteId);
       if (paciente) {
-        setNomePaciente(paciente.nome);
+        setNomePaciente(paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado');
       }
     } else {
       setNomePaciente('');
@@ -244,7 +247,7 @@ const Atestados: React.FC = () => {
                     <SelectContent>
                       {pacientes.map(paciente => (
                         <SelectItem key={paciente.id} value={paciente.id.toString()}>
-                          {paciente.nome} ({paciente.idade} anos)
+                          {paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado'} ({paciente.birth_date ? new Date().getFullYear() - new Date(paciente.birth_date).getFullYear() : 'N/A'} anos)
                         </SelectItem>
                       ))}
                     </SelectContent>

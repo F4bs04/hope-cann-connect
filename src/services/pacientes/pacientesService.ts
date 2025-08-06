@@ -1,8 +1,28 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export const getPacientes = async (doctorId?: string) => {
+export const getPacientes = async (doctorIdString?: string) => {
   try {
-    if (doctorId) {
+    console.log('[getPacientes] doctorIdString recebido:', doctorIdString);
+    
+    if (doctorIdString) {
+      // Primeiro, buscar o UUID do médico pela tabela doctors
+      const { data: doctorData, error: doctorError } = await supabase
+        .from('doctors')
+        .select('id')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      console.log('[getPacientes] Dados do médico:', doctorData);
+      console.log('[getPacientes] Erro ao buscar médico:', doctorError);
+
+      if (doctorError || !doctorData) {
+        console.error('[getPacientes] Médico não encontrado');
+        return [];
+      }
+
+      const doctorUuid = doctorData.id;
+      console.log('[getPacientes] UUID do médico:', doctorUuid);
+
       // Get patients for specific doctor via doctor_patients relationship
       const { data, error } = await supabase
         .from('doctor_patients')
@@ -16,7 +36,7 @@ export const getPacientes = async (doctorId?: string) => {
             )
           )
         `)
-        .eq('doctor_id', doctorId)
+        .eq('doctor_id', doctorUuid)
         .order('created_at', { ascending: false });
 
       if (error) {

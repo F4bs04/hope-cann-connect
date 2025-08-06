@@ -1,22 +1,31 @@
 import { useState, useEffect } from 'react';
 import { getPacientes, createPaciente, updatePaciente, addPatientToDoctor } from '@/services/pacientes/pacientesService';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export const usePacientesData = () => {
   const [pacientes, setPacientes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const { medicoId } = useAuth();
-  const medicoIdString = medicoId ? String(medicoId) : undefined;
+  const { user } = useAuth();
+  const userUuid = user?.id;
 
   const fetchPacientes = async () => {
+    if (!userUuid) {
+      console.log('[usePacientesData] UUID do usuário não disponível');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getPacientes(medicoIdString);
+      console.log('[usePacientesData] Buscando pacientes para UUID:', userUuid);
+      const data = await getPacientes(userUuid);
+      console.log('[usePacientesData] Pacientes retornados:', data);
       setPacientes(data);
     } catch (err) {
+      console.error('[usePacientesData] Erro ao buscar pacientes:', err);
       setError(err);
     } finally {
       setIsLoading(false);
@@ -24,10 +33,10 @@ export const usePacientesData = () => {
   };
 
   useEffect(() => {
-    if (medicoIdString) {
+    if (userUuid) {
       fetchPacientes();
     }
-  }, [medicoIdString]);
+  }, [userUuid]);
 
   const addPaciente = async (pacienteData) => {
     try {
@@ -35,10 +44,22 @@ export const usePacientesData = () => {
       const result = await createPaciente(pacienteData);
       console.log('[usePacientesData] createPaciente retornou:', result);
       
-      if (result.success && medicoIdString && result.data) {
+      if (result.success && userUuid && result.data) {
+        // Buscar o UUID do médico
+        const { data: doctorData, error: doctorError } = await supabase
+          .from('doctors')
+          .select('id')
+          .eq('user_id', userUuid)
+          .single();
+
+        if (doctorError || !doctorData) {
+          console.error('[usePacientesData] Médico não encontrado');
+          return { success: false, error: 'Médico não encontrado' };
+        }
+
         console.log('[usePacientesData] Adicionando relacionamento médico-paciente...');
         // Add relationship between doctor and patient
-        const relationResult = await addPatientToDoctor(medicoIdString, result.data.id);
+        const relationResult = await addPatientToDoctor(doctorData.id, result.data.id);
         console.log('[usePacientesData] Resultado do relacionamento:', relationResult);
         
         await fetchPacientes();
@@ -84,14 +105,29 @@ export const usePacientesData = () => {
     updatePaciente: updatePacienteData,
     refetch: fetchPacientes,
     addPatientToDoctor: async (patientId: string, notes?: string) => {
-      if (medicoIdString) {
-        const result = await addPatientToDoctor(medicoIdString, patientId, notes);
-        if (result.success) {
-          await fetchPacientes();
+      if (userUuid) {
+        try {
+          // Buscar o UUID do médico
+          const { data: doctorData, error: doctorError } = await supabase
+            .from('doctors')
+            .select('id')
+            .eq('user_id', userUuid)
+            .single();
+
+          if (doctorError || !doctorData) {
+            return { success: false, error: 'Médico não encontrado' };
+          }
+
+          const result = await addPatientToDoctor(doctorData.id, patientId, notes);
+          if (result.success) {
+            await fetchPacientes();
+          }
+          return result;
+        } catch (error) {
+          return { success: false, error };
         }
-        return result;
       }
-      return { success: false, error: 'Doctor ID not found' };
+      return { success: false, error: 'User ID not found' };
     }
   };
 };
