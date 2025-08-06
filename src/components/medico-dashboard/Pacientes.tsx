@@ -69,7 +69,7 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
       if (result.success) {
         toast({
           title: "Paciente adicionado",
-          description: `${patient.profiles?.full_name || 'Paciente'} foi adicionado à sua lista`,
+          description: `${patient.full_name || patient.profiles?.full_name || 'Paciente'} foi adicionado à sua lista`,
         });
         setShowSearchDialog(false);
         setPatientSearch('');
@@ -115,12 +115,12 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
     console.log('[Pacientes] Iniciando cadastro de paciente...');
     
     const pacienteData = {
+      full_name: nome, // Nome do paciente
       birth_date: dataNascimento,
       gender: genero,
       address: endereco,
       cpf,
       medical_condition: condicao,
-      emergency_contact_name: nome,
       emergency_contact_phone: telefone,
       user_id: null // Paciente criado pelo médico, sem conta ainda
     };
@@ -215,7 +215,7 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
                   
                   <div className="p-4 flex-1">
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
-                      <h3 className="font-medium text-lg">{patient.profiles?.full_name || 'Nome não informado'}</h3>
+                      <h3 className="font-medium text-lg">{patient.full_name || patient.profiles?.full_name || 'Nome não informado'}</h3>
                       <span className="text-sm text-gray-500 md:ml-4">
                         {patient.birth_date ? new Date().getFullYear() - new Date(patient.birth_date).getFullYear() : 'Idade não informada'} anos
                       </span>
@@ -437,7 +437,7 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
                 {searchResults.map((patient) => (
                   <div key={patient.id} className="border rounded p-3 mb-2 flex justify-between items-center">
                     <div>
-                      <p className="font-medium">{patient.profiles?.full_name || 'Nome não informado'}</p>
+                      <p className="font-medium">{patient.full_name || patient.profiles?.full_name || 'Nome não informado'}</p>
                       <p className="text-sm text-gray-600">{patient.profiles?.email || 'Email não informado'}</p>
                       <p className="text-sm text-gray-600">{patient.cpf || 'CPF não informado'}</p>
                     </div>

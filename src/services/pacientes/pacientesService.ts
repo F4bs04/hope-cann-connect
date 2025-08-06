@@ -82,25 +82,38 @@ export const getPacienteById = async (id) => {
 export const createPaciente = async (data) => {
   try {
     console.log('[createPaciente] Dados recebidos:', data);
-    console.log('[createPaciente] auth.uid atual:', (await supabase.auth.getUser()).data.user?.id);
     
     // Verificar se o usuário é um médico
     const { data: doctorData, error: doctorError } = await supabase
       .from('doctors')
-      .select('*')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+      .select('id')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+      .single();
     
-    console.log('[createPaciente] Dados do médico:', doctorData);
-    console.log('[createPaciente] Erro ao buscar médico:', doctorError);
+    if (doctorError || !doctorData) {
+      console.error('[createPaciente] Médico não encontrado:', doctorError);
+      return { success: false, error: 'Médico não encontrado' };
+    }
+    
+    // Preparar dados do paciente (médicos criam pacientes sem user_id)
+    const patientData = {
+      ...data,
+      user_id: null, // Pacientes criados por médicos não têm user_id
+    };
     
     const { data: result, error } = await supabase
       .from('patients')
-      .insert([data])
+      .insert([patientData])
       .select();
     
     if (error) {
       console.error('[createPaciente] Error creating patient:', error);
       return { success: false, error };
+    }
+    
+    // Associar paciente ao médico
+    if (result && result[0]) {
+      await addPatientToDoctor(doctorData.id, result[0].id);
     }
     
     console.log('[createPaciente] Resultado:', result);
@@ -136,7 +149,7 @@ export const searchAllPatients = async (query: string) => {
           avatar_url
         )
       `)
-      .or(`profiles.full_name.ilike.%${query}%,profiles.email.ilike.%${query}%,cpf.ilike.%${query}%`)
+      .or(`full_name.ilike.%${query}%,profiles.full_name.ilike.%${query}%,profiles.email.ilike.%${query}%,cpf.ilike.%${query}%`)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -173,7 +186,7 @@ export const searchPacientes = async (query) => {
           avatar_url
         )
       `)
-      .or(`profiles.full_name.ilike.%${query}%,profiles.email.ilike.%${query}%,cpf.ilike.%${query}%`)
+      .or(`full_name.ilike.%${query}%,profiles.full_name.ilike.%${query}%,profiles.email.ilike.%${query}%,cpf.ilike.%${query}%`)
       .order('created_at', { ascending: false });
 
     if (error) {

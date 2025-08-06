@@ -786,6 +786,7 @@ export type Database = {
           created_at: string
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          full_name: string | null
           gender: string | null
           id: string
           medical_condition: string | null
@@ -799,6 +800,7 @@ export type Database = {
           created_at?: string
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          full_name?: string | null
           gender?: string | null
           id?: string
           medical_condition?: string | null
@@ -812,6 +814,7 @@ export type Database = {
           created_at?: string
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          full_name?: string | null
           gender?: string | null
           id?: string
           medical_condition?: string | null
