@@ -62,20 +62,31 @@ export const getPacienteById = async (id) => {
 export const createPaciente = async (data) => {
   try {
     console.log('[createPaciente] Dados recebidos:', data);
+    console.log('[createPaciente] auth.uid atual:', (await supabase.auth.getUser()).data.user?.id);
+    
+    // Verificar se o usuário é um médico
+    const { data: doctorData, error: doctorError } = await supabase
+      .from('doctors')
+      .select('*')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+    
+    console.log('[createPaciente] Dados do médico:', doctorData);
+    console.log('[createPaciente] Erro ao buscar médico:', doctorError);
+    
     const { data: result, error } = await supabase
       .from('patients')
       .insert([data])
       .select();
     
     if (error) {
-      console.error('Error creating patient:', error);
+      console.error('[createPaciente] Error creating patient:', error);
       return { success: false, error };
     }
     
     console.log('[createPaciente] Resultado:', result);
     return { success: true, error: null, data: result?.[0] };
   } catch (error) {
-    console.error('Error in createPaciente:', error);
+    console.error('[createPaciente] Error in createPaciente:', error);
     return { success: false, error };
   }
 };
