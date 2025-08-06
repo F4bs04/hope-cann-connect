@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getPacientes, getMedicos } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Patient {
   id: string;
@@ -170,22 +171,57 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleDeletePatient = async (patientId: string) => {
-    // TODO: Implementar exclusão de paciente
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A exclusão de pacientes será implementada em breve",
-      variant: "default"
-    });
+  const handleSuspendPatient = async (patientId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: false })
+        .eq('id', patientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Paciente suspenso",
+        description: "Paciente foi suspenso com sucesso",
+        variant: "default"
+      });
+      
+      loadData(); // Recarregar dados
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível suspender o paciente",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteDoctor = async (doctorId: string) => {
-    // TODO: Implementar exclusão de médico
-    toast({
-      title: "Funcionalidade em desenvolvimento", 
-      description: "A exclusão de médicos será implementada em breve",
-      variant: "default"
-    });
+  const handleSuspendDoctor = async (doctorId: string) => {
+    try {
+      const { error } = await supabase
+        .from('doctors')
+        .update({ 
+          is_available: false,
+          is_approved: false
+        })
+        .eq('id', doctorId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Médico suspenso", 
+        description: "Médico foi suspenso com sucesso",
+        variant: "default"
+      });
+      
+      loadData(); // Recarregar dados
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível suspender o médico",
+        variant: "destructive"
+      });
+    }
   };
 
   const filteredPatients = patients.filter(patient => {
@@ -261,10 +297,10 @@ const AdminDashboard: React.FC = () => {
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="text-red-600"
-                onClick={() => handleDeletePatient(patient.id)}
+                onClick={() => handleSuspendPatient(patient.user_id)}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir
+                <UserX className="h-4 w-4 mr-2" />
+                Suspender
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -337,10 +373,10 @@ const AdminDashboard: React.FC = () => {
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="text-red-600"
-                onClick={() => handleDeleteDoctor(doctor.id)}
+                onClick={() => handleSuspendDoctor(doctor.id)}
               >
                 <UserX className="h-4 w-4 mr-2" />
-                Desativar
+                Suspender
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

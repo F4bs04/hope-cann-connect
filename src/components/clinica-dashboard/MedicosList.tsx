@@ -136,7 +136,7 @@ export const MedicosList = () => {
         .from('doctors')
         .update({ 
           is_available: false,
-          is_approved: false 
+          is_approved: false
         })
         .eq('id', medicoParaRemover.id);
 
@@ -151,8 +151,8 @@ export const MedicosList = () => {
       }
 
       toast({
-        title: "Médico removido",
-        description: `${medicoParaRemover.nome} foi removido da clínica com sucesso.`,
+        title: "Médico suspenso",
+        description: `${medicoParaRemover.nome} foi suspenso com sucesso.`,
       });
       
       // Recarregar lista
@@ -269,12 +269,12 @@ export const MedicosList = () => {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-500" />
-              Confirmar remoção
+              Confirmar suspensão
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover o médico <strong>{medicoParaRemover?.nome}</strong> da clínica?
+              Tem certeza que deseja suspender o médico <strong>{medicoParaRemover?.nome}</strong>?
               <br /><br />
-              Esta ação não poderá ser desfeita e o médico perderá acesso ao sistema.
+              O médico será suspenso e não poderá acessar o sistema até ser reativado.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -284,7 +284,7 @@ export const MedicosList = () => {
               disabled={isLoading}
               className="bg-red-500 hover:bg-red-600"
             >
-              {isLoading ? "Removendo..." : "Sim, remover médico"}
+              {isLoading ? "Suspendendo..." : "Sim, suspender médico"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
