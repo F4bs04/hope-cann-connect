@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Printer, Check, Download } from 'lucide-react';
+import { Printer, Check, Download, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getPacientes, createReceita } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +16,7 @@ import PdfUpload from '@/components/ui/pdf-upload';
 import html2pdf from 'html2pdf.js';
 import DocumentConfirmationDialog from '@/components/ui/document-confirmation-dialog';
 import { createDocumentNotification } from '@/services/notifications/notificationService';
+import { SendToPatientDialog } from './SendToPatientDialog';
 
 const Prescricoes: React.FC = () => {
   const { toast } = useToast();
@@ -42,6 +43,8 @@ const Prescricoes: React.FC = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pendingReceitaData, setPendingReceitaData] = useState<any>(null);
+  const [showSendDialog, setShowSendDialog] = useState(false);
+  const [generatedPrescriptionId, setGeneratedPrescriptionId] = useState<string>('');
   
   useEffect(() => {
     const loadPacientes = async () => {
@@ -173,6 +176,11 @@ const Prescricoes: React.FC = () => {
               newReceita.data.id.toString()
             );
           }
+        }
+        
+        // Salvar ID da receita gerada
+        if (newReceita && 'data' in newReceita && newReceita.data?.id) {
+          setGeneratedPrescriptionId(newReceita.data.id.toString());
         }
         
         // Preparar dados para exibição e PDF
@@ -321,6 +329,15 @@ const Prescricoes: React.FC = () => {
               >
                 <Download className="mr-2 h-5 w-5" />
                 Baixar PDF
+              </Button>
+              <Button 
+                variant="secondary"
+                size="lg"
+                className="flex items-center justify-center"
+                onClick={() => setShowSendDialog(true)}
+              >
+                <Send className="mr-2 h-5 w-5" />
+                Enviar ao Paciente
               </Button>
               <Button 
                 variant="outline"
@@ -636,6 +653,13 @@ const Prescricoes: React.FC = () => {
         }}
         documentType="receita"
         isGenerating={isGeneratingPdf}
+      />
+
+      <SendToPatientDialog
+        open={showSendDialog}
+        onOpenChange={setShowSendDialog}
+        prescriptionData={lastGeneratedReceita}
+        prescriptionId={generatedPrescriptionId}
       />
     </div>
   );
