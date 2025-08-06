@@ -80,7 +80,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onOpenConsulta }) => {
           </div>
           <div className="h-10 w-10 rounded-full bg-teal-500 overflow-hidden">
             <img 
-              src={userProfile?.avatar_url || "/lovable-uploads/4187ef44-3d50-43dc-afd3-3632726fbd1f.png"}
+              src={medicoProfile?.foto_perfil || userProfile?.avatar_url || "/lovable-uploads/4187ef44-3d50-43dc-afd3-3632726fbd1f.png"}
               alt="Perfil do médico" 
               className="h-full w-full object-cover"
             />
