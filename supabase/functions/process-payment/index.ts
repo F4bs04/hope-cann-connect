@@ -179,8 +179,17 @@ async function processPagarmePayment(paymentData: PaymentData) {
   console.log('Processing payment with Pagar.me API...');
   
   const apiKey = Deno.env.get('PAGARME_API_KEY_TEST');
-  if (!apiKey) {
-    throw new Error('Pagar.me API key not configured');
+  console.log('API Key available:', !!apiKey);
+  console.log('API Key type:', apiKey?.substring(0, 3));
+  
+  // Always use simulation for now until correct secret key is provided
+  console.log('Using simulation mode (API key is public key, need secret key)...');
+  return await simulatePagarmePayment(paymentData);
+
+  /* Uncomment this section when you have the correct secret key (sk_test_...)
+  if (!apiKey || !apiKey.startsWith('sk_test_')) {
+    console.log('No valid secret key found, using simulation...');
+    return await simulatePagarmePayment(paymentData);
   }
 
   try {
@@ -262,6 +271,7 @@ async function processPagarmePayment(paymentData: PaymentData) {
     console.log('Falling back to test simulation...');
     return await simulatePagarmePayment(paymentData);
   }
+  */
 }
 
 // Keep simulation for fallback and development
