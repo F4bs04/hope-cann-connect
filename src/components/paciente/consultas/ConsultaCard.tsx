@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 
 interface ConsultaCardProps {
   consulta: any;
-  onReagendar: (id: number) => void;
-  onCancelar: (id: number) => void;
+  onReagendar: (id: string) => void;
+  onCancelar: (id: string) => void;
 }
 
 export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCardProps) {
@@ -19,37 +19,45 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row">
           <div className={`w-full md:w-2 p-0 md:p-0 ${
-            consulta.status === 'agendada' ? 'bg-primary' : 
-            consulta.status === 'realizada' ? 'bg-green-500' : 
+            consulta.status === 'scheduled' ? 'bg-primary' : 
+            consulta.status === 'completed' ? 'bg-green-500' : 
             'bg-destructive'
           }`}></div>
           <div className="p-4 flex-1">
             <div className="flex justify-between flex-wrap gap-2">
               <div>
-                <h3 className="font-semibold truncate">{consulta.medicos?.nome || 'Médico não especificado'}</h3>
-                <p className="text-sm text-gray-600 truncate">{consulta.medicos?.especialidade || 'Especialidade não especificada'}</p>
+                <h3 className="font-semibold truncate">{consulta.doctors?.profiles?.full_name || 'Médico não especificado'}</h3>
+                <p className="text-sm text-gray-600 truncate">{consulta.doctors?.specialty || 'Especialidade não especificada'}</p>
               </div>
               <Badge className={
-                consulta.status === 'agendada' ? 'bg-primary/10 text-primary' :
-                consulta.status === 'realizada' ? 'bg-green-100 text-green-800' :
+                consulta.status === 'scheduled' ? 'bg-primary/10 text-primary' :
+                consulta.status === 'completed' ? 'bg-green-100 text-green-800' :
                 'bg-destructive/10 text-destructive'
               }>
-                {consulta.status.charAt(0).toUpperCase() + consulta.status.slice(1)}
+                {consulta.status === 'scheduled' ? 'Agendada' : 
+                 consulta.status === 'completed' ? 'Realizada' : 
+                 consulta.status === 'cancelled' ? 'Cancelada' : consulta.status}
               </Badge>
             </div>
             
-            {consulta.motivo && (
-              <p className="text-sm text-gray-700 mt-2 truncate">{consulta.motivo}</p>
+            {consulta.reason && (
+              <p className="text-sm text-gray-700 mt-2 truncate">{consulta.reason}</p>
+            )}
+            
+            {consulta.fee && (
+              <p className="text-sm text-muted-foreground mt-1">
+                <strong>Taxa:</strong> R$ {consulta.fee.toFixed(2)}
+              </p>
             )}
             
             <div className="mt-3 flex items-center text-sm text-muted-foreground">
               <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
-              <span className="truncate">{format(new Date(consulta.data_hora), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+              <span className="truncate">{format(new Date(consulta.scheduled_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
               <Clock className="h-4 w-4 ml-3 mr-1 flex-shrink-0" />
-              <span>{format(new Date(consulta.data_hora), "HH:mm", { locale: ptBR })}</span>
+              <span>{format(new Date(consulta.scheduled_at), "HH:mm", { locale: ptBR })}</span>
             </div>
             
-            {consulta.status === 'agendada' && (
+            {consulta.status === 'scheduled' && (
               <div className="mt-3 flex gap-2">
                 <Button 
                   variant="outline" 
@@ -69,7 +77,7 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
               </div>
             )}
             
-            {consulta.status === 'realizada' && (
+            {consulta.status === 'completed' && (
               <div className="mt-3 flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-1 flex-shrink-0" />
                 <span className="text-sm text-green-600 truncate">
@@ -78,7 +86,7 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
               </div>
             )}
             
-            {consulta.status === 'cancelada' && (
+            {consulta.status === 'cancelled' && (
               <div className="mt-3 flex items-center">
                 <XCircle className="h-4 w-4 text-red-500 mr-1 flex-shrink-0" />
                 <span className="text-sm text-red-600 truncate">

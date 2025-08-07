@@ -8,8 +8,8 @@ interface ConsultasListProps {
   consultas: any[];
   loading: boolean;
   error?: string | null;
-  onReagendar: (id: number) => void;
-  onCancelar: (id: number) => void;
+  onReagendar: (id: string) => void;
+  onCancelar: (id: string) => void;
 }
 
 export function ConsultasList({ consultas, loading, error, onReagendar, onCancelar }: ConsultasListProps) {
