@@ -6,6 +6,7 @@ import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import PasswordRecoveryHandler from "@/components/auth/PasswordRecoveryHandler";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 
 console.log('[App.tsx] Componente App carregado');
 
@@ -62,6 +63,7 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
         <PasswordRecoveryHandler />
+        <WhatsAppFloat />
         <Routes>
           <Route path="/cadastro-complementar" element={<CadastroComplementar />} />
           <Route path="/" element={<Index />} />
