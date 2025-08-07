@@ -4,8 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useUnifiedAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Stethoscope, Calendar, MessageCircle } from 'lucide-react';
+import ChatMedicoTexto from '@/components/chat/ChatMedicoTexto';
 
 interface Doctor {
   id: string;
@@ -24,6 +26,7 @@ const MedicosPaciente: React.FC = () => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const { userProfile } = useAuth();
 
   useEffect(() => {
@@ -168,15 +171,30 @@ const MedicosPaciente: React.FC = () => {
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-1 text-blue-600">
-                  <MessageCircle className="h-4 w-4" />
-                  <span>Chat em desenvolvimento</span>
-                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-auto"
+                  onClick={() => setSelectedDoctor(doctor)}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Iniciar Chat
+                </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Chat Modal */}
+      {selectedDoctor && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <ChatMedicoTexto
+            doctor={selectedDoctor}
+            onClose={() => setSelectedDoctor(null)}
+          />
+        </div>
+      )}
     </div>
   );
 };
