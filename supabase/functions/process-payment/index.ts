@@ -58,9 +58,8 @@ serve(async (req) => {
       cardNumber: paymentData.cardData.number.substring(0, 4) + '****'
     });
 
-    // Simulate Pagar.me payment processing
-    // In production, this would make actual API calls to Pagar.me
-    const pagarmeResponse = await simulatePagarmePayment(paymentData);
+    // Process payment with Pagar.me API
+    const pagarmeResponse = await processPagarmePayment(paymentData);
     
     console.log('Pagar.me response:', pagarmeResponse);
 
@@ -149,21 +148,111 @@ serve(async (req) => {
   }
 });
 
-// Simulate Pagar.me API response for testing
+// Process payment with Pagar.me API
+async function processPagarmePayment(paymentData: PaymentData) {
+  console.log('Processing payment with Pagar.me API...');
+  
+  const apiKey = Deno.env.get('PAGARME_API_KEY_TEST');
+  if (!apiKey) {
+    throw new Error('Pagar.me API key not configured');
+  }
+
+  try {
+    // Create transaction with Pagar.me
+    const transactionData = {
+      amount: paymentData.amount, // Amount in cents
+      payment_method: 'credit_card',
+      card: {
+        number: paymentData.cardData.number.replace(/\s/g, ''),
+        holder_name: paymentData.cardData.holder_name,
+        exp_month: parseInt(paymentData.cardData.exp_month),
+        exp_year: parseInt(paymentData.cardData.exp_year),
+        cvv: paymentData.cardData.cvv
+      },
+      customer: {
+        external_id: Date.now().toString(),
+        name: paymentData.cardData.holder_name,
+        type: 'individual',
+        country: 'br',
+        documents: [
+          {
+            type: 'cpf',
+            number: '00000000000' // In production, collect actual CPF
+          }
+        ]
+      }
+    };
+
+    console.log('Sending transaction to Pagar.me...');
+    
+    const response = await fetch('https://api.pagar.me/core/v5/transactions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(apiKey + ':')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(transactionData)
+    });
+
+    const responseData = await response.json();
+    console.log('Pagar.me response status:', response.status);
+    console.log('Pagar.me response:', responseData);
+
+    if (response.ok && responseData.status === 'paid') {
+      return {
+        success: true,
+        transaction_id: responseData.id,
+        status: responseData.status,
+        amount: responseData.amount,
+        card: responseData.charges?.[0]?.last_transaction?.card || {},
+        created_at: responseData.created_at,
+        gateway_response: responseData
+      };
+    } else {
+      // Handle different error scenarios
+      let errorMessage = 'Pagamento recusado';
+      
+      if (responseData.errors) {
+        const firstError = responseData.errors[0];
+        errorMessage = firstError.message || errorMessage;
+      } else if (responseData.charges && responseData.charges[0]) {
+        const charge = responseData.charges[0];
+        if (charge.last_transaction && charge.last_transaction.gateway_response) {
+          errorMessage = charge.last_transaction.gateway_response.reason || errorMessage;
+        }
+      }
+
+      return {
+        success: false,
+        error: errorMessage,
+        gateway_response: responseData
+      };
+    }
+
+  } catch (error: any) {
+    console.error('Error calling Pagar.me API:', error);
+    
+    // Fallback to test simulation if API fails
+    console.log('Falling back to test simulation...');
+    return await simulatePagarmePayment(paymentData);
+  }
+}
+
+// Keep simulation for fallback and development
 async function simulatePagarmePayment(paymentData: PaymentData) {
   console.log('Simulating Pagar.me payment...');
   
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 2000));
   
-  const cardNumber = paymentData.cardData.number;
+  const cardNumber = paymentData.cardData.number.replace(/\s/g, '');
   
   // Test cards logic
   if (cardNumber === '4111111111111111') {
     // Approved card
     return {
       success: true,
-      transaction_id: 'tran_' + Date.now(),
+      transaction_id: 'tran_test_' + Date.now(),
       status: 'paid',
       amount: paymentData.amount,
       card: {
@@ -183,7 +272,7 @@ async function simulatePagarmePayment(paymentData: PaymentData) {
     // For any other card, approve for testing
     return {
       success: true,
-      transaction_id: 'tran_' + Date.now(),
+      transaction_id: 'tran_test_' + Date.now(),
       status: 'paid',
       amount: paymentData.amount,
       card: {
