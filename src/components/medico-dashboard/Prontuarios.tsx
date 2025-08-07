@@ -243,74 +243,63 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
           <p>Carregando prontuários...</p>
         </div>
       ) : filteredProntuarios.length > 0 ? (
-        <div className="grid gap-4">
+        <div className="space-y-3">
           {filteredProntuarios.map(prontuario => (
             <Card 
               key={prontuario.id}
-              className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+              className="hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => handleSelectProntuario(prontuario)}
             >
-              <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row">
-                  <div 
-                    className={`
-                      p-4 text-white flex items-center justify-center md:w-16
-                      ${prontuario.status === 'concluído' ? 'bg-green-500' : 
-                        prontuario.status === 'pendente' ? 'bg-amber-500' : 
-                        'bg-red-500'}
-                    `}
-                  >
-                    <FileText className="h-8 w-8" />
-                  </div>
-                  
-                  <div className="p-4 flex-1">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
-                      <div className="flex items-center">
-                        <h3 className="font-medium text-lg">{prontuario.pacientes?.nome}</h3>
-                        <span className="text-sm text-gray-500 ml-4">{prontuario.pacientes?.data_nascimento ? new Date().getFullYear() - new Date(prontuario.pacientes.data_nascimento).getFullYear() : 'N/A'} anos</span>
-                      </div>
-                      <div 
-                        className={`
-                          text-xs px-2 py-1 rounded-full mt-2 md:mt-0 inline-block
-                          ${prontuario.status === 'concluído' ? 'bg-green-100 text-green-700' : 
-                            prontuario.status === 'pendente' ? 'bg-amber-100 text-amber-700' : 
-                            'bg-red-100 text-red-700'}
-                        `}
-                      >
-                        {prontuario.status.charAt(0).toUpperCase() + prontuario.status.slice(1)}
-                      </div>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div 
+                      className={`
+                        w-10 h-10 rounded-full flex items-center justify-center text-white
+                        ${prontuario.status === 'concluído' ? 'bg-green-500' : 
+                          prontuario.status === 'pendente' ? 'bg-amber-500' : 
+                          'bg-red-500'}
+                      `}
+                    >
+                      <User className="h-5 w-5" />
                     </div>
                     
-                    <div className="mb-3">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium">Diagnóstico:</span> {prontuario.diagnostico}
-                      </p>
-                      <p className="text-sm text-gray-700 mt-1">
-                        <span className="font-medium">Tratamento:</span> {prontuario.tratamento}
-                      </p>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-3 text-xs text-gray-500">
-                      <div className="flex items-center">
-                        <Calendar className="h-3.5 w-3.5 mr-1" />
-                        Consulta: {new Date(prontuario.data_consulta).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center">
-                        <User className="h-3.5 w-3.5 mr-1" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-gray-900">
                         {prontuario.pacientes?.nome}
+                      </h3>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                        <span>
+                          {prontuario.pacientes?.data_nascimento ? 
+                            new Date().getFullYear() - new Date(prontuario.pacientes.data_nascimento).getFullYear() : 'N/A'} anos
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center">
+                          <Calendar className="h-3.5 w-3.5 mr-1" />
+                          {new Date(prontuario.data_consulta).toLocaleDateString()}
+                        </span>
                       </div>
-                      <div className="flex items-center">
-                        <Clock className="h-3.5 w-3.5 mr-1" />
-                        Última atualização: {new Date(prontuario.data_consulta).toLocaleDateString()}
-                      </div>
+                      <p className="text-sm text-gray-700 mt-1">
+                        {prontuario.diagnostico}
+                      </p>
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 p-4 flex flex-col gap-2 justify-center md:w-48">
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className={`
+                        text-xs px-3 py-1 rounded-full font-medium
+                        ${prontuario.status === 'concluído' ? 'bg-green-100 text-green-700' : 
+                          prontuario.status === 'pendente' ? 'bg-amber-100 text-amber-700' : 
+                          'bg-red-100 text-red-700'}
+                      `}
+                    >
+                      {prontuario.status.charAt(0).toUpperCase() + prontuario.status.slice(1)}
+                    </div>
+                    
                     <Button 
                       variant="outline" 
-                      size="sm" 
-                      className="w-full"
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSelectProntuario(prontuario);
