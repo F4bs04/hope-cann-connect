@@ -25,7 +25,7 @@ export const usePatientDeduplication = () => {
   const [isMerging, setIsMerging] = useState(false);
   const { toast } = useToast();
 
-  const detectDuplicates = useCallback(async (userProfile?: any) => {
+  const detectDuplicates = useCallback(async (userProfile?: any, showToast: boolean = false) => {
     setIsLoading(true);
     try {
       if (!userProfile) {
@@ -66,19 +66,24 @@ export const usePatientDeduplication = () => {
       
       setDuplicates(duplicates);
       
-      toast({
-        title: "Detecção Executada",
-        description: `Processo de detecção concluído. ${duplicates.length} registros de paciente encontrados.`,
-      });
+      // Só mostra notificação se explicitamente solicitado (para médicos na área de duplicatas)
+      if (showToast) {
+        toast({
+          title: "Detecção Executada",
+          description: `Processo de detecção concluído. ${duplicates.length} registros de paciente encontrados.`,
+        });
+      }
 
       return duplicates;
     } catch (error: any) {
       console.error('Erro ao detectar duplicatas:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao detectar registros de paciente.",
-        variant: "destructive",
-      });
+      if (showToast) {
+        toast({
+          title: "Erro",
+          description: "Erro ao detectar registros de paciente.",
+          variant: "destructive",
+        });
+      }
       return [];
     } finally {
       setIsLoading(false);

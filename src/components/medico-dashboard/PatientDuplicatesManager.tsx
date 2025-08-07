@@ -70,7 +70,7 @@ export const PatientDuplicatesManager: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <Button
-            onClick={detectDuplicates}
+            onClick={() => detectDuplicates(undefined, true)}
             disabled={isLoading}
             variant="outline"
           >
