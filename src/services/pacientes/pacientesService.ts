@@ -29,7 +29,7 @@ export const getPacientes = async (doctorIdString?: string) => {
         .select(`
           patients!inner (
             *,
-            profiles!inner(full_name, email)
+            profiles(full_name, email)
           )
         `)
         .eq('doctor_id', doctorUuid)
@@ -40,8 +40,24 @@ export const getPacientes = async (doctorIdString?: string) => {
         return [];
       }
 
-      // Extract the patients from the relationship
-      return data?.map(item => item.patients).filter(patient => patient != null) || [];
+      console.log('[getPacientes] Dados retornados:', data);
+      console.log('[getPacientes] Erro na consulta:', error);
+
+      // Extract the patients from the relationship and merge profile data
+      const patients = data?.map(item => {
+        const patient = item.patients;
+        if (patient && patient.profiles) {
+          // Se há dados do profile, usar eles
+          return {
+            ...patient,
+            full_name: patient.profiles.full_name || patient.full_name
+          };
+        }
+        return patient;
+      }).filter(patient => patient != null) || [];
+      
+      console.log('[getPacientes] Pacientes processados:', patients);
+      return patients;
     } else {
       // Get all patients (for admins) - direct query without doctor relationship
       const { data, error } = await supabase
