@@ -3,14 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Search, UserPlus, User, Calendar, Phone, Mail, Clock, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, UserPlus, User, Calendar, Phone, Mail, Clock, X, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { usePacientesData } from '@/hooks/usePacientesData';
 import { searchAllPatients, addPatientToDoctor } from '@/services/pacientes/pacientesService';
+import { PatientDuplicatesManager } from './PatientDuplicatesManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -165,117 +168,135 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Pacientes</h1>
         <p className="text-gray-600">
-          Gerencie seus pacientes e histórico de consultas
+          Gerencie seus pacientes, histórico de consultas e duplicatas
         </p>
       </div>
       
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Buscar nos seus pacientes..."
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+      <Tabs defaultValue="lista" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="lista">Lista de Pacientes</TabsTrigger>
+          <TabsTrigger value="duplicatas" className="relative">
+            Duplicatas
+            <Badge variant="destructive" className="ml-2 h-4 w-4 p-0 text-xs">
+              !
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
         
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={() => setShowSearchDialog(true)}
-          >
-            <Search className="h-4 w-4 mr-2" /> Buscar Existente
-          </Button>
-          <Button 
-            className="bg-[#00B3B0] hover:bg-[#009E9B]"
-            onClick={() => setOpenDialog(true)}
-          >
-            <UserPlus className="h-4 w-4 mr-2" /> Novo Paciente
-          </Button>
-        </div>
-      </div>
-      
-      {loading ? (
-        <div className="text-center py-10">
-          <p>Carregando pacientes...</p>
-        </div>
-      ) : patients.length > 0 ? (
-        <div className="grid gap-4">
-          {patients.map(patient => (
-            <Card 
-              key={patient.id}
-              className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => onSelectPatient(patient.id)}
-            >
-              <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row">
-                  <div className="bg-[#00B3B0] p-4 text-white flex items-center justify-center md:w-16">
-                    <User className="h-8 w-8" />
-                  </div>
-                  
-                  <div className="p-4 flex-1">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
-                      <h3 className="font-medium text-lg">{patient.full_name || 'Nome não informado'}</h3>
-                      <span className="text-sm text-gray-500 md:ml-4">
-                        {patient.birth_date ? new Date().getFullYear() - new Date(patient.birth_date).getFullYear() : 'Idade não informada'} anos
-                      </span>
-                    </div>
-                    
-                    <p className="text-gray-600 mb-4">{patient.medical_condition || 'Condição não informada'}</p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                      {patient.emergency_contact_phone && (
-                        <div className="flex items-center">
-                          <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                          {patient.emergency_contact_phone}
+        <TabsContent value="lista" className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar nos seus pacientes..."
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowSearchDialog(true)}
+              >
+                <Search className="h-4 w-4 mr-2" /> Buscar Existente
+              </Button>
+              <Button 
+                className="bg-[#00B3B0] hover:bg-[#009E9B]"
+                onClick={() => setOpenDialog(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-2" /> Novo Paciente
+              </Button>
+            </div>
+          </div>
+          
+          {loading ? (
+            <div className="text-center py-10">
+              <p>Carregando pacientes...</p>
+            </div>
+          ) : patients.length > 0 ? (
+            <div className="grid gap-4">
+              {patients.map(patient => (
+                <Card 
+                  key={patient.id}
+                  className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => onSelectPatient(patient.id)}
+                >
+                  <CardContent className="p-0">
+                    <div className="flex flex-col md:flex-row">
+                      <div className="bg-[#00B3B0] p-4 text-white flex items-center justify-center md:w-16">
+                        <User className="h-8 w-8" />
+                      </div>
+                      
+                      <div className="p-4 flex-1">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
+                          <h3 className="font-medium text-lg">{patient.full_name || 'Nome não informado'}</h3>
+                          <span className="text-sm text-gray-500 md:ml-4">
+                            {patient.birth_date ? new Date().getFullYear() - new Date(patient.birth_date).getFullYear() : 'Idade não informada'} anos
+                          </span>
                         </div>
-                      )}
-                       {patient.cpf && (
-                         <div className="flex items-center">
-                           <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                           CPF: {patient.cpf}
-                         </div>
-                       )}
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                        Cadastrado: {new Date(patient.created_at).toLocaleDateString()}
+                        
+                        <p className="text-gray-600 mb-4">{patient.medical_condition || 'Condição não informada'}</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                          {patient.emergency_contact_phone && (
+                            <div className="flex items-center">
+                              <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                              {patient.emergency_contact_phone}
+                            </div>
+                          )}
+                           {patient.cpf && (
+                             <div className="flex items-center">
+                               <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                               CPF: {patient.cpf}
+                             </div>
+                           )}
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                            Cadastrado: {new Date(patient.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 p-4 flex flex-col gap-2 justify-center md:w-48">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Handle scheduling here
+                          }}
+                        >
+                          <Calendar className="h-4 w-4 mr-2" /> Agendar
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          className="w-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectPatient(patient.id);
+                          }}
+                        >
+                          Ver prontuário
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 flex flex-col gap-2 justify-center md:w-48">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Handle scheduling here
-                      }}
-                    >
-                      <Calendar className="h-4 w-4 mr-2" /> Agendar
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectPatient(patient.id);
-                      }}
-                    >
-                      Ver prontuário
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10">
-          <p className="text-gray-500">Nenhum paciente encontrado</p>
-        </div>
-      )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-gray-500">Nenhum paciente encontrado</p>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="duplicatas">
+          <PatientDuplicatesManager />
+        </TabsContent>
+      </Tabs>
       
       {/* Novo Paciente Dialog */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>

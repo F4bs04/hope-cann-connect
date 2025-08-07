@@ -47,7 +47,6 @@ import EditProfileDialog from '@/components/medico/EditProfileDialog';
 import MedicoHeader from '@/components/medico/MedicoHeader';
 import ChatsList from '@/components/medico/ChatsList';
 import ChatMedico from '@/components/medico/ChatMedico';
-import { PatientDuplicatesManager } from '@/components/medico-dashboard/PatientDuplicatesManager';
 
 // Contexts and Hooks
 import { DoctorScheduleProvider } from '@/contexts/DoctorScheduleContext';
@@ -194,8 +193,6 @@ const AreaMedicoContent: React.FC = () => {
         ) : null;
       case 'chat':
         return <ChatMedico />;
-      case 'duplicatas':
-        return <PatientDuplicatesManager />;
       case 'financeiro':
         return <ConfiguracoesFinanceiras />;
       default:
@@ -327,16 +324,6 @@ const AreaMedicoContent: React.FC = () => {
                   className="text-white hover:bg-[#009E9B]"
                 >
                   <Activity className="w-5 h-5 mr-2" /> Pedidos de Exame
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => navigateToSection('duplicatas')}
-                  isActive={currentSection === 'duplicatas'}
-                  className="text-white hover:bg-[#009E9B]"
-                >
-                  <Users className="w-5 h-5 mr-2" /> Duplicatas
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
