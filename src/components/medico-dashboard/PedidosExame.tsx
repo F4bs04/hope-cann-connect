@@ -269,7 +269,7 @@ const PedidosExame: React.FC = () => {
                     <SelectContent>
                       {pacientes.map(paciente => (
                         <SelectItem key={paciente.id} value={paciente.id.toString()}>
-                          {paciente.nome} ({paciente.idade} anos)
+                          {paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado'}
                         </SelectItem>
                       ))}
                     </SelectContent>
