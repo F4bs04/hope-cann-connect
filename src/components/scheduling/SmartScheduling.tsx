@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { PaymentStep } from '@/components/home-scheduling/PaymentStep';
 import { createAppointmentScheduledNotification } from '@/services/notifications/notificationService';
 
 interface Doctor {
@@ -117,7 +118,7 @@ const sendConfirmationEmails = async (data: ConfirmationEmailData) => {
   }
 };
 
-type Step = 'doctor' | 'datetime' | 'confirmation';
+type Step = 'doctor' | 'datetime' | 'payment' | 'confirmation';
 
 const SmartScheduling: React.FC = () => {
   const [step, setStep] = useState<Step>('doctor');
@@ -126,6 +127,13 @@ const SmartScheduling: React.FC = () => {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
+  
+  // Debug logging for step changes
+  console.log('=== SmartScheduling DEBUG ===');
+  console.log('Current step:', step);
+  console.log('Selected doctor:', selectedDoctor?.name);
+  console.log('Selected date:', selectedDate);
+  console.log('Selected time:', selectedTime);
   // Hook para buscar horários disponíveis
   // Usar o ID do profile do médico para buscar os horários configurados
   const { timeSlots, loading: slotsLoading, error: slotsError } = useAvailableTimeSlots(
@@ -397,18 +405,36 @@ const SmartScheduling: React.FC = () => {
 
   // Funções de navegação
   const handleNext = () => {
+    console.log('=== HANDLE NEXT ===');
+    console.log('Current step:', step);
+    console.log('Selected doctor:', selectedDoctor?.name);
+    console.log('Selected date:', selectedDate);
+    console.log('Selected time:', selectedTime);
+    
     if (step === 'doctor' && selectedDoctor) {
+      console.log('Moving to datetime step');
       setStep('datetime');
     } else if (step === 'datetime' && selectedDate && selectedTime) {
+      console.log('Moving to payment step');
+      setStep('payment');
+    } else if (step === 'payment') {
+      console.log('Moving to confirmation step');
       setStep('confirmation');
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    console.log('=== PAYMENT SUCCESS ===');
+    setStep('confirmation');
   };
 
   const handleBack = () => {
     if (step === 'datetime') {
       setStep('doctor');
-    } else if (step === 'confirmation') {
+    } else if (step === 'payment') {
       setStep('datetime');
+    } else if (step === 'confirmation') {
+      setStep('payment');
     }
   };
 
@@ -457,18 +483,27 @@ const SmartScheduling: React.FC = () => {
         <div className="flex items-center space-x-4">
           <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
             step === 'doctor' ? 'bg-hopecann-teal text-white' : 
-            step === 'datetime' || step === 'confirmation' ? 'bg-green-500 text-white' : 'bg-gray-200'
+            step === 'datetime' || step === 'payment' || step === 'confirmation' ? 'bg-green-500 text-white' : 'bg-gray-200'
           }`}>
             <User size={20} />
           </div>
           <div className={`w-16 h-1 ${
-            step === 'datetime' || step === 'confirmation' ? 'bg-green-500' : 'bg-gray-200'
+            step === 'datetime' || step === 'payment' || step === 'confirmation' ? 'bg-green-500' : 'bg-gray-200'
           }`} />
           <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
             step === 'datetime' ? 'bg-hopecann-teal text-white' : 
-            step === 'confirmation' ? 'bg-green-500 text-white' : 'bg-gray-200'
+            step === 'payment' || step === 'confirmation' ? 'bg-green-500 text-white' : 'bg-gray-200'
           }`}>
             <Calendar size={20} />
+          </div>
+          <div className={`w-16 h-1 ${
+            step === 'payment' || step === 'confirmation' ? 'bg-green-500' : 'bg-gray-200'
+          }`} />
+          <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+            step === 'payment' ? 'bg-hopecann-teal text-white' : 
+            step === 'confirmation' ? 'bg-green-500 text-white' : 'bg-gray-200'
+          }`}>
+            <DollarSign size={20} />
           </div>
           <div className={`w-16 h-1 ${
             step === 'confirmation' ? 'bg-green-500' : 'bg-gray-200'
@@ -689,7 +724,31 @@ const SmartScheduling: React.FC = () => {
             </div>
           )}
 
-          {/* Etapa 3: Confirmação */}
+          {/* Etapa 3: Pagamento */}
+          {step === 'payment' && selectedDoctor && selectedDate && selectedTime && (
+            <PaymentStep 
+              selectedDoctorInfo={selectedDoctor}
+              selectedDate={selectedDate}
+              selectedTime={selectedTime}
+              onNext={handlePaymentSuccess}
+              onBack={handleBack}
+              appointmentData={{
+                doctor_id: selectedDoctor.id,
+                patient_id: null, // Will be set in the Edge Function
+                scheduled_at: (() => {
+                  const scheduledAt = new Date(selectedDate);
+                  const [h, m] = selectedTime.split(':');
+                  scheduledAt.setHours(Number(h), Number(m), 0, 0);
+                  return scheduledAt.toISOString();
+                })(),
+                status: 'scheduled',
+                consultation_type: 'in_person',
+                reason: 'Consulta agendada via plataforma',
+              }}
+            />
+          )}
+
+          {/* Etapa 4: Confirmação */}
           {step === 'confirmation' && selectedDoctor && selectedDate && selectedTime && (
             <div>
               <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
