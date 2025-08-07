@@ -73,11 +73,37 @@ serve(async (req) => {
     if (pagarmeResponse.success) {
       console.log('Payment approved, creating appointment...');
       
-      // Create appointment first
+      // Get doctor_id from doctors table using user_id
+      const { data: doctorData, error: doctorError } = await supabaseService
+        .from('doctors')
+        .select('id')
+        .eq('user_id', paymentData.appointmentData.doctor_id)
+        .single();
+
+      if (doctorError || !doctorData) {
+        console.error('Doctor not found:', doctorError);
+        throw new Error('Doctor not found');
+      }
+
+      // Get patient_id from patients table using user_id
+      const { data: patientData, error: patientError } = await supabaseService
+        .from('patients')
+        .select('id')
+        .eq('user_id', userData.user.id)
+        .single();
+
+      let patientId = patientData?.id || userData.user.id; // Fallback to user_id
+
+      // Create appointment with correct IDs
       const { data: appointmentData, error: appointmentError } = await supabaseService
         .from('appointments')
         .insert([{
-          ...paymentData.appointmentData,
+          doctor_id: doctorData.id,
+          patient_id: patientId,
+          scheduled_at: paymentData.appointmentData.scheduled_at,
+          reason: paymentData.appointmentData.reason || 'Consulta agendada via plataforma',
+          consultation_type: paymentData.appointmentData.consultation_type || 'in_person',
+          status: 'scheduled',
           payment_status: 'paid',
           fee: paymentData.amount / 100 // Convert back from cents to reais
         }])

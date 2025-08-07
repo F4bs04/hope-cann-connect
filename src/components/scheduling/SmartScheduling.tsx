@@ -221,187 +221,7 @@ const SmartScheduling: React.FC = () => {
     fetchDoctors();
   }, []);
 
-  // Função para agendar consulta
-  async function handleAgendar() {
-    setAgendamentoError(null);
-    if (!selectedDoctor || !selectedDate || !selectedTime) {
-      const missingFields = [];
-      if (!selectedDoctor) missingFields.push('médico');
-      if (!selectedDate) missingFields.push('data');
-      if (!selectedTime) missingFields.push('horário');
-      const errorMsg = `Por favor, selecione: ${missingFields.join(', ')}`;
-      setAgendamentoError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-    
-    console.log('=== AGENDANDO CONSULTA ===');
-    console.log('Doctor:', selectedDoctor);
-    console.log('Selected Date:', selectedDate);
-    console.log('Selected Time:', selectedTime);
-    
-    // Verificar autenticação do usuário
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error('Erro ao verificar sessão:', sessionError);
-      const errorMsg = 'Erro ao verificar autenticação. Tente novamente.';
-      setAgendamentoError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-    
-    if (!session || !session.user) {
-      const errorMsg = 'Você precisa estar logado para agendar consultas. Faça login primeiro.';
-      setAgendamentoError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-    
-    const userId = session.user.id;
-    console.log('Usuário autenticado:', { userId, email: session.user.email });
-    
-    try {
-      // Tentar buscar o doctor_id na tabela doctors primeiro
-      const { data: doctorData, error: doctorError } = await supabase
-        .from('doctors')
-        .select('id')
-        .eq('user_id', selectedDoctor.id)
-        .single();
-        
-      let doctorId;
-      
-      if (doctorError || !doctorData) {
-        console.log('Médico não encontrado na tabela doctors, usando profile ID diretamente');
-        console.log('Erro da tabela doctors:', doctorError);
-        
-        // Fallback: usar o ID do profile diretamente
-        doctorId = selectedDoctor.id;
-        console.log('Usando doctor ID do profile:', doctorId);
-      } else {
-        doctorId = doctorData.id;
-        console.log('Doctor ID encontrado na tabela doctors:', doctorId);
-      }
-      
-      // Buscar o patient_id na tabela patients usando o user_id
-      const { data: patientData, error: patientError } = await supabase
-        .from('patients')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
-        
-      let patientId;
-      
-      if (patientError || !patientData) {
-        console.log('Paciente não encontrado na tabela patients, usando user_id diretamente');
-        console.log('Erro da tabela patients:', patientError);
-        
-        // Fallback: usar o user_id diretamente
-        patientId = userId;
-        console.log('Usando patient ID do profile:', patientId);
-      } else {
-        patientId = patientData.id;
-        console.log('Patient ID encontrado na tabela patients:', patientId);
-      }
-      
-      const scheduledAt = new Date(selectedDate);
-      const [h, m] = selectedTime.split(':');
-      scheduledAt.setHours(Number(h), Number(m), 0, 0);
-      
-      console.log('Scheduled at:', scheduledAt.toISOString());
-      
-      // Preparar dados para inserção
-      const appointmentData = {
-        doctor_id: doctorId,
-        patient_id: patientId,
-        scheduled_at: scheduledAt.toISOString(),
-        status: 'scheduled' as const,
-        reason: 'Consulta agendada via plataforma',
-        consultation_type: 'in_person' as const
-      };
-      
-      console.log('Dados do agendamento:', appointmentData);
-      
-      // Inserir na tabela appointments
-      const { data, error } = await supabase
-        .from('appointments')
-        .insert([appointmentData])
-        .select();
-        
-      if (error) {
-        console.error('Erro detalhado do Supabase:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        
-        // Tratar erros específicos
-        let userFriendlyMessage = 'Erro ao agendar consulta.';
-        
-        if (error.code === '23505') {
-          userFriendlyMessage = 'Já existe um agendamento para este horário.';
-        } else if (error.code === '23503') {
-          userFriendlyMessage = 'Dados inválidos. Verifique se o médico e paciente existem.';
-        } else if (error.message.includes('patient_id')) {
-          userFriendlyMessage = 'ID do paciente inválido. Faça login novamente.';
-        } else if (error.message.includes('doctor_id')) {
-          userFriendlyMessage = 'Médico selecionado inválido. Tente selecionar outro médico.';
-        } else if (error.message) {
-          userFriendlyMessage = `Erro: ${error.message}`;
-        }
-        
-        throw new Error(userFriendlyMessage);
-      }
-      
-      console.log('Consulta agendada com sucesso! Dados retornados:', data);
-      setAgendamentoSuccess(true);
-      toast.success('Consulta agendada com sucesso!');
-      
-      console.log('Agendamento criado com sucesso:', data);
-      
-      // Enviar emails de confirmação
-      await sendConfirmationEmails({
-        appointment: data[0],
-        doctor: selectedDoctor,
-        patient: session.user,
-        scheduledDate: selectedDate,
-        scheduledTime: selectedTime
-      });
-      
-      // Reset form
-      setSelectedDoctor(null);
-      setSelectedDate(null);
-      setSelectedTime(null);
-      setStep('doctor');
-      setAgendamentoSuccess(true);
-      
-      toast.success('Consulta agendada com sucesso! Emails de confirmação enviados.');
-      
-    } catch (err: any) {
-      console.error('Erro no agendamento:', err);
-      
-      let errorMessage = 'Erro desconhecido ao agendar consulta.';
-      
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (typeof err === 'string') {
-        errorMessage = err;
-      } else if (err && typeof err === 'object') {
-        // Tentar extrair mensagem de erro de objetos
-        if (err.message) {
-          errorMessage = err.message;
-        } else if (err.error) {
-          errorMessage = err.error;
-        } else {
-          errorMessage = JSON.stringify(err);
-        }
-      }
-      
-      setAgendamentoError(errorMessage);
-      toast.error('Erro ao agendar consulta: ' + errorMessage);
-    }
-  }
+  // This function is now removed since appointments are created in the Edge Function
 
   // Funções de navegação
   const handleNext = () => {
@@ -748,85 +568,27 @@ const SmartScheduling: React.FC = () => {
             />
           )}
 
-          {/* Etapa 4: Confirmação */}
+          {/* Etapa 4: Confirmação - Pagamento processado com sucesso */}
           {step === 'confirmation' && selectedDoctor && selectedDate && selectedTime && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-                <Check className="text-hopecann-teal" />
-                Confirmar Agendamento
-              </h2>
-              
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle>Detalhes da Consulta</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <User className="text-hopecann-teal" />
-                    <div>
-                      <div className="font-medium">{selectedDoctor.name}</div>
-                      <div className="text-sm text-gray-600">{selectedDoctor.email}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Calendar className="text-hopecann-teal" />
-                    <div>
-                      <div className="font-medium">
-                        {selectedDate.toLocaleDateString('pt-BR', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </div>
-                      <div className="text-sm text-gray-600">Data da consulta</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Clock className="text-hopecann-teal" />
-                    <div>
-                      <div className="font-medium">{selectedTime}</div>
-                      <div className="text-sm text-gray-600">Horário da consulta</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <DollarSign className="text-hopecann-teal" />
-                    <div>
-                      <div className="font-medium">{formatCurrency(selectedDoctor.consultationFee || 0)}</div>
-                      <div className="text-sm text-gray-600">Valor da consulta</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {agendamentoError && (
-                <Alert className="border-red-200 bg-red-50 mb-6">
-                  <AlertDescription className="text-red-600">
-                    {agendamentoError}
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="flex justify-between">
-                <Button 
-                  variant="outline" 
-                  onClick={handleBack}
-                >
-                  <ArrowLeft className="mr-2 w-4 h-4" />
-                  Voltar
-                </Button>
-                <Button 
-                  onClick={handleAgendar}
-                  className="bg-hopecann-teal hover:bg-hopecann-teal/90"
-                >
-                  Confirmar Agendamento
-                  <Check className="ml-2 w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            <Card className="max-w-md mx-auto">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Consulta Agendada!</h3>
+                <p className="text-gray-600 mb-4">
+                  Sua consulta foi agendada e paga com sucesso. Você receberá uma confirmação em breve.
+                </p>
+                <div className="space-y-2 text-sm text-gray-600 mb-4">
+                  <div><strong>Médico:</strong> {selectedDoctor.name}</div>
+                  <div><strong>Data:</strong> {selectedDate.toLocaleDateString('pt-BR')}</div>
+                  <div><strong>Horário:</strong> {selectedTime}</div>
+                </div>
+                <Badge variant="outline" className="text-green-600 border-green-600">
+                  Pagamento confirmado
+                </Badge>
+              </CardContent>
+            </Card>
           )}
         </>
       )}
