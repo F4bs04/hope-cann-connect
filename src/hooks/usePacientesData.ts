@@ -10,8 +10,15 @@ export const usePacientesData = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { user } = useAuth();
   const userUuid = user?.id;
+  
+  console.log('[usePacientesData] === HOOK INITIALIZED ===');
+  console.log('[usePacientesData] user:', user);
+  console.log('[usePacientesData] userUuid:', userUuid);
 
   const fetchPacientes = async () => {
+    console.log('[usePacientesData] === FETCH PACIENTES INICIADO ===');
+    console.log('[usePacientesData] userUuid:', userUuid);
+    
     if (!userUuid) {
       console.log('[usePacientesData] UUID do usuário não disponível');
       return;
@@ -33,6 +40,8 @@ export const usePacientesData = () => {
   };
 
   useEffect(() => {
+    console.log('[usePacientesData] === USEEFFECT EXECUTADO ===');
+    console.log('[usePacientesData] userUuid no useEffect:', userUuid);
     if (userUuid) {
       fetchPacientes();
     }
