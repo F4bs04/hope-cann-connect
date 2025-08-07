@@ -32,61 +32,89 @@ const ChatMedico = () => {
     try {
       console.log('Loading patients for doctor:', userProfile.id);
       
-      // Buscar chats ativos diretamente
-      const chatsResult = await chatService.getActiveChats(userProfile.id);
-      if (chatsResult.success && chatsResult.data.length > 0) {
-        console.log('Active chats found:', chatsResult.data);
-        
-        // Transformar os dados dos chats em formato de pacientes
-        const patientsWithChats = chatsResult.data.map((chat: any) => ({
-          id: chat.patient_id,
-          full_name: chat.pacientes.nome,
-          email: chat.pacientes.email,
-          hasActiveChat: true,
-          lastMessageAt: chat.last_message_at,
-          chatId: chat.id,
-          appointmentStatus: 'active_chat'
-        }));
-        
-        setPatients(patientsWithChats);
-      } else {
-        // Se não há chats ativos, buscar pacientes com consultas
-        console.log('No active chats, loading patients from appointments');
-        
-        const { data: appointmentsData, error: appointmentsError } = await supabase
-          .from('appointments')
-          .select(`
+      // Primeiro, buscar pacientes com consultas agendadas/realizadas
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          patients!inner(
             *,
-            patients!inner(
-              *,
-              profiles(full_name, email)
-            )
-          `)
-          .eq('doctor_id', userProfile.id)
-          .in('status', ['scheduled', 'completed', 'in_progress']);
+            profiles(full_name, email)
+          )
+        `)
+        .eq('doctor_id', userProfile.id)
+        .in('status', ['scheduled', 'completed', 'in_progress'])
+        .order('scheduled_at', { ascending: false });
 
-        if (appointmentsError) throw appointmentsError;
-
-        // Extrair pacientes únicos das consultas
-        const uniquePatients = [];
-        const patientIds = new Set();
-        
-        appointmentsData?.forEach(appointment => {
-          if (appointment.patients && !patientIds.has(appointment.patients.id)) {
-            patientIds.add(appointment.patients.id);
-            uniquePatients.push({
-              ...appointment.patients,
-              full_name: appointment.patients.profiles?.full_name || appointment.patients.full_name,
-              email: appointment.patients.profiles?.email || '',
-              lastAppointment: appointment.scheduled_at,
-              appointmentStatus: appointment.status,
-              hasActiveChat: false
-            });
-          }
-        });
-        
-        setPatients(uniquePatients);
+      if (appointmentsError) {
+        console.error('Error loading appointments:', appointmentsError);
+        setPatients([]);
+        return;
       }
+
+      console.log('Appointments found:', appointmentsData);
+
+      if (!appointmentsData || appointmentsData.length === 0) {
+        console.log('No appointments found');
+        setPatients([]);
+        return;
+      }
+
+      // Extrair pacientes únicos das consultas
+      const uniquePatients = [];
+      const patientIds = new Set();
+      
+      for (const appointment of appointmentsData) {
+        if (appointment.patients && !patientIds.has(appointment.patients.id)) {
+          patientIds.add(appointment.patients.id);
+          
+          // Verificar se existe chat ativo para este paciente
+          const { data: activeChats } = await supabase
+            .from('active_chats')
+            .select('id, created_at, updated_at')
+            .eq('doctor_id', userProfile.id)
+            .eq('patient_id', appointment.patients.id)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          let hasActiveChat = false;
+          let chatId = null;
+          let lastMessageAt = null;
+
+          if (activeChats && activeChats.length > 0) {
+            hasActiveChat = true;
+            chatId = activeChats[0].id;
+            
+            // Buscar última mensagem do chat
+            const { data: lastMessage } = await supabase
+              .from('chat_messages')
+              .select('created_at')
+              .eq('chat_id', chatId)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (lastMessage && lastMessage.length > 0) {
+              lastMessageAt = lastMessage[0].created_at;
+            }
+          }
+
+          uniquePatients.push({
+            id: appointment.patients.id,
+            full_name: appointment.patients.profiles?.full_name || appointment.patients.full_name || 'Nome não informado',
+            email: appointment.patients.profiles?.email || '',
+            lastAppointment: appointment.scheduled_at,
+            appointmentStatus: appointment.status,
+            hasActiveChat,
+            chatId,
+            lastMessageAt
+          });
+        }
+      }
+      
+      console.log('Unique patients found:', uniquePatients);
+      setPatients(uniquePatients);
+      
     } catch (error) {
       console.error('Erro ao carregar pacientes:', error);
       setPatients([]);
@@ -176,7 +204,7 @@ const ChatMedico = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5" />
-            Conversas com Pacientes
+            Pacientes
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -184,8 +212,8 @@ const ChatMedico = () => {
             {patients.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhuma conversa ativa</p>
-                <p className="text-sm">Conversas aparecerão aqui quando pacientes iniciarem chats</p>
+                <p>Nenhum paciente encontrado</p>
+                <p className="text-sm">Pacientes com consultas agendadas aparecerão aqui</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -200,14 +228,14 @@ const ChatMedico = () => {
                     }`}
                   >
                     <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{patient.full_name || 'Nome não informado'}</p>
+                      <div className="flex-1">
+                        <p className="font-medium">{patient.full_name}</p>
                         <p className="text-sm text-gray-500">
-                          {patient.hasActiveChat ? 'Chat ativo' : 'Clique para iniciar conversa'}
+                          {patient.hasActiveChat ? 'Chat disponível' : 'Iniciar conversa'}
                         </p>
                         {patient.lastAppointment && (
                           <p className="text-xs text-gray-400">
-                            Última consulta: {new Date(patient.lastAppointment).toLocaleDateString('pt-BR')}
+                            Consulta: {new Date(patient.lastAppointment).toLocaleDateString('pt-BR')}
                           </p>
                         )}
                         {patient.lastMessageAt && (
@@ -233,7 +261,7 @@ const ChatMedico = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>
-              {selectedPatient ? `Chat com ${selectedPatient.full_name || 'Paciente'}` : 'Selecione uma conversa'}
+              {selectedPatient ? `Chat com ${selectedPatient.full_name}` : 'Selecione um paciente'}
             </span>
             {selectedPatient && (
               <Button
