@@ -265,9 +265,17 @@ const ChatMedicoTexto: React.FC<ChatMedicoTextoProps> = ({ doctor, onClose }) =>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {doctor.profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'DR'}
-              </AvatarFallback>
+              {doctor.profile.avatar_url ? (
+                <img 
+                  src={doctor.profile.avatar_url} 
+                  alt={doctor.profile.full_name}
+                  className="h-full w-full object-cover rounded-full"
+                />
+              ) : (
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {doctor.profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'DR'}
+                </AvatarFallback>
+              )}
             </Avatar>
             <div>
               <CardTitle className="text-lg">
