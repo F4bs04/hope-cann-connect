@@ -10,6 +10,7 @@ import { getProntuarios, getPacientes } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 import NovoProntuario from './NovoProntuario';
 import ProntuarioDetalhes from '@/components/medico/ProntuarioDetalhes';
+import PacienteDetalhes from './PacienteDetalhes';
 import { useDoctorSchedule } from '@/contexts/DoctorScheduleContext';
 
 interface ProntuariosProps {
@@ -25,7 +26,9 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
   const [loading, setLoading] = useState(true);
   const [showNewProntuario, setShowNewProntuario] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showPacienteDetails, setShowPacienteDetails] = useState(false);
   const [selectedProntuarioId, setSelectedProntuarioId] = useState<number | null>(null);
+  const [selectedPacienteId, setSelectedPacienteId] = useState<string | null>(null);
   
   useEffect(() => {
     const loadData = async () => {
@@ -97,8 +100,9 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
           // Notifica o componente pai
           onSelectPatient(validPaciente.id);
           
-          // Mostrar os detalhes
-          setShowDetails(true);
+          // Mostrar detalhes do paciente em vez de prontuário
+          setSelectedPacienteId(validPaciente.id);
+          setShowPacienteDetails(true);
         } else {
           toast({
             title: "Erro ao carregar paciente",
@@ -119,6 +123,18 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
     getPacienteData();
   };
   
+  if (showPacienteDetails && selectedPacienteId) {
+    return (
+      <PacienteDetalhes 
+        pacienteId={selectedPacienteId} 
+        onBack={() => {
+          setShowPacienteDetails(false);
+          setSelectedPacienteId(null);
+        }} 
+      />
+    );
+  }
+
   if (showDetails) {
     return <ProntuarioDetalhes onBack={() => setShowDetails(false)} />;
   }
@@ -249,7 +265,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
                         handleSelectProntuario(prontuario);
                       }}
                     >
-                      Ver detalhes
+                      Ver paciente
                     </Button>
                   </div>
                 </div>
