@@ -169,7 +169,7 @@ const AreaPaciente: React.FC<AreaPacienteProps> = ({ initialSection = 'dashboard
       case 'pedidos-exame':
         return <PedidosExamePaciente />;
       case 'medicos':
-        return <MedicosPaciente pacienteId={pacienteId} />;
+        return <MedicosPaciente />;
       case 'perfil':
         // Passando o pacienteData que já inclui id e id_usuario corretamente formatados
         return <PacientePerfilDetalhes paciente={pacienteData} onUpdatePaciente={handleUpdatePaciente} />;
