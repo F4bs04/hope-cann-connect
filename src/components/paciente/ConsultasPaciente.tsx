@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 
 const ConsultasPaciente: React.FC = () => {
   const [consultas, setConsultas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, userProfile, isLoading: authLoading } = useUnifiedAuth();
 
   useEffect(() => {
     const fetchConsultas = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Get authenticated user
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError || !session?.user) {
+        if (!isAuthenticated || !userProfile?.id) {
           throw new Error('Usuário não autenticado');
         }
 
-        const userId = session.user.id;
+        const userId = userProfile.id;
         console.log('Fetching appointments for user:', userId);
 
         // Try to get patient_id from patients table first
@@ -57,10 +56,13 @@ const ConsultasPaciente: React.FC = () => {
         setLoading(false);
       }
     };
-    fetchConsultas();
-  }, []);
+    
+    if (!authLoading) {
+      fetchConsultas();
+    }
+  }, [isAuthenticated, userProfile, authLoading]);
 
-  if (loading) return <div>Carregando consultas...</div>;
+  if (authLoading || loading) return <div>Carregando consultas...</div>;
   if (error) return <div className="text-red-600">Erro: {error}</div>;
   if (consultas.length === 0) return <div>Nenhuma consulta encontrada.</div>;
 
