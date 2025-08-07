@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { usePacientesData } from '@/hooks/usePacientesData';
 import { searchAllPatients, addPatientToDoctor } from '@/services/pacientes/pacientesService';
+import { usePatientDeduplication } from '@/hooks/usePatientDeduplication';
 import { PatientDuplicatesManager } from './PatientDuplicatesManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -37,6 +38,9 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchingPatients, setSearchingPatients] = useState(false);
   const [patientSearch, setPatientSearch] = useState('');
+  
+  // Hook para verificar duplicatas
+  const { duplicates } = usePatientDeduplication();
   
   // Form state
   const [nome, setNome] = useState('');
@@ -177,7 +181,7 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
           <TabsTrigger value="lista">Lista de Pacientes</TabsTrigger>
           <TabsTrigger value="duplicatas" className="relative">
             Duplicatas
-            <Badge variant="destructive" className="ml-2">
+            <Badge variant={duplicates.length > 0 ? "destructive" : "secondary"} className="ml-2">
               <AlertTriangle className="h-3 w-3" />
             </Badge>
           </TabsTrigger>
