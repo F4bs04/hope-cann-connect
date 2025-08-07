@@ -35,8 +35,8 @@ export const usePatientDocuments = () => {
 
   const fetchPrescriptionsData = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!userProfile?.id) throw new Error('Usuário não autenticado');
+      const userId = userProfile.id;
 
       // Primeiro: buscar por pacientes associados ao usuário
       const { data: directData, error: directError } = await supabase
@@ -45,7 +45,7 @@ export const usePatientDocuments = () => {
           *,
           patient:patients!inner(id, user_id, cpf, full_name)
         `)
-        .eq('patient.user_id', user.id)
+        .eq('patient.user_id', userId)
         .order('issued_at', { ascending: false });
 
       if (directError) throw directError;
@@ -54,7 +54,7 @@ export const usePatientDocuments = () => {
       const { data: profile } = await supabase
         .from('profiles')
         .select('email, full_name')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
 
       let indirectData: any[] = [];
@@ -87,12 +87,12 @@ export const usePatientDocuments = () => {
       console.error('Erro ao buscar prescrições:', error);
       throw error;
     }
-  }, []);
+  }, [userProfile?.id]);
 
   const fetchDocumentsData = useCallback(async (documentType: 'certificate' | 'exam_request' | 'medical_report' | 'prescription' | 'medical_record') => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!userProfile?.id) throw new Error('Usuário não autenticado');
+      const userId = userProfile.id;
 
       // Primeiro: buscar por pacientes associados ao usuário
       const { data: directData, error: directError } = await supabase
@@ -101,7 +101,7 @@ export const usePatientDocuments = () => {
           *,
           patient:patients!inner(id, user_id, cpf, full_name)
         `)
-        .eq('patient.user_id', user.id)
+        .eq('patient.user_id', userId)
         .eq('document_type', documentType)
         .order('issued_at', { ascending: false });
 
@@ -111,7 +111,7 @@ export const usePatientDocuments = () => {
       const { data: profile } = await supabase
         .from('profiles')
         .select('email, full_name')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
 
       let indirectData: any[] = [];
@@ -145,7 +145,7 @@ export const usePatientDocuments = () => {
       console.error(`Erro ao buscar documentos tipo ${documentType}:`, error);
       throw error;
     }
-  }, []);
+  }, [userProfile?.id]);
 
   const fetchPrescriptions = useCallback(async () => {
     try {

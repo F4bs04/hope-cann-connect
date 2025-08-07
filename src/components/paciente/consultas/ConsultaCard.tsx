@@ -26,8 +26,8 @@ export function ConsultaCard({ consulta, onReagendar, onCancelar }: ConsultaCard
           <div className="p-4 flex-1">
             <div className="flex justify-between flex-wrap gap-2">
               <div>
-                <h3 className="font-semibold truncate">{consulta.doctors?.profiles?.full_name || 'Médico não especificado'}</h3>
-                <p className="text-sm text-gray-600 truncate">{consulta.doctors?.specialty || 'Especialidade não especificada'}</p>
+                <h3 className="font-semibold truncate">{consulta.doctor?.profile?.full_name || 'Médico não especificado'}</h3>
+                <p className="text-sm text-gray-600 truncate">{consulta.doctor?.specialty || 'Especialidade não especificada'}</p>
               </div>
               <Badge className={
                 consulta.status === 'scheduled' ? 'bg-primary/10 text-primary' :

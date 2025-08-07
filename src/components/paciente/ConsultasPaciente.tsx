@@ -26,7 +26,7 @@ const ConsultasPaciente: React.FC = () => {
         const userId = userProfile.id;
         console.log('Fetching appointments for user:', userId);
 
-        // First try to get patient_id from patients table
+        // Buscar patient_id na tabela patients
         const { data: patientData, error: patientError } = await supabase
           .from('patients')
           .select('id, full_name, cpf')
@@ -35,29 +35,32 @@ const ConsultasPaciente: React.FC = () => {
 
         if (patientError) {
           console.error('Error fetching patient data:', patientError);
+          setError(`Erro ao buscar dados do paciente: ${patientError.message}`);
+          return;
         }
 
-        let patientId = patientData?.id;
-        
-        // If no patient record found, try using user_id directly
-        if (!patientId) {
-          console.log('No patient record found for user_id, trying direct lookup');
-          patientId = userId;
+        // Se não encontrou paciente associado ao user_id, não pode buscar consultas
+        if (!patientData) {
+          console.log('No patient record found for user_id:', userId);
+          setError('Perfil de paciente não encontrado. Verifique seu cadastro.');
+          setConsultas([]);
+          return;
         }
         
+        const patientId = patientData.id;
         console.log('Using patient_id:', patientId);
         console.log('Patient data:', patientData);
 
-        // Fetch appointments with detailed doctor information
+        // Buscar consultas com informações do médico
         const { data: appointmentsData, error: appointmentsError } = await supabase
           .from('appointments')
           .select(`
             *,
-            doctors!inner(
+            doctor:doctors!inner(
               id,
               specialty,
               consultation_fee,
-              profiles!inner(
+              profile:profiles!inner(
                 full_name,
                 phone
               )
