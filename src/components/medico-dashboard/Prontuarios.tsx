@@ -297,7 +297,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
                       </div>
                       <div className="flex items-center">
                         <User className="h-3.5 w-3.5 mr-1" />
-                        Paciente #{prontuario.id_paciente}
+                        {prontuario.pacientes?.nome}
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-3.5 w-3.5 mr-1" />
