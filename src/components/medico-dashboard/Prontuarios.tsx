@@ -56,13 +56,13 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
 
               const prontuarioMaisRecente = prontuarios?.[0];
               
-              return {
-                id: prontuarioMaisRecente?.id || `temp-${paciente.id}`,
-                id_paciente: paciente.id,
-                pacientes: {
-                  nome: paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado',
-                  data_nascimento: paciente.birth_date
-                },
+                return {
+                  id: prontuarioMaisRecente?.id || `temp-${paciente.id}`,
+                  id_paciente: paciente.id,
+                  pacientes: {
+                    nome: paciente.full_name || paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado',
+                    data_nascimento: paciente.birth_date
+                  },
                 diagnostico: prontuarioMaisRecente?.diagnosis || 'Sem diagnóstico',
                 tratamento: prontuarioMaisRecente?.treatment || 'Sem tratamento definido',
                 data_consulta: prontuarioMaisRecente?.created_at || paciente.created_at,
@@ -74,7 +74,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
                 id: `temp-${paciente.id}`,
                 id_paciente: paciente.id,
                 pacientes: {
-                  nome: paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado',
+                  nome: paciente.full_name || paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado',
                   data_nascimento: paciente.birth_date
                 },
                 diagnostico: 'Sem diagnóstico',
@@ -133,6 +133,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
           // Type assertion after filtering ensures paciente is valid
           const validPaciente = paciente as { 
             id: string; 
+            full_name?: string;
             profiles?: { full_name?: string };
             emergency_contact_name?: string;
             birth_date?: string;
@@ -142,7 +143,7 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
           // Atualiza o contexto global com o paciente selecionado
           setSelectedPaciente({
             id: validPaciente.id,
-            nome: validPaciente.profiles?.full_name || validPaciente.emergency_contact_name || 'Nome não informado',
+            nome: validPaciente.full_name || validPaciente.profiles?.full_name || validPaciente.emergency_contact_name || 'Nome não informado',
             idade: validPaciente.birth_date ? new Date().getFullYear() - new Date(validPaciente.birth_date).getFullYear() : 0,
             condicao: validPaciente.medical_condition || 'Condição não informada',
             ultimaConsulta: new Date().toISOString()
