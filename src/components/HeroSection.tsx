@@ -45,12 +45,14 @@ const HeroSection = () => {
             >
               Agendar Consulta <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
-            <Link 
-              to="/tratamentos" 
+            <a 
+              href="https://wa.me/558179008621?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20consulta"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hopecann-btn-secondary bg-transparent border-white text-white hover:bg-white/10 text-lg"
             >
-              Conhecer Tratamentos
-            </Link>
+              Agende pelo WhatsApp
+            </a>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 animate-fade-in delay-300">
