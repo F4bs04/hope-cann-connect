@@ -28,7 +28,8 @@ export const getPacientes = async (doctorIdString?: string) => {
         .from('doctor_patients')
         .select(`
           patients!inner (
-            *
+            *,
+            profiles!inner(full_name, email)
           )
         `)
         .eq('doctor_id', doctorUuid)
@@ -46,7 +47,8 @@ export const getPacientes = async (doctorIdString?: string) => {
       const { data, error } = await supabase
         .from('patients')
         .select(`
-          *
+          *,
+          profiles(full_name, email)
         `)
         .order('created_at', { ascending: false });
 
