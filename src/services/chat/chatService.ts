@@ -36,21 +36,22 @@ interface ActiveChat {
 export const verificarChatAtivo = async (doctorId: string, patientId: string) => {
   try {
     // Verificar se já existe um chat ativo na tabela active_chats
-    const { data: existingChat, error } = await supabase
+    const { data: existingChats, error } = await supabase
       .from('active_chats')
       .select('id')
       .eq('doctor_id', doctorId)
       .eq('patient_id', patientId)
       .eq('is_active', true)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Error checking active chat:', error);
       return null;
     }
 
-    if (existingChat) {
-      return existingChat.id;
+    if (existingChats && existingChats.length > 0) {
+      return existingChats[0].id;
     }
 
     // Se não existe, criar um novo chat ativo
