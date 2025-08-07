@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Interface para mensagens de chat
@@ -154,75 +155,73 @@ export const marcarMensagensComoLidas = async (chatId: string, userId: string) =
   }
 };
 
-// Obter chats ativos do médico
+// Obter chats ativos do médico - CORRIGIDA
 export const getChatsAtivos = async (doctorId: string) => {
   try {
-    // Buscar todos os chats onde o médico participou
-    const { data: messages, error } = await supabase
-      .from('chat_messages')
+    console.log('Getting active chats for doctor:', doctorId);
+
+    // Buscar chats ativos através da tabela active_chats
+    const { data: activeChats, error } = await supabase
+      .from('active_chats')
       .select(`
-        chat_id,
+        id,
+        patient_id,
         created_at,
-        sender_id
+        updated_at,
+        patients!inner(
+          id,
+          full_name,
+          user_id,
+          profiles(
+            full_name,
+            email
+          )
+        )
       `)
-      .like('chat_id', `${doctorId}_%`)
-      .order('created_at', { ascending: false });
+      .eq('doctor_id', doctorId)
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false });
 
     if (error) {
       console.error('Error getting active chats:', error);
       return [];
     }
 
-    if (!messages || messages.length === 0) {
+    if (!activeChats || activeChats.length === 0) {
+      console.log('No active chats found');
       return [];
     }
 
-    // Extrair IDs únicos de pacientes dos chat_ids
-    const uniqueChats = new Map();
-    messages.forEach(msg => {
-      const patientId = msg.chat_id.split('_')[1];
-      if (!uniqueChats.has(patientId)) {
-        uniqueChats.set(patientId, {
-          id: msg.chat_id,
-          patient_id: patientId,
-          last_message_at: msg.created_at
-        });
-      }
-    });
+    // Para cada chat ativo, buscar a última mensagem
+    const chatsWithMessages = await Promise.all(
+      activeChats.map(async (chat) => {
+        const { data: lastMessage } = await supabase
+          .from('chat_messages')
+          .select('created_at')
+          .eq('chat_id', chat.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-    // Buscar informações dos pacientes
-    const patientIds = Array.from(uniqueChats.keys());
-    const { data: patients, error: patientsError } = await supabase
-      .from('patients')
-      .select(`
-        id,
-        full_name,
-        user_id
-      `)
-      .in('id', patientIds);
+        return {
+          id: chat.id,
+          patient_id: chat.patient_id,
+          last_message_at: lastMessage && lastMessage.length > 0 
+            ? lastMessage[0].created_at 
+            : chat.created_at,
+          pacientes: {
+            id: chat.patients.id,
+            nome: chat.patients.profiles?.full_name || chat.patients.full_name || 'Paciente',
+            email: chat.patients.profiles?.email || '',
+            avatar: null
+          },
+          data_inicio: chat.created_at,
+          data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        };
+      })
+    );
 
-    if (patientsError) {
-      console.error('Error getting patients info:', patientsError);
-      return Array.from(uniqueChats.values());
-    }
-
-    // Combinar dados
-    const chatsWithPatients = Array.from(uniqueChats.values()).map(chat => {
-      const patient = patients?.find(p => p.id === chat.patient_id);
-      return {
-        ...chat,
-        pacientes: {
-          id: patient?.id,
-          nome: patient?.full_name || 'Paciente',
-          email: patient?.user_id,
-          avatar: null
-        },
-        data_inicio: chat.last_message_at,
-        data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 dias a partir de agora
-      };
-    });
-
-    return chatsWithPatients;
+    console.log('Active chats with messages:', chatsWithMessages);
+    return chatsWithMessages;
   } catch (error) {
     console.error('Error in getChatsAtivos:', error);
     return [];
