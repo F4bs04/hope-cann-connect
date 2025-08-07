@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, MessageCircle, FileText, Pill } from 'lucide-react';
 import { useAuth } from '@/hooks/useUnifiedAuth';
 import { chatService } from '@/services/chat/chatService';
-import { getPacientes } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 import ReceitaDialog from './ReceitaDialog';
 
 // Componente de chat integrado com sistema de receitas
@@ -30,15 +30,43 @@ const ChatMedico = () => {
     
     setLoading(true);
     try {
-      // Buscar pacientes do médico
-      const patientsData = await getPacientes(userProfile.id);
-      setPatients(patientsData);
+      // Buscar pacientes com consultas agendadas/realizadas para este médico
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          patients!inner(
+            *,
+            profiles(full_name, email)
+          )
+        `)
+        .eq('doctor_id', userProfile.id)
+        .in('status', ['scheduled', 'completed', 'in_progress']);
+
+      if (appointmentsError) throw appointmentsError;
+
+      // Extrair pacientes únicos das consultas
+      const uniquePatients = [];
+      const patientIds = new Set();
       
-      // Buscar chats ativos
+      appointmentsData?.forEach(appointment => {
+        if (appointment.patients && !patientIds.has(appointment.patients.id)) {
+          patientIds.add(appointment.patients.id);
+          uniquePatients.push({
+            ...appointment.patients,
+            full_name: appointment.patients.profiles?.full_name || appointment.patients.full_name,
+            email: appointment.patients.profiles?.email || '',
+            lastAppointment: appointment.scheduled_at,
+            appointmentStatus: appointment.status
+          });
+        }
+      });
+      
+      // Buscar chats ativos para estes pacientes
       const chatsResult = await chatService.getActiveChats(userProfile.id);
       if (chatsResult.success) {
         // Combinar pacientes com chats ativos
-        const patientsWithChats = patientsData.map(patient => {
+        const patientsWithChats = uniquePatients.map(patient => {
           const activeChat = chatsResult.data.find(chat => 
             chat.patient_id === patient.id
           );
@@ -49,6 +77,8 @@ const ChatMedico = () => {
           };
         });
         setPatients(patientsWithChats);
+      } else {
+        setPatients(uniquePatients);
       }
     } catch (error) {
       console.error('Erro ao carregar pacientes:', error);
@@ -130,8 +160,8 @@ const ChatMedico = () => {
             {patients.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhuma conversa ativa</p>
-                <p className="text-sm">As conversas aparecerão após consultas realizadas</p>
+                <p>Nenhum paciente com consultas</p>
+                <p className="text-sm">Pacientes aparecerão após agendamentos</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -151,11 +181,13 @@ const ChatMedico = () => {
                         <p className="text-sm text-gray-500">
                           {patient.hasActiveChat ? 'Chat ativo' : 'Clique para iniciar conversa'}
                         </p>
-                        {patient.lastMessageAt && (
-                          <p className="text-xs text-gray-400">
-                            {new Date(patient.lastMessageAt).toLocaleDateString('pt-BR')}
-                          </p>
-                        )}
+                        <p className="text-xs text-gray-400">
+                          Última consulta: {new Date(patient.lastAppointment).toLocaleDateString('pt-BR')}
+                        </p>
+                        <p className="text-xs text-blue-600">
+                          Status: {patient.appointmentStatus === 'completed' ? 'Realizada' : 
+                                   patient.appointmentStatus === 'scheduled' ? 'Agendada' : 'Em andamento'}
+                        </p>
                       </div>
                       {patient.hasActiveChat && (
                         <div className="h-2 w-2 bg-green-500 rounded-full"></div>

@@ -193,11 +193,7 @@ const AreaMedicoContent: React.FC = () => {
           />
         ) : null;
       case 'chat':
-        return selectedChat ? (
-          <div>Chat temporariamente desabilitado</div>
-        ) : (
-          <div>Lista de chats temporariamente desabilitado</div>
-        );
+        return <ChatMedico />;
       case 'duplicatas':
         return <PatientDuplicatesManager />;
       case 'financeiro':
