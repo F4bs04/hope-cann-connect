@@ -26,25 +26,13 @@ const WhatsAppFloat = () => {
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}
         >
-          <div className="relative w-16 h-16 rounded-full border-3 border-blue-500 overflow-hidden shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl animate-pulse">
+          <div className="relative w-16 h-16 rounded-full border-3 border-blue-500 overflow-hidden shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl">
             {/* Profile Image */}
             <img
               src="/lovable-uploads/517435b1-124e-44c4-bedc-bf12a451edcc.png"
               alt="Atendente WhatsApp"
               className="w-full h-full object-cover"
-              onError={(e) => {
-                // Fallback para ícone do WhatsApp se a imagem não carregar
-                const target = e.currentTarget as HTMLImageElement;
-                const fallback = target.nextElementSibling as HTMLElement;
-                target.style.display = 'none';
-                fallback.style.display = 'flex';
-              }}
             />
-            
-            {/* Fallback WhatsApp Icon */}
-            <div className="absolute inset-0 bg-green-500 flex items-center justify-center" style={{ display: 'none' }}>
-              <MessageCircle className="w-8 h-8 text-white" />
-            </div>
             
             {/* WhatsApp Icon Overlay */}
             <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
