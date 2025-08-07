@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 
 const WhatsAppFloat = () => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const location = useLocation();
+  
+  // Ocultar nas áreas administrativas
+  const hiddenRoutes = ['/area-paciente', '/area-medico', '/admin', '/admin-panel'];
+  const shouldHide = hiddenRoutes.some(route => location.pathname.startsWith(route));
+  
+  if (shouldHide) return null;
   
   const whatsappUrl = "https://wa.me/558179008621?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20consulta";
 
