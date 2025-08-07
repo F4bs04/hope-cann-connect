@@ -11,7 +11,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep }) => 
       <div className="flex justify-between items-center w-full max-w-3xl mx-auto relative">
         <div className="absolute top-1/2 w-full h-0.5 bg-gray-200 -z-10"></div>
         
-        {[1, 2, 3, 4].map((stepNumber) => (
+        {[1, 2, 3, 4, 5].map((stepNumber) => (
           <div key={stepNumber} className="flex flex-col items-center">
             <div 
               className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -24,7 +24,8 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep }) => 
               {
                 stepNumber === 1 ? 'Especialista' :
                 stepNumber === 2 ? 'Data e Hora' :
-                stepNumber === 3 ? 'Dados' : 'Confirmação'
+                stepNumber === 3 ? 'Pagamento' :
+                stepNumber === 4 ? 'Dados' : 'Confirmação'
               }
             </span>
           </div>

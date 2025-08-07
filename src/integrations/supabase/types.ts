@@ -149,6 +149,7 @@ export type Database = {
           id: string
           notes: string | null
           patient_id: string
+          payment_status: string | null
           reason: string
           scheduled_at: string
           status: Database["public"]["Enums"]["appointment_status"]
@@ -163,6 +164,7 @@ export type Database = {
           id?: string
           notes?: string | null
           patient_id: string
+          payment_status?: string | null
           reason: string
           scheduled_at: string
           status?: Database["public"]["Enums"]["appointment_status"]
@@ -177,6 +179,7 @@ export type Database = {
           id?: string
           notes?: string | null
           patient_id?: string
+          payment_status?: string | null
           reason?: string
           scheduled_at?: string
           status?: Database["public"]["Enums"]["appointment_status"]
@@ -836,6 +839,53 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          appointment_id: string | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          pagarme_transaction_id: string | null
+          payment_data: Json | null
+          payment_method: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          appointment_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          pagarme_transaction_id?: string | null
+          payment_data?: Json | null
+          payment_method?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          pagarme_transaction_id?: string | null
+          payment_data?: Json | null
+          payment_method?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
         ]

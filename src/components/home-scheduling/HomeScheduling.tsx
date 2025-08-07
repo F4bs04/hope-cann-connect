@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { StepIndicator } from './StepIndicator';
 import { DoctorStep } from './DoctorStep';
 import { DateTimeStep } from './DateTimeStep';
+import { PaymentStep } from './PaymentStep';
 import { UserDataStep } from './UserDataStep';
 import { ConfirmationStep } from './ConfirmationStep';
 import { fetchDoctors } from './utils/doctorUtils'; // This utility is specific to fetching the list
@@ -78,6 +79,11 @@ const HomeScheduling = () => {
       return;
     }
     setStep(prev => prev + 1); // Use setStep from hook
+  };
+
+  // Função para avançar do pagamento para confirmação
+  const handlePaymentSuccess = () => {
+    setStep(4); // Ir direto para confirmação após pagamento aprovado
   };
   
   // handleSubmit remains largely the same but uses state/setters from the hook
@@ -233,6 +239,26 @@ const HomeScheduling = () => {
           )}
           
           {step === 3 && (
+            <PaymentStep 
+              selectedDoctorInfo={doctorInfo}
+              selectedDate={selectedDate}
+              selectedTime={selectedTime}
+              onNext={handlePaymentSuccess}
+              onBack={handleBack}
+              appointmentData={{
+                doctor_id: selectedDoctor,
+                patient_id: null, // Will be set in the Edge Function
+                scheduled_at: selectedDate && selectedTime ? 
+                  new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 
+                    parseInt(selectedTime.split(':')[0]), parseInt(selectedTime.split(':')[1])).toISOString() : null,
+                status: 'scheduled',
+                consultation_type: selectedConsultType,
+                reason: formData.symptoms,
+              }}
+            />
+          )}
+
+          {step === 4 && (
             <UserDataStep 
               formData={formData}
               handleFormChange={localHandleFormChange}
@@ -241,7 +267,7 @@ const HomeScheduling = () => {
             />
           )}
           
-          {step === 4 && (
+          {step === 5 && (
             <ConfirmationStep 
               selectedDoctorInfo={doctorInfo} // use doctorInfo from hook
               selectedDate={selectedDate}
