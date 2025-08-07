@@ -61,7 +61,7 @@ const Atestados: React.FC = () => {
     if (pacienteId) {
       const paciente = pacientes.find(p => p.id.toString() === pacienteId);
       if (paciente) {
-        setNomePaciente(paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado');
+        setNomePaciente(paciente.profiles?.full_name || paciente.full_name || paciente.emergency_contact_name || 'Nome não informado');
       }
     } else {
       setNomePaciente('');
@@ -247,7 +247,7 @@ const Atestados: React.FC = () => {
                     <SelectContent>
                       {pacientes.map(paciente => (
                         <SelectItem key={paciente.id} value={paciente.id.toString()}>
-                          {paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado'} ({paciente.birth_date ? new Date().getFullYear() - new Date(paciente.birth_date).getFullYear() : 'N/A'} anos)
+                          {paciente.profiles?.full_name || paciente.full_name || paciente.emergency_contact_name || 'Nome não informado'} ({paciente.birth_date ? new Date().getFullYear() - new Date(paciente.birth_date).getFullYear() : 'N/A'} anos)
                         </SelectItem>
                       ))}
                     </SelectContent>
