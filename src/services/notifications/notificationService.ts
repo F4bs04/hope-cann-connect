@@ -169,32 +169,20 @@ export const deleteNotification = async (notificationId: string) => {
   }
 };
 
-// Criar notificação para agendamento
-export const createAppointmentNotification = async (
-  userId: string,
-  userType: 'patient' | 'doctor',
-  appointmentData: {
-    patientName?: string;
-    doctorName?: string;
-    date: string;
-    time: string;
-  }
+// Criar notificação para agendamento (quando paciente agenda)
+export const createAppointmentScheduledNotification = async (
+  doctorUserId: string,
+  patientName: string,
+  date: string,
+  time: string
 ) => {
   try {
-    const title = userType === 'patient' 
-      ? 'Consulta Agendada' 
-      : 'Nova Consulta Agendada';
-    
-    const message = userType === 'patient'
-      ? `Sua consulta com Dr(a). ${appointmentData.doctorName} foi agendada para ${appointmentData.date} às ${appointmentData.time}.`
-      : `Nova consulta agendada com ${appointmentData.patientName} para ${appointmentData.date} às ${appointmentData.time}.`;
-
     const { data, error } = await supabase
       .from('notifications')
       .insert({
-        user_id: userId,
-        title,
-        message,
+        user_id: doctorUserId,
+        title: 'Nova Consulta para Confirmação',
+        message: `${patientName} agendou uma consulta para ${date} às ${time}. Confirme ou reagende.`,
         notification_type: 'appointment',
         is_read: false
       })
@@ -209,6 +197,121 @@ export const createAppointmentNotification = async (
     return { success: true, data };
   } catch (error) {
     console.error('Erro ao criar notificação de agendamento:', error);
+    return { success: false, error: 'Erro inesperado ao criar notificação' };
+  }
+};
+
+// Criar notificação quando médico confirma consulta
+export const createAppointmentConfirmedNotification = async (
+  patientUserId: string,
+  doctorName: string,
+  date: string,
+  time: string
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: patientUserId,
+        title: 'Consulta Confirmada',
+        message: `Dr(a). ${doctorName} confirmou sua consulta para ${date} às ${time}.`,
+        notification_type: 'appointment',
+        is_read: false
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao criar notificação de confirmação:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Erro ao criar notificação de confirmação:', error);
+    return { success: false, error: 'Erro inesperado ao criar notificação' };
+  }
+};
+
+// Criar notificação quando consulta é cancelada
+export const createAppointmentCancelledNotification = async (
+  userId: string,
+  userType: 'patient' | 'doctor',
+  appointmentData: {
+    patientName?: string;
+    doctorName?: string;
+    date: string;
+    time: string;
+    reason?: string;
+  }
+) => {
+  try {
+    const title = 'Consulta Cancelada';
+    const message = userType === 'patient'
+      ? `Sua consulta com Dr(a). ${appointmentData.doctorName} para ${appointmentData.date} às ${appointmentData.time} foi cancelada.${appointmentData.reason ? ` Motivo: ${appointmentData.reason}` : ''}`
+      : `A consulta com ${appointmentData.patientName} para ${appointmentData.date} às ${appointmentData.time} foi cancelada.${appointmentData.reason ? ` Motivo: ${appointmentData.reason}` : ''}`;
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        title,
+        message,
+        notification_type: 'appointment',
+        is_read: false
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao criar notificação de cancelamento:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Erro ao criar notificação de cancelamento:', error);
+    return { success: false, error: 'Erro inesperado ao criar notificação' };
+  }
+};
+
+// Criar notificação de lembrete
+export const createAppointmentReminderNotification = async (
+  userId: string,
+  userType: 'patient' | 'doctor',
+  appointmentData: {
+    patientName?: string;
+    doctorName?: string;
+    date: string;
+    time: string;
+  }
+) => {
+  try {
+    const title = 'Lembrete de Consulta';
+    const message = userType === 'patient'
+      ? `Lembrete: Você tem uma consulta amanhã com Dr(a). ${appointmentData.doctorName} às ${appointmentData.time}.`
+      : `Lembrete: Você tem uma consulta amanhã com ${appointmentData.patientName} às ${appointmentData.time}.`;
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        title,
+        message,
+        notification_type: 'appointment',
+        is_read: false
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao criar notificação de lembrete:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Erro ao criar notificação de lembrete:', error);
     return { success: false, error: 'Erro inesperado ao criar notificação' };
   }
 };

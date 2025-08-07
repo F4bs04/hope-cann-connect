@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { createAppointmentNotification } from '@/services/notifications/notificationService';
+import { createAppointmentScheduledNotification } from '@/services/notifications/notificationService';
 
 interface Doctor {
   id: string;

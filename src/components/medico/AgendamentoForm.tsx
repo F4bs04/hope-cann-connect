@@ -94,7 +94,7 @@ const AgendamentoForm: React.FC<AgendamentoFormProps> = ({ onSuccess, onCancel }
           scheduled_at: scheduledAt.toISOString(),
           reason: reason,
           notes: notes || null,
-          status: 'scheduled' as const,
+          status: 'confirmed' as const, // Médico criando diretamente = já confirmada
           consultation_type: consultationType as 'in_person' | 'telemedicine'
         });
 
@@ -104,7 +104,25 @@ const AgendamentoForm: React.FC<AgendamentoFormProps> = ({ onSuccess, onCancel }
         return;
       }
 
-      toast.success('Consulta agendada com sucesso!');
+      // Buscar user_id do paciente para notificação
+      const { data: patientUserData } = await supabase
+        .from('patients')
+        .select('user_id')
+        .eq('id', patientId)
+        .single();
+
+      // Enviar notificação para o paciente
+      if (patientUserData?.user_id) {
+        const { createAppointmentConfirmedNotification } = await import('@/services/notifications/notificationService');
+        await createAppointmentConfirmedNotification(
+          patientUserData.user_id,
+          userProfile?.full_name || 'Médico',
+          format(selectedDate, 'dd/MM/yyyy', { locale: ptBR }),
+          selectedTime
+        );
+      }
+
+      toast.success('Consulta agendada e confirmada com sucesso!');
       
       // Limpar formulário
       setSelectedDate(undefined);

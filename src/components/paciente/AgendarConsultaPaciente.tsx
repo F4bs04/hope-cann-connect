@@ -73,7 +73,7 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
           patient_id: patientData.id,
           scheduled_at: appointmentDateTime.toISOString(),
           reason: 'Consulta agendada via sistema',
-          status: 'scheduled',
+          status: 'scheduled', // Status inicial: aguardando confirmação do médico
           consultation_type: 'in_person'
         });
 
@@ -83,7 +83,25 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
         return;
       }
 
-      toast.success('Consulta agendada com sucesso!');
+      // Buscar dados do médico para notificação
+      const { data: doctorData } = await supabase
+        .from('doctors')
+        .select('user_id')
+        .eq('id', selectedDoctorId)
+        .single();
+
+      // Enviar notificação para o médico
+      if (doctorData?.user_id) {
+        const { createAppointmentScheduledNotification } = await import('@/services/notifications/notificationService');
+        await createAppointmentScheduledNotification(
+          doctorData.user_id,
+          userProfile.full_name || userProfile.email,
+          format(selectedDate, 'dd/MM/yyyy', { locale: ptBR }),
+          selectedTime
+        );
+      }
+
+      toast.success('Consulta agendada com sucesso! Aguarde a confirmação do médico.');
       onSuccess?.();
       
     } catch (error: any) {
