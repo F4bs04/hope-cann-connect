@@ -181,9 +181,11 @@ const Pacientes: React.FC<PacientesProps> = ({ onSelectPatient }) => {
           <TabsTrigger value="lista">Lista de Pacientes</TabsTrigger>
           <TabsTrigger value="duplicatas" className="relative">
             Duplicatas
-            <Badge variant={duplicates.length > 0 ? "destructive" : "secondary"} className="ml-2">
-              <AlertTriangle className="h-3 w-3" />
-            </Badge>
+            {duplicates.length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                <AlertTriangle className="h-3 w-3" />
+              </Badge>
+            )}
           </TabsTrigger>
         </TabsList>
         
