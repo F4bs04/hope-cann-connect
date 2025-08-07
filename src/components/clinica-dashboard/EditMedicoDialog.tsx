@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { User, Camera } from "lucide-react";
 
 interface EditMedicoDialogProps {
   open: boolean;
@@ -39,6 +40,8 @@ export function EditMedicoDialog({ open, onOpenChange, medico, onUpdate }: EditM
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [formData, setFormData] = React.useState<Partial<Omit<MedicoInfo, 'id' | 'status'>>>({});
+  const [uploadingPhoto, setUploadingPhoto] = React.useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (medico) {
@@ -46,6 +49,52 @@ export function EditMedicoDialog({ open, onOpenChange, medico, onUpdate }: EditM
       setFormData(medicoData);
     }
   }, [medico]);
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !medico) return;
+
+    setUploadingPhoto(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${medico.id}_${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Atualizar o profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', medico.id);
+
+      if (updateError) throw updateError;
+
+      setFormData({ ...formData, foto_perfil: publicUrl });
+      
+      toast({
+        title: "Foto atualizada",
+        description: "A foto de perfil foi atualizada com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao fazer upload da foto:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro no upload",
+        description: "Não foi possível atualizar a foto de perfil.",
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +138,45 @@ export function EditMedicoDialog({ open, onOpenChange, medico, onUpdate }: EditM
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
+            {/* Foto de Perfil */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Foto</Label>
+              <div className="col-span-3 flex items-center gap-4">
+                <div className="relative">
+                  {formData.foto_perfil ? (
+                    <img
+                      src={formData.foto_perfil}
+                      alt={formData.nome}
+                      className="h-16 w-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center">
+                      <User className="h-8 w-8 text-gray-400" />
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="absolute -bottom-1 -right-1 h-6 w-6 p-0 rounded-full"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                  >
+                    <Camera className="h-3 w-3" />
+                  </Button>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {uploadingPhoto ? "Carregando..." : "Clique no ícone para alterar"}
+                </span>
+              </div>
+            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="nome" className="text-right">Nome</Label>
               <Input
