@@ -35,24 +35,42 @@ interface ActiveChat {
 // Criar ou obter chat ativo entre médico e paciente
 export const verificarChatAtivo = async (doctorId: string, patientId: string) => {
   try {
-    // Verificar se já existe um chat ativo
+    // Verificar se já existe um chat ativo na tabela active_chats
     const { data: existingChat, error } = await supabase
-      .from('chat_messages')
-      .select('chat_id')
-      .eq('chat_id', `${doctorId}_${patientId}`)
-      .limit(1);
+      .from('active_chats')
+      .select('id')
+      .eq('doctor_id', doctorId)
+      .eq('patient_id', patientId)
+      .eq('is_active', true)
+      .single();
 
-    if (error) {
+    if (error && error.code !== 'PGRST116') {
       console.error('Error checking active chat:', error);
       return null;
     }
 
-    if (existingChat && existingChat.length > 0) {
-      return existingChat[0].chat_id;
+    if (existingChat) {
+      return existingChat.id;
     }
 
-    // Se não existe, criar um novo chat_id
-    return `${doctorId}_${patientId}`;
+    // Se não existe, criar um novo chat ativo
+    const { data: newChat, error: createError } = await supabase
+      .from('active_chats')
+      .insert({
+        doctor_id: doctorId,
+        patient_id: patientId,
+        is_active: true,
+        ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 dias
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating chat:', createError);
+      return null;
+    }
+
+    return newChat.id;
   } catch (error) {
     console.error('Error in verificarChatAtivo:', error);
     return null;
