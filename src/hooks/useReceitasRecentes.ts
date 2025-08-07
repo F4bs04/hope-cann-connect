@@ -1,43 +1,58 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useUnifiedAuth';
+import { usePatientDocuments } from '@/hooks/usePatientDocuments';
 
-// Hook simplificado que retorna dados mock até implementarmos as tabelas corretas
 export const useReceitasRecentes = () => {
   const [receitas, setReceitas] = useState([]);
   const [atestados, setAtestados] = useState([]);
   const [prontuarios, setProntuarios] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
   const { userProfile } = useAuth();
+  const { 
+    prescriptions, 
+    isLoading, 
+    error, 
+    fetchPrescriptions, 
+    fetchCertificates,
+    fetchReports 
+  } = usePatientDocuments();
 
   useEffect(() => {
-    // Por enquanto retornamos arrays vazios
-    // TODO: Implementar quando as tabelas prescriptions, documents e medical_records estiverem prontas
     if (userProfile) {
-      setReceitas([]);
-      setAtestados([]);
-      setProntuarios([]);
-      setIsLoading(false);
+      fetchPrescriptions();
+      loadDocuments();
     }
-  }, [userProfile]);
+  }, [userProfile, fetchPrescriptions]);
+
+  const loadDocuments = async () => {
+    try {
+      const [certificates, reports] = await Promise.all([
+        fetchCertificates(),
+        fetchReports()
+      ]);
+      
+      setAtestados(certificates);
+      setProntuarios(reports);
+    } catch (error) {
+      console.error('Erro ao carregar documentos:', error);
+    }
+  };
+
+  useEffect(() => {
+    setReceitas(prescriptions as any);
+  }, [prescriptions]);
 
   return {
     receitas,
     atestados,
     prontuarios,
-    documentos: [], // Adicionar para compatibilidade
+    documentos: [...atestados, ...prontuarios],
     isLoading,
     error,
     refetch: () => {
-      // Função para recarregar dados quando necessário
-      setIsLoading(true);
-      setTimeout(() => {
-        setReceitas([]);
-        setAtestados([]);
-        setProntuarios([]);
-        setIsLoading(false);
-      }, 100);
+      if (userProfile) {
+        fetchPrescriptions();
+        loadDocuments();
+      }
     }
   };
 };

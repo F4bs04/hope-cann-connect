@@ -1,37 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { usePatientDocuments } from '@/hooks/usePatientDocuments';
 
 const PedidosExamePaciente: React.FC = () => {
   const [exames, setExames] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { isLoading, error, fetchExamRequests } = usePatientDocuments();
 
   useEffect(() => {
-    const fetchExames = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const pacienteId = localStorage.getItem('userId');
-        if (!pacienteId) throw new Error('Paciente não autenticado');
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('patient_id', pacienteId)
-        .eq('document_type', 'exam_request')
-        .order('issued_at', { ascending: false });
-        if (error) throw error;
-        setExames(data || []);
-      } catch (err: any) {
-        setError(err.message);
-        setExames([]);
-      } finally {
-        setLoading(false);
-      }
+    const loadExamRequests = async () => {
+      const data = await fetchExamRequests();
+      setExames(data);
     };
-    fetchExames();
-  }, []);
+    loadExamRequests();
+  }, [fetchExamRequests]);
 
-  if (loading) return <div>Carregando pedidos de exame...</div>;
+  if (isLoading) return <div>Carregando pedidos de exame...</div>;
   if (error) return <div className="text-red-600">Erro: {error}</div>;
   if (exames.length === 0) return <div>Nenhum pedido de exame encontrado.</div>;
 
