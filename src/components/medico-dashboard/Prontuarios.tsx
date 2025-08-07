@@ -34,10 +34,61 @@ const Prontuarios: React.FC<ProntuariosProps> = ({ onSelectPatient }) => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const prontuariosData = await getProntuarios();
-        setProntuarios(prontuariosData);
+        // Buscar o UUID do médico logado
+        const { data: user } = await supabase.auth.getUser();
+        if (!user?.user?.id) {
+          throw new Error('Usuário não autenticado');
+        }
+
+        // Buscar pacientes do médico
+        const pacientesData = await getPacientes(user.user.id);
+        
+        // Para cada paciente, buscar seus prontuários mais recentes
+        const pacientesComProntuarios = await Promise.all(
+          pacientesData.map(async (paciente: any) => {
+            try {
+              const { data: prontuarios } = await supabase
+                .from('medical_records')
+                .select('*')
+                .eq('patient_id', paciente.id)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+              const prontuarioMaisRecente = prontuarios?.[0];
+              
+              return {
+                id: prontuarioMaisRecente?.id || `temp-${paciente.id}`,
+                id_paciente: paciente.id,
+                pacientes: {
+                  nome: paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado',
+                  data_nascimento: paciente.birth_date
+                },
+                diagnostico: prontuarioMaisRecente?.diagnosis || 'Sem diagnóstico',
+                tratamento: prontuarioMaisRecente?.treatment || 'Sem tratamento definido',
+                data_consulta: prontuarioMaisRecente?.created_at || paciente.created_at,
+                status: prontuarioMaisRecente ? 'concluído' : 'pendente'
+              };
+            } catch (error) {
+              console.error('Erro ao buscar prontuário do paciente:', error);
+              return {
+                id: `temp-${paciente.id}`,
+                id_paciente: paciente.id,
+                pacientes: {
+                  nome: paciente.profiles?.full_name || paciente.emergency_contact_name || 'Nome não informado',
+                  data_nascimento: paciente.birth_date
+                },
+                diagnostico: 'Sem diagnóstico',
+                tratamento: 'Sem tratamento definido',
+                data_consulta: paciente.created_at,
+                status: 'pendente'
+              };
+            }
+          })
+        );
+        
+        setProntuarios(pacientesComProntuarios);
       } catch (error) {
-        console.error('Erro ao carregar prontuários:', error);
+        console.error('Erro ao carregar pacientes:', error);
       }
       setLoading(false);
     };
