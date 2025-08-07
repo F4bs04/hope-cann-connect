@@ -63,12 +63,78 @@ const ProntuarioAba: React.FC<ProntuarioAbaProps> = ({ onBack }) => {
 
   if (!selectedPaciente) {
     return (
-      <div className="max-w-2xl mx-auto py-12 flex flex-col items-center">
-        <p className="text-gray-600 mb-4">Selecione um paciente para acessar o prontuário.</p>
-        <Button onClick={onBack} variant="outline">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
+      <div className="max-w-3xl mx-auto py-8">
+        <Button onClick={onBack} variant="ghost" className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
         </Button>
+        <h2 className="text-2xl font-bold mb-6">Dados do Paciente</h2>
+        
+        <div className="space-y-6 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nome Completo</Label>
+              <div className="p-3 border rounded-md bg-gray-50">
+                Selecione um paciente para visualizar
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>CPF</Label>
+              <div className="p-3 border rounded-md bg-gray-50">
+                Selecione um paciente para visualizar
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Data de Nascimento</Label>
+              <div className="p-3 border rounded-md bg-gray-50">
+                Selecione um paciente para visualizar
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Gênero</Label>
+              <div className="p-3 border rounded-md bg-gray-50">
+                Selecione um paciente para visualizar
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Telefone</Label>
+              <div className="p-3 border rounded-md bg-gray-50">
+                Selecione um paciente para visualizar
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Endereço</Label>
+              <div className="p-3 border rounded-md bg-gray-50">
+                Selecione um paciente para visualizar
+              </div>
+            </div>
+            
+            <div className="space-y-2 md:col-span-2">
+              <Label>Condição Médica</Label>
+              <div className="p-3 border rounded-md bg-gray-50">
+                Selecione um paciente para visualizar
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Contato de Emergência - Nome</Label>
+              <div className="p-3 border rounded-md bg-gray-50">
+                Selecione um paciente para visualizar
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Contato de Emergência - Telefone</Label>
+              <div className="p-3 border rounded-md bg-gray-50">
+                Selecione um paciente para visualizar
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
