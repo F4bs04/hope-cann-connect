@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, Instagram, Facebook, Linkedin } from 'lucide-react';
@@ -46,7 +47,7 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center space-x-3">
                 <Phone size={18} />
-                <span>99999-9999</span>
+                <span>(81) 7900-8621</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail size={18} />
