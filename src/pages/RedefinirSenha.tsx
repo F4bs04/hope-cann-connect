@@ -245,13 +245,18 @@ const RedefinirSenha = () => {
             <CardHeader>
               <CardTitle className="text-center flex items-center justify-center gap-2">
                 <Lock className="h-6 w-6 text-hopecann-teal" />
-                Redefinir Senha
+                Criar Nova Senha
               </CardTitle>
+              <p className="text-center text-sm text-gray-600 mt-2">
+                Você está redefinindo sua senha através do link de recuperação.
+                <br />
+                <span className="text-hopecann-teal font-medium">Não é necessário informar a senha anterior.</span>
+              </p>
             </CardHeader>
             <CardContent>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="password">Nova Senha</Label>
+                  <Label htmlFor="password">Sua Nova Senha</Label>
                   <div className="relative">
                     <Input
                       id="password"
@@ -274,7 +279,7 @@ const RedefinirSenha = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                  <Label htmlFor="confirmPassword">Confirmar Sua Nova Senha</Label>
                   <div className="relative">
                     <Input
                       id="confirmPassword"
@@ -302,7 +307,7 @@ const RedefinirSenha = () => {
                     className="w-full"
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Redefinindo...' : 'Redefinir Senha'}
+                    {isLoading ? 'Criando Nova Senha...' : 'Criar Nova Senha'}
                   </Button>
                   
                   <Button
@@ -317,11 +322,19 @@ const RedefinirSenha = () => {
               </form>
 
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <h4 className="text-sm font-medium text-blue-800 mb-2">Requisitos da senha:</h4>
+                <h4 className="text-sm font-medium text-blue-800 mb-2">Requisitos da nova senha:</h4>
                 <ul className="text-sm text-blue-700 space-y-1">
                   <li>• Mínimo de 6 caracteres</li>
                   <li>• As senhas devem coincidir</li>
                 </ul>
+              </div>
+              
+              <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                <h4 className="text-sm font-medium text-green-800 mb-2">🔐 Link de Recuperação Válido</h4>
+                <p className="text-sm text-green-700">
+                  Você está usando um link seguro de recuperação de senha. 
+                  Não precisa informar sua senha antiga - apenas defina uma nova senha.
+                </p>
               </div>
             </CardContent>
           </Card>

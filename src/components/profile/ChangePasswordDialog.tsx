@@ -126,10 +126,14 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({ children })
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-hopecann-teal" />
-            Alterar Senha
+            Alterar Senha da Conta
           </DialogTitle>
           <DialogDescription>
-            Para sua segurança, digite sua senha atual e defina uma nova senha.
+            Para sua segurança, confirme sua senha atual e defina uma nova senha.
+            <br />
+            <span className="text-amber-600 font-medium">
+              Esta opção é para usuários logados que sabem a senha atual.
+            </span>
           </DialogDescription>
         </DialogHeader>
 
@@ -214,6 +218,15 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({ children })
               <li>• As senhas devem coincidir</li>
               <li>• Diferente da senha atual</li>
             </ul>
+          </div>
+          
+          {/* Aviso sobre esquecimento de senha */}
+          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+            <h4 className="text-sm font-medium text-amber-800 mb-1">🔑 Esqueceu sua senha?</h4>
+            <p className="text-xs text-amber-700">
+              Se você não lembra sua senha atual, use a opção 
+              <span className="font-medium"> "Esqueceu sua senha?"</span> na tela de login.
+            </p>
           </div>
 
           {/* Botões */}
