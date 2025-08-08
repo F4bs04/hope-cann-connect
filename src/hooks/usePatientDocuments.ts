@@ -24,6 +24,7 @@ interface PrescriptionData {
   notes?: string;
   doctor_id: string;
   patient_id: string;
+  file_path?: string;
 }
 
 export const usePatientDocuments = () => {
