@@ -1,19 +1,70 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
-const DoctorFilters = () => {
+interface DoctorFiltersProps {
+  onFiltersChange: (filters: {
+    searchTerm: string;
+    specialty: string;
+    availability: string;
+  }) => void;
+}
+
+const DoctorFilters: React.FC<DoctorFiltersProps> = ({ onFiltersChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
-  const [selectedState, setSelectedState] = useState('all');
   const [selectedAvailability, setSelectedAvailability] = useState('any');
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [isLoadingSpecialties, setIsLoadingSpecialties] = useState(true);
+  
+  // Buscar especialidades dinâmicas dos médicos cadastrados
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('doctors')
+          .select('specialty')
+          .eq('is_approved', true)
+          .eq('is_available', true);
+        
+        if (error) {
+          console.error('Erro ao buscar especialidades:', error);
+          return;
+        }
+        
+        // Extrair especialidades únicas
+        const uniqueSpecialties = [...new Set(
+          data
+            ?.map(doctor => doctor.specialty)
+            .filter(specialty => specialty && specialty.trim() !== '') || []
+        )];
+        
+        setSpecialties(uniqueSpecialties);
+      } catch (error) {
+        console.error('Erro ao carregar especialidades:', error);
+      } finally {
+        setIsLoadingSpecialties(false);
+      }
+    };
+
+    fetchSpecialties();
+  }, []);
+  
+  // Notificar mudanças de filtros
+  useEffect(() => {
+    onFiltersChange({
+      searchTerm,
+      specialty: selectedSpecialty === 'all' ? '' : selectedSpecialty,
+      availability: selectedAvailability === 'any' ? '' : selectedAvailability,
+    });
+  }, [searchTerm, selectedSpecialty, selectedAvailability, onFiltersChange]);
   
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedSpecialty('all');
-    setSelectedState('all');
     setSelectedAvailability('any');
   };
 
@@ -48,7 +99,7 @@ const DoctorFilters = () => {
           </div>
         </div>
         
-        {/* Filter by specialty */}
+        {/* Filter by specialty - Dynamic from database */}
         <div>
           <label htmlFor="specialty" className="block text-sm font-medium mb-2">
             Especialidade
@@ -59,29 +110,15 @@ const DoctorFilters = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas especialidades</SelectItem>
-              <SelectItem value="Neurologista">Neurologista</SelectItem>
-              <SelectItem value="Psiquiatra">Psiquiatra</SelectItem>
-              <SelectItem value="Clínica Geral">Clínica Geral</SelectItem>
-              <SelectItem value="Reumatologista">Reumatologista</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Filter by state */}
-        <div>
-          <label htmlFor="state" className="block text-sm font-medium mb-2">
-            Estado
-          </label>
-          <Select value={selectedState} onValueChange={setSelectedState}>
-            <SelectTrigger id="state" className="w-full">
-              <SelectValue placeholder="Todos os estados" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os estados</SelectItem>
-              <SelectItem value="SP">São Paulo</SelectItem>
-              <SelectItem value="RJ">Rio de Janeiro</SelectItem>
-              <SelectItem value="MG">Minas Gerais</SelectItem>
-              <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+              {isLoadingSpecialties ? (
+                <SelectItem value="loading" disabled>Carregando...</SelectItem>
+              ) : (
+                specialties.map((specialty) => (
+                  <SelectItem key={specialty} value={specialty}>
+                    {specialty}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>

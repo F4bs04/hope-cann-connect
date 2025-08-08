@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Calendar } from 'lucide-react';
@@ -7,12 +7,24 @@ import DoctorFilters from '../components/DoctorFilters';
 import DoctorSearch from '../components/DoctorSearch';
 import { useNavigate } from 'react-router-dom';
 import { useDoctors } from '@/hooks/useDoctors';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Doctor {
+  id: string;
+  name: string;
+  specialty: string;
+  bio: string;
+  image: string;
+  availability: string[];
+}
 
 const Medicos = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
+  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
+  const [allDoctors, setAllDoctors] = useState<Doctor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { doctors, isLoading, dbStatus } = useDoctors();
   
   const handleSelectDoctor = (id: string) => {
     setSelectedDoctor(id);
@@ -23,6 +35,111 @@ const Medicos = () => {
     setCurrentPage(page);
     window.scrollTo(0, 0);
   };
+
+  // Buscar todos os médicos do banco
+  const fetchDoctors = async () => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase
+        .from('doctors')
+        .select(`
+          *,
+          profiles!inner(full_name, avatar_url)
+        `)
+        .eq('is_available', true)
+        .eq('is_approved', true);
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.length > 0) {
+        // Processar dados dos médicos
+        const doctorsWithAvailability = await Promise.all(data.map(async (doctor) => {
+          // Verificar próximas consultas disponíveis
+          const { data: appointmentData, error: appointmentError } = await supabase
+            .from('appointments')
+            .select('scheduled_at')
+            .eq('doctor_id', doctor.id)
+            .eq('status', 'scheduled')
+            .gte('scheduled_at', new Date().toISOString())
+            .order('scheduled_at', { ascending: true })
+            .limit(1);
+          
+          if (appointmentError) {
+            console.error('Error fetching appointments:', appointmentError);
+          }
+          
+          let availability = ['next-week']; // Default
+          
+          if (appointmentData && appointmentData.length > 0) {
+            const appointmentDate = new Date(appointmentData[0].scheduled_at);
+            const today = new Date();
+            const thisWeekEnd = new Date(today);
+            thisWeekEnd.setDate(today.getDate() + 7);
+            
+            if (appointmentDate.toDateString() === today.toDateString()) {
+              availability = ['today', 'this-week'];
+            } else if (appointmentDate <= thisWeekEnd) {
+              availability = ['this-week'];
+            }
+          }
+          
+          return {
+            id: doctor.id,
+            name: doctor.profiles?.full_name || "Médico",
+            specialty: doctor.specialty || "Medicina Canábica",
+            bio: doctor.biography || 'Especialista em tratamentos canábicos.',
+            image: doctor.profiles?.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+            availability
+          };
+        }));
+        
+        setAllDoctors(doctorsWithAvailability);
+        setFilteredDoctors(doctorsWithAvailability);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar médicos:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+
+  // Função para aplicar filtros
+  const handleFiltersChange = useCallback((filters: {
+    searchTerm: string;
+    specialty: string;
+    availability: string;
+  }) => {
+    let filtered = allDoctors;
+    
+    // Filtro por nome
+    if (filters.searchTerm) {
+      filtered = filtered.filter(doctor => 
+        doctor.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        doctor.specialty.toLowerCase().includes(filters.searchTerm.toLowerCase())
+      );
+    }
+    
+    // Filtro por especialidade
+    if (filters.specialty) {
+      filtered = filtered.filter(doctor => doctor.specialty === filters.specialty);
+    }
+    
+    // Filtro por disponibilidade
+    if (filters.availability) {
+      filtered = filtered.filter(doctor => 
+        doctor.availability.includes(filters.availability)
+      );
+    }
+    
+    setFilteredDoctors(filtered);
+  }, [allDoctors]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -41,13 +158,13 @@ const Medicos = () => {
           <div className="hopecann-container">
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="lg:w-1/4">
-                <DoctorFilters />
+                <DoctorFilters onFiltersChange={handleFiltersChange} />
               </div>
               
               <div className="lg:w-3/4">
                 <DoctorSearch 
                   onSelectDoctor={handleSelectDoctor} 
-                  initialDoctors={[]}
+                  initialDoctors={filteredDoctors}
                   isInitialLoading={isLoading}
                   selectedDoctor={selectedDoctor}
                 />
