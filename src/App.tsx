@@ -32,6 +32,7 @@ import Notificacoes from "./pages/Notificacoes";
 import PerfilMedico from "./pages/PerfilMedico";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
+import AuthCallback from "./pages/AuthCallback";
 
 function App() {
   console.log('[App.tsx] Renderizando App component');
@@ -134,6 +135,7 @@ function App() {
           {/* Rotas de autenticação */}
           <Route path="/recuperarsenha" element={<RecuperarSenha />} />
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

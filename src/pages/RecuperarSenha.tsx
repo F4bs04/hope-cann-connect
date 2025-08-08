@@ -37,14 +37,20 @@ const RecuperarSenha = () => {
     setSuccess(false);
     
     try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('[RecuperarSenha] Enviando email de recuperação para:', values.email);
+      console.log('[RecuperarSenha] URL de redirecionamento:', redirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/redefinir-senha`
+        redirectTo: redirectUrl
       });
       
       if (error) {
+        console.error('[RecuperarSenha] Erro ao enviar email:', error);
         throw error;
       }
       
+      console.log('[RecuperarSenha] Email enviado com sucesso');
       setSuccess(true);
       toast({
         title: 'E-mail enviado com sucesso!',
