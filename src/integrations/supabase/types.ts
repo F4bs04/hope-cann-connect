@@ -152,11 +152,14 @@ export type Database = {
           consultation_type: Database["public"]["Enums"]["consultation_type"]
           created_at: string
           doctor_id: string
+          duration_min: number
+          expires_at: string | null
           fee: number | null
           id: string
           notes: string | null
           patient_id: string
           payment_status: string | null
+          price_cents: number | null
           reason: string
           scheduled_at: string
           status: Database["public"]["Enums"]["appointment_status"]
@@ -167,11 +170,14 @@ export type Database = {
           consultation_type?: Database["public"]["Enums"]["consultation_type"]
           created_at?: string
           doctor_id: string
+          duration_min?: number
+          expires_at?: string | null
           fee?: number | null
           id?: string
           notes?: string | null
           patient_id: string
           payment_status?: string | null
+          price_cents?: number | null
           reason: string
           scheduled_at: string
           status?: Database["public"]["Enums"]["appointment_status"]
@@ -182,11 +188,14 @@ export type Database = {
           consultation_type?: Database["public"]["Enums"]["consultation_type"]
           created_at?: string
           doctor_id?: string
+          duration_min?: number
+          expires_at?: string | null
           fee?: number | null
           id?: string
           notes?: string | null
           patient_id?: string
           payment_status?: string | null
+          price_cents?: number | null
           reason?: string
           scheduled_at?: string
           status?: Database["public"]["Enums"]["appointment_status"]
@@ -442,6 +451,51 @@ export type Database = {
           },
           {
             foreignKeyName: "doctor_schedules_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_slots: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          ends_at: string
+          id: string
+          is_available: boolean
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          ends_at: string
+          id?: string
+          is_available?: boolean
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          ends_at?: string
+          id?: string
+          is_available?: boolean
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_slots_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_slots_doctor_id_fkey"
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "v_doctors_public"
@@ -1121,6 +1175,10 @@ export type Database = {
       }
       delete_all_users: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      generate_doctor_slots: {
+        Args: { p_doctor_id: string; p_start_date: string; p_end_date: string }
         Returns: undefined
       }
       get_authenticated_email: {
