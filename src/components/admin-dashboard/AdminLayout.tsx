@@ -22,31 +22,31 @@ const AdminLayout: React.FC = () => {
       icon: Home,
       label: 'Dashboard',
       path: '/admin',
-      active: location.pathname === '/admin'
+      active: location.pathname === '/admin' || location.pathname === '/admin/'
     },
     {
       icon: Users,
       label: 'Pacientes',
       path: '/admin/patients',
-      active: location.pathname === '/admin/patients'
+      active: location.pathname.startsWith('/admin/patients')
     },
     {
       icon: UserCheck,
       label: 'Médicos',
       path: '/admin/doctors',
-      active: location.pathname === '/admin/doctors'
+      active: location.pathname.startsWith('/admin/doctors')
     },
     {
       icon: BarChart3,
       label: 'Relatórios',
       path: '/admin/reports',
-      active: location.pathname === '/admin/reports'
+      active: location.pathname.startsWith('/admin/reports')
     },
     {
       icon: Settings,
       label: 'Configurações',
       path: '/admin/settings',
-      active: location.pathname === '/admin/settings'
+      active: location.pathname.startsWith('/admin/settings')
     }
   ];
 

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/NewProtectedRoute";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -96,6 +96,14 @@ function App() {
           <Route 
             path="/admin/*" 
             element={
+              <ProtectedRoute allowedUserTypes={['admin', 'admin_clinica']}>
+                <AreaAdmin />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/area-clinica/*" 
+            element={
               <ProtectedRoute allowedUserTypes={['admin_clinica']}>
                 <AreaClinica />
               </ProtectedRoute>
@@ -103,11 +111,7 @@ function App() {
           />
           <Route 
             path="/admin-panel/*" 
-            element={
-              <ProtectedRoute allowedUserTypes={['admin', 'admin_clinica']}>
-                <AreaAdmin />
-              </ProtectedRoute>
-            } 
+            element={<Navigate to="/admin" replace />}
           />
           <Route 
             path="/agendar" 
