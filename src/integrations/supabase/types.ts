@@ -93,6 +93,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "active_chats_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "active_chats_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -198,6 +205,13 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
             referencedColumns: ["id"]
           },
           {
@@ -372,6 +386,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "doctor_patients_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "doctor_patients_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -417,6 +438,13 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_schedules_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
             referencedColumns: ["id"]
           },
         ]
@@ -548,6 +576,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "documents_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "documents_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -601,6 +636,13 @@ export type Database = {
             referencedRelation: "doctors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "exam_templates_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       financial_transactions: {
@@ -650,6 +692,13 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
             referencedColumns: ["id"]
           },
           {
@@ -738,6 +787,13 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
             referencedColumns: ["id"]
           },
           {
@@ -985,6 +1041,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "prescriptions_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "v_doctors_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "prescriptions_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -1038,7 +1101,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_doctors_public: {
+        Row: {
+          consultation_fee: number | null
+          doctor_name: string | null
+          id: string | null
+          is_approved: boolean | null
+          is_available: boolean | null
+          price_cents: number | null
+          specialty: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_access_patient_data: {
@@ -1062,6 +1136,20 @@ export type Database = {
             }
           | { p_medico_id: number; p_data_hora: string; p_consulta_id?: number }
         Returns: boolean
+      }
+      rpc_slots_available: {
+        Args: {
+          p_doctor: string
+          p_from: string
+          p_to: string
+          p_slot_minutes?: number
+          p_step_minutes?: number
+          p_tz?: string
+        }
+        Returns: {
+          slot_start: string
+          slot_end: string
+        }[]
       }
       verificar_chats_expirados: {
         Args: Record<PropertyKey, never>

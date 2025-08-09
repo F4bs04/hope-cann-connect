@@ -34,6 +34,18 @@ interface ActivityLog {
   created_at: string;
 }
 
+interface FinancialTransactionItem {
+  id: string;
+  created_at: string;
+  processed_at: string | null;
+  amount: number;
+  transaction_type: string; // 'credit' | 'debit' | outros
+  appointment_id: string | null;
+  patient_id: string | null;
+  patient_name?: string;
+  payment_status?: string | null;
+}
+
 const Acompanhamento: React.FC = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -41,6 +53,7 @@ const Acompanhamento: React.FC = () => {
   const [doctors, setDoctors] = useState<DoctorItem[]>([]);
   const [openDoctorId, setOpenDoctorId] = useState<string | null>(null);
   const [logsByUserId, setLogsByUserId] = useState<Record<string, { loading: boolean; error: string | null; logs: ActivityLog[] }>>({});
+  const [financialByDoctorId, setFinancialByDoctorId] = useState<Record<string, { loading: boolean; error: string | null; items: FinancialTransactionItem[] }>>({});
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -99,17 +112,102 @@ const Acompanhamento: React.FC = () => {
     fetchDoctors();
   }, [toast]);
 
+  const fetchFinancialLogs = async (doctorId: string) => {
+    // Evitar recarregar se já carregado
+    if (financialByDoctorId[doctorId]) return;
+
+    setFinancialByDoctorId(prev => ({ ...prev, [doctorId]: { loading: true, error: null, items: [] } }));
+
+    try {
+      // 1) Buscar transações financeiras do médico
+      const { data: txs, error: txError } = await supabase
+        .from("financial_transactions")
+        .select("id, created_at, processed_at, amount, transaction_type, appointment_id, patient_id, doctor_id")
+        .eq("doctor_id", doctorId)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (txError) throw txError;
+
+      const items: FinancialTransactionItem[] = (txs || []).map((t: any) => ({
+        id: String(t.id),
+        created_at: String(t.created_at),
+        processed_at: t.processed_at ? String(t.processed_at) : null,
+        amount: Number(t.amount ?? 0),
+        transaction_type: String(t.transaction_type || ''),
+        appointment_id: t.appointment_id ? String(t.appointment_id) : null,
+        patient_id: t.patient_id ? String(t.patient_id) : null,
+      }));
+
+      // 2) Resolver nomes dos pacientes via tabela patients (admin tem política para SELECT)
+      const patientIds = Array.from(new Set(items.map(i => i.patient_id).filter(Boolean))) as string[];
+      let patientNameById: Record<string, string> = {};
+      if (patientIds.length > 0) {
+        const { data: patientsData, error: patientsError } = await supabase
+          .from("patients")
+          .select("id, full_name")
+          .in("id", patientIds);
+
+        if (patientsError) {
+          console.warn("Não foi possível carregar nomes dos pacientes (usando fallback):", patientsError);
+        } else {
+          patientNameById = (patientsData || []).reduce((acc, p: any) => {
+            acc[String(p.id)] = p.full_name || "Paciente";
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
+
+      // 3) Opcional: obter status de pagamento pela tabela payments (por appointment_id)
+      const appointmentIds = Array.from(new Set(items.map(i => i.appointment_id).filter(Boolean))) as string[];
+      let paymentStatusByAppointment: Record<string, string> = {};
+      if (appointmentIds.length > 0) {
+        const { data: paymentsData, error: paymentsError } = await supabase
+          .from("payments")
+          .select("id, status, appointment_id")
+          .in("appointment_id", appointmentIds);
+
+        if (paymentsError) {
+          console.warn("Não foi possível carregar status de pagamentos (usando status derivado):", paymentsError);
+        } else {
+          paymentStatusByAppointment = (paymentsData || []).reduce((acc, p: any) => {
+            if (p.appointment_id) acc[String(p.appointment_id)] = String(p.status || "");
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
+
+      // 4) Enriquecer itens com nomes e status amigáveis
+      const enriched = items.map((i) => ({
+        ...i,
+        patient_name: i.patient_id ? (patientNameById[i.patient_id] || "Paciente") : "Paciente",
+        payment_status: i.appointment_id ? (paymentStatusByAppointment[i.appointment_id] || null) : null,
+      }));
+
+      setFinancialByDoctorId(prev => ({ ...prev, [doctorId]: { loading: false, error: null, items: enriched } }));
+    } catch (err: any) {
+      console.error("Erro ao carregar logs financeiros:", err);
+      setFinancialByDoctorId(prev => ({
+        ...prev,
+        [doctorId]: { loading: false, error: "Não foi possível carregar os logs financeiros.", items: [] }
+      }));
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar financeiro",
+        description: "Falha ao obter transações financeiras.",
+      });
+    }
+  };
+
   const handleToggleLogs = async (doctor: DoctorItem) => {
     const newOpen = openDoctorId === doctor.id ? null : doctor.id;
     setOpenDoctorId(newOpen);
 
     if (!newOpen) return; // closed
 
-    // Fetch logs lazily if not loaded
+    // Fetch logs de atividade (lazy)
     const key = doctor.user_id;
-    if (!key) return;
-
-    if (!logsByUserId[key]) {
+    if (key && !logsByUserId[key]) {
       setLogsByUserId((prev) => ({ ...prev, [key]: { loading: true, error: null, logs: [] } }));
       const { data, error: logsError } = await supabase
         .from("activity_logs")
@@ -142,6 +240,11 @@ const Acompanhamento: React.FC = () => {
         setLogsByUserId((prev) => ({ ...prev, [key]: { loading: false, error: null, logs: typedLogs } }));
       }
     }
+
+    // Fetch financeiro (lazy)
+    if (doctor.id) {
+      fetchFinancialLogs(doctor.id);
+    }
   };
 
   const filteredDoctors = useMemo(() => doctors, [doctors]);
@@ -166,7 +269,7 @@ const Acompanhamento: React.FC = () => {
     <section aria-labelledby="acompanhamento-title" className="space-y-6">
       <header className="space-y-1">
         <h2 id="acompanhamento-title" className="text-2xl font-semibold tracking-tight">Acompanhamento</h2>
-        <p className="text-sm text-muted-foreground">Selecione um médico para visualizar as atividades registradas no sistema.</p>
+        <p className="text-sm text-muted-foreground">Selecione um médico para visualizar as atividades e o financeiro.</p>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -212,7 +315,7 @@ const Acompanhamento: React.FC = () => {
 
                 <CollapsibleContent>
                   <Separator className="mx-6" />
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-5">
                     <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                       {doc.specialty && (
                         <Badge variant="outline">{doc.specialty}</Badge>
@@ -227,59 +330,130 @@ const Acompanhamento: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Logs */}
-                    {(() => {
-                      const key = doc.user_id;
-                      const state = key ? logsByUserId[key] : undefined;
-                      if (!key || !state) {
-                        return (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Activity className="h-4 w-4" /> Clique para carregar os logs.
-                          </div>
-                        );
-                      }
+                    {/* Logs de Atividade */}
+                    <section className="space-y-2">
+                      <header className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-primary" />
+                        <h3 className="font-medium">Atividades</h3>
+                      </header>
+                      {(() => {
+                        const key = doc.user_id;
+                        const state = key ? logsByUserId[key] : undefined;
+                        if (!key || !state) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Activity className="h-4 w-4" /> Clique para carregar os logs.
+                            </div>
+                          );
+                        }
 
-                      if (state.loading) {
-                        return (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" /> Carregando logs...
-                          </div>
-                        );
-                      }
+                        if (state.loading) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" /> Carregando logs...
+                            </div>
+                          );
+                        }
 
-                      if (state.error) {
-                        return (
-                          <div className="text-sm text-destructive">{state.error}</div>
-                        );
-                      }
+                        if (state.error) {
+                          return (
+                            <div className="text-sm text-destructive">{state.error}</div>
+                          );
+                        }
 
-                      if (!state.logs.length) {
-                        return (
-                          <div className="text-sm text-muted-foreground">Nenhuma atividade encontrada para este médico.</div>
-                        );
-                      }
+                        if (!state.logs.length) {
+                          return (
+                            <div className="text-sm text-muted-foreground">Nenhuma atividade encontrada para este médico.</div>
+                          );
+                        }
 
-                      return (
-                        <ul className="space-y-2">
-                          {state.logs.map((log) => (
-                            <li key={log.id} className="rounded-md border p-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 font-medium">
-                                  {renderIconForActivity(log.activity_type)}
-                                  <span className="capitalize">{formatActivityType(log.activity_type)}</span>
+                        return (
+                          <ul className="space-y-2">
+                            {state.logs.map((log) => (
+                              <li key={log.id} className="rounded-md border p-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 font-medium">
+                                    {renderIconForActivity(log.activity_type)}
+                                    <span className="capitalize">{formatActivityType(log.activity_type)}</span>
+                                  </div>
+                                  <time className="text-xs text-muted-foreground">
+                                    {new Date(log.created_at).toLocaleString("pt-BR")}
+                                  </time>
                                 </div>
-                                <time className="text-xs text-muted-foreground">
-                                  {new Date(log.created_at).toLocaleString("pt-BR")}
-                                </time>
-                              </div>
-                              {log.description && (
-                                <p className="mt-1 text-sm text-muted-foreground break-words">{log.description}</p>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      );
-                    })()}
+                                {log.description && (
+                                  <p className="mt-1 text-sm text-muted-foreground break-words">{log.description}</p>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      })()}
+                    </section>
+
+                    <Separator />
+
+                    {/* Logs Financeiros */}
+                    <section className="space-y-2">
+                      <header className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-primary" />
+                        <h3 className="font-medium">Financeiro</h3>
+                      </header>
+                      {(() => {
+                        const state = financialByDoctorId[doc.id];
+                        if (!state) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <DollarSign className="h-4 w-4" /> Clique para carregar os logs financeiros.
+                            </div>
+                          );
+                        }
+
+                        if (state.loading) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" /> Carregando financeiro...
+                            </div>
+                          );
+                        }
+
+                        if (state.error) {
+                          return <div className="text-sm text-destructive">{state.error}</div>;
+                        }
+
+                        if (!state.items.length) {
+                          return (
+                            <div className="text-sm text-muted-foreground">Nenhuma transação encontrada para este médico.</div>
+                          );
+                        }
+
+                        return (
+                          <ul className="space-y-2">
+                            {state.items.map((tx) => (
+                              <li key={tx.id} className="rounded-md border p-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium truncate">
+                                      {name} • {tx.patient_name || "Paciente"}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {new Date(tx.created_at).toLocaleString("pt-BR")}
+                                      {tx.appointment_id ? ` • Consulta: ${tx.appointment_id.slice(0, 8)}...` : ""}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <Badge variant={getStatusVariant(tx)}>{getStatusLabel(tx)}</Badge>
+                                    <span className={cn("text-sm font-medium", tx.transaction_type === "debit" ? "text-destructive" : "text-foreground")}>
+                                      {tx.transaction_type === "debit" ? "-" : "+"}
+                                      {tx.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      })()}
+                    </section>
                   </CardContent>
                 </CollapsibleContent>
               </Collapsible>
@@ -292,7 +466,6 @@ const Acompanhamento: React.FC = () => {
 };
 
 function formatActivityType(type: string) {
-  // Normaliza possíveis tipos esperados pelo pedido
   const map: Record<string, string> = {
     criar_documento: "Criar documento",
     agendar: "Agendar",
@@ -313,6 +486,32 @@ function renderIconForActivity(type: string) {
   if (normalized.includes("cancel") || normalized.includes("desmarc")) return <XCircle className="h-4 w-4 text-destructive" />;
   if (normalized.includes("efetu")) return <DollarSign className="h-4 w-4 text-primary" />;
   return <Activity className="h-4 w-4 text-primary" />;
+}
+
+function getStatusLabel(tx: FinancialTransactionItem): string {
+  const s = (tx.payment_status || "").toLowerCase();
+
+  const paidWords = ["paid", "completed", "succeeded", "paid_out"];
+  const canceledWords = ["cancelled", "canceled", "refunded", "chargeback"];
+  const confirmedWords = ["confirmed", "approved", "authorized"];
+
+  if (s) {
+    if (paidWords.includes(s)) return "Pagamento concluído";
+    if (canceledWords.includes(s)) return "Cancelado";
+    if (confirmedWords.includes(s)) return "Comprovado";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  if (tx.transaction_type === "debit") return "Cancelado";
+  if (tx.transaction_type === "credit" && tx.processed_at) return "Pagamento concluído";
+  return "Comprovado";
+}
+
+function getStatusVariant(tx: FinancialTransactionItem): "default" | "secondary" | "destructive" | "outline" {
+  const label = getStatusLabel(tx).toLowerCase();
+  if (label.includes("cancel")) return "destructive";
+  if (label.includes("conclu")) return "secondary";
+  return "default";
 }
 
 export default Acompanhamento;
