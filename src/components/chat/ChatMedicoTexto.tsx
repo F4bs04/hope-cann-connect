@@ -136,22 +136,19 @@ const ChatMedicoTexto: React.FC<ChatMedicoTextoProps> = ({ doctor, onClose }) =>
     }
   };
 
-  const uploadFile = async (file: File): Promise<{ url: string; fileName: string }> => {
-    const fileName = `${Date.now()}_${file.name}`;
-    const filePath = `chat-documents/${chatId}/${fileName}`;
+const uploadFile = async (file: File): Promise<{ path: string; fileName: string }> => {
+  const fileName = `${Date.now()}_${file.name}`;
+  const filePath = `chat-documents/${chatId}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('documentos_medicos')
-      .upload(filePath, file);
+  const { error: uploadError } = await supabase.storage
+    .from('documentos_medicos')
+    .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+  if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('documentos_medicos')
-      .getPublicUrl(filePath);
-
-    return { url: publicUrl, fileName: file.name };
-  };
+  // Retornar apenas o caminho (seguro). URL será gerada sob demanda via download
+  return { path: filePath, fileName: file.name };
+};
 
   const sendMessage = async () => {
     if ((!newMessage.trim() && !selectedFile) || !chatId || !userProfile?.id) return;
@@ -162,15 +159,15 @@ const ChatMedicoTexto: React.FC<ChatMedicoTextoProps> = ({ doctor, onClose }) =>
       let fileName = '';
       let fileType = '';
 
-      // Upload do arquivo se existir
-      if (selectedFile) {
-        setUploadingFile(true);
-        const uploadResult = await uploadFile(selectedFile);
-        fileUrl = uploadResult.url;
-        fileName = uploadResult.fileName;
-        fileType = selectedFile.type;
-        setUploadingFile(false);
-      }
+// Upload do arquivo se existir
+if (selectedFile) {
+  setUploadingFile(true);
+  const uploadResult = await uploadFile(selectedFile);
+  fileUrl = uploadResult.path; // armazenar caminho seguro
+  fileName = uploadResult.fileName;
+  fileType = selectedFile.type;
+  setUploadingFile(false);
+}
 
       // Enviar mensagem
       const messageText = newMessage.trim() || (selectedFile ? `📎 ${fileName}` : '');
@@ -218,23 +215,25 @@ const ChatMedicoTexto: React.FC<ChatMedicoTextoProps> = ({ doctor, onClose }) =>
     }
   };
 
-  const downloadFile = async (fileUrl: string, fileName: string) => {
-    try {
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Erro ao baixar arquivo:', error);
-      toast.error('Erro ao baixar arquivo');
-    }
-  };
+const downloadFile = async (filePath: string, fileName: string) => {
+  try {
+    const { data, error } = await supabase.storage
+      .from('documentos_medicos')
+      .download(filePath);
+    if (error) throw error;
+    const url = window.URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('Erro ao baixar arquivo:', error);
+    toast.error('Erro ao baixar arquivo');
+  }
+};
 
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) return <ImageIcon className="h-4 w-4" />;

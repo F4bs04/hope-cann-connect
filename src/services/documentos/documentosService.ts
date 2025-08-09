@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const getDocumentUrl = async (path: string) => {
   try {
-    const { data } = await supabase.storage
+    const { data, error } = await supabase.storage
       .from('documentos_medicos')
-      .getPublicUrl(path);
+      .createSignedUrl(path, 60); // URL assinada válida por 60s
     
-    return data.publicUrl;
+    if (error) throw error;
+    return data.signedUrl;
   } catch (error) {
     console.error("Erro ao obter URL do documento:", error);
     return null;

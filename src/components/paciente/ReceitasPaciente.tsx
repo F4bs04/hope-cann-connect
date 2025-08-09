@@ -34,54 +34,62 @@ const ReceitasPaciente: React.FC = () => {
     }
   };
 
-  const generateReceitaPDF = async (receita: any) => {
-    try {
-      const element = document.createElement('div');
-      element.innerHTML = `
-        <div style="padding: 40px; font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2563eb; margin-bottom: 10px;">RECEITA MÉDICA</h1>
-            <p style="color: #666; margin: 0;">Prescrição Digital</p>
-          </div>
-          
-          <div style="border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-            <h2 style="color: #1f2937; margin-bottom: 15px; font-size: 18px;">Informações da Receita</h2>
-            <div style="margin-bottom: 10px;"><strong>Medicamento:</strong> ${receita.medication_name}</div>
-            <div style="margin-bottom: 10px;"><strong>Dosagem:</strong> ${receita.dosage}</div>
-            <div style="margin-bottom: 10px;"><strong>Frequência:</strong> ${receita.frequency}</div>
-            <div style="margin-bottom: 10px;"><strong>Duração:</strong> ${receita.duration}</div>
-            ${receita.instructions ? `<div style="margin-bottom: 10px;"><strong>Instruções:</strong> ${receita.instructions}</div>` : ''}
-            ${receita.notes ? `<div style="margin-bottom: 10px;"><strong>Observações:</strong> ${receita.notes}</div>` : ''}
-          </div>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="text-align: center; color: #666; font-size: 12px;">
-              Receita emitida em: ${new Date(receita.issued_at).toLocaleDateString('pt-BR')}<br>
-              Documento gerado digitalmente
-            </p>
-          </div>
+const generateReceitaPDF = async (receita: any) => {
+  try {
+    const esc = (val: any) => String(val ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    const safeName = (s: any) => esc(s).replace(/\s+/g, '_');
+
+    const element = document.createElement('div');
+    element.innerHTML = `
+      <div style="padding: 40px; font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #2563eb; margin-bottom: 10px;">RECEITA MÉDICA</h1>
+          <p style="color: #666; margin: 0;">Prescrição Digital</p>
         </div>
-      `;
+        
+        <div style="border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+          <h2 style="color: #1f2937; margin-bottom: 15px; font-size: 18px;">Informações da Receita</h2>
+          <div style="margin-bottom: 10px;"><strong>Medicamento:</strong> ${esc(receita.medication_name)}</div>
+          <div style="margin-bottom: 10px;"><strong>Dosagem:</strong> ${esc(receita.dosage)}</div>
+          <div style="margin-bottom: 10px;"><strong>Frequência:</strong> ${esc(receita.frequency)}</div>
+          <div style="margin-bottom: 10px;"><strong>Duração:</strong> ${esc(receita.duration)}</div>
+          ${receita.instructions ? `<div style="margin-bottom: 10px;"><strong>Instruções:</strong> ${esc(receita.instructions)}</div>` : ''}
+          ${receita.notes ? `<div style=\"margin-bottom: 10px;\"><strong>Observações:</strong> ${esc(receita.notes)}</div>` : ''}
+        </div>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          <p style="text-align: center; color: #666; font-size: 12px;">
+            Receita emitida em: ${new Date(receita.issued_at).toLocaleDateString('pt-BR')}<br>
+            Documento gerado digitalmente
+          </p>
+        </div>
+      </div>
+    `;
 
-      document.body.appendChild(element);
+    document.body.appendChild(element);
 
-      const opt = {
-        margin: 1,
-        filename: `receita-${receita.medication_name}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      };
+    const opt = {
+      margin: 1,
+      filename: `receita-${safeName(receita.medication_name)}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    } as const;
 
-      await html2pdf().set(opt).from(element).save();
-      document.body.removeChild(element);
-      
-      toast.success('PDF da receita gerado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      toast.error('Erro ao gerar PDF da receita');
-    }
-  };
+    await html2pdf().set(opt).from(element).save();
+    document.body.removeChild(element);
+    
+    toast.success('PDF da receita gerado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao gerar PDF:', error);
+    toast.error('Erro ao gerar PDF da receita');
+  }
+};
 
   if (isLoading) {
     return (

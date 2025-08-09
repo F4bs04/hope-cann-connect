@@ -115,22 +115,30 @@ const DocumentosMedicos: React.FC = () => {
     }
   };
 
+  // Escapar conteúdo dinâmico para evitar XSS em templates HTML
+  const esc = (val: any) => String(val ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
   const generateReceitaHTML = (documento: any) => `
     <div style="padding: 40px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
       <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px;">
         <h1 style="color: #2563eb; margin: 0; font-size: 24px;">RECEITA MÉDICA</h1>
-        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${documento.id.toString().padStart(4, '0')}</p>
+        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${String(documento.id).padStart(4, '0')}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
-        <p style="margin: 10px 0;"><strong>Data de Emissão:</strong> ${format(new Date(documento.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
-        <p style="margin: 10px 0;"><strong>Médico:</strong> ${documento.medico_nome}</p>
+        <p style="margin: 10px 0;"><strong>Data de Emissão:</strong> ${esc(format(new Date(documento.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }))}</p>
+        <p style="margin: 10px 0;"><strong>Médico:</strong> ${esc(documento.medico_nome)}</p>
       </div>
       
       <div style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
         <h3 style="color: #2563eb; margin-top: 0;">Medicamento Prescrito</h3>
-        <p style="font-size: 18px; font-weight: bold; margin: 10px 0;">${documento.titulo}</p>
-        ${documento.observacoes ? `<p style="margin: 10px 0;"><strong>Observações:</strong> ${documento.observacoes}</p>` : ''}
+        <p style="font-size: 18px; font-weight: bold; margin: 10px 0;">${esc(documento.titulo)}</p>
+        ${documento.observacoes ? `<p style="margin: 10px 0;"><strong>Observações:</strong> ${esc(documento.observacoes)}</p>` : ''}
       </div>
       
       <div style="margin-top: 60px; text-align: center; border-top: 1px solid #000; padding-top: 20px;">
@@ -146,12 +154,12 @@ const DocumentosMedicos: React.FC = () => {
     <div style="padding: 40px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
       <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px;">
         <h1 style="color: #2563eb; margin: 0; font-size: 24px;">ATESTADO MÉDICO</h1>
-        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${documento.id.toString().padStart(4, '0')}</p>
+        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${String(documento.id).padStart(4, '0')}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
-        <p style="margin: 10px 0;"><strong>Data:</strong> ${format(new Date(documento.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
-        <p style="margin: 10px 0;"><strong>Médico:</strong> ${documento.medico_nome}</p>
+        <p style="margin: 10px 0;"><strong>Data:</strong> ${esc(format(new Date(documento.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }))}</p>
+        <p style="margin: 10px 0;"><strong>Médico:</strong> ${esc(documento.medico_nome)}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
@@ -159,7 +167,7 @@ const DocumentosMedicos: React.FC = () => {
           Atesto para os devidos fins que o(a) paciente deverá permanecer afastado(a) 
           de suas atividades habituais conforme especificado no documento.
         </p>
-        ${documento.observacoes ? `<p style="margin: 15px 0;"><strong>Justificativa:</strong> ${documento.observacoes}</p>` : ''}
+        ${documento.observacoes ? `<p style="margin: 15px 0;"><strong>Justificativa:</strong> ${esc(documento.observacoes)}</p>` : ''}
       </div>
       
       <div style="margin-top: 60px; text-align: center; border-top: 1px solid #000; padding-top: 20px;">
@@ -175,17 +183,17 @@ const DocumentosMedicos: React.FC = () => {
     <div style="padding: 40px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
       <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px;">
         <h1 style="color: #2563eb; margin: 0; font-size: 24px;">PRONTUÁRIO MÉDICO</h1>
-        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${documento.id.toString().padStart(4, '0')}</p>
+        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${String(documento.id).padStart(4, '0')}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
-        <p style="margin: 10px 0;"><strong>Data da Consulta:</strong> ${format(new Date(documento.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
-        <p style="margin: 10px 0;"><strong>Médico:</strong> ${documento.medico_nome}</p>
+        <p style="margin: 10px 0;"><strong>Data da Consulta:</strong> ${esc(format(new Date(documento.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }))}</p>
+        <p style="margin: 10px 0;"><strong>Médico:</strong> ${esc(documento.medico_nome)}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
-        <h3 style="color: #2563eb; margin-bottom: 15px;">${documento.titulo}</h3>
-        ${documento.observacoes ? `<p style="margin: 15px 0; line-height: 1.6;">${documento.observacoes}</p>` : ''}
+        <h3 style="color: #2563eb; margin-bottom: 15px;">${esc(documento.titulo)}</h3>
+        ${documento.observacoes ? `<p style="margin: 15px 0; line-height: 1.6;">${esc(documento.observacoes)}</p>` : ''}
       </div>
       
       <div style="margin-top: 60px; text-align: center; border-top: 1px solid #000; padding-top: 20px;">
@@ -201,18 +209,18 @@ const DocumentosMedicos: React.FC = () => {
     <div style="padding: 40px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
       <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px;">
         <h1 style="color: #2563eb; margin: 0; font-size: 24px;">DOCUMENTO MÉDICO</h1>
-        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${documento.id.toString().padStart(4, '0')}</p>
+        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${String(documento.id).padStart(4, '0')}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
-        <p style="margin: 10px 0;"><strong>Data:</strong> ${format(new Date(documento.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
-        <p style="margin: 10px 0;"><strong>Médico:</strong> ${documento.medico_nome}</p>
-        <p style="margin: 10px 0;"><strong>Tipo:</strong> ${documento.tipo.charAt(0).toUpperCase() + documento.tipo.slice(1)}</p>
+        <p style="margin: 10px 0;"><strong>Data:</strong> ${esc(format(new Date(documento.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }))}</p>
+        <p style="margin: 10px 0;"><strong>Médico:</strong> ${esc(documento.medico_nome)}</p>
+        <p style="margin: 10px 0;"><strong>Tipo:</strong> ${esc(documento.tipo.charAt(0).toUpperCase() + documento.tipo.slice(1))}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
-        <h3 style="color: #2563eb; margin-bottom: 15px;">${documento.titulo}</h3>
-        ${documento.observacoes ? `<p style="margin: 15px 0; line-height: 1.6;">${documento.observacoes}</p>` : ''}
+        <h3 style="color: #2563eb; margin-bottom: 15px;">${esc(documento.titulo)}</h3>
+        ${documento.observacoes ? `<p style="margin: 15px 0; line-height: 1.6;">${esc(documento.observacoes)}</p>` : ''}
       </div>
       
       <div style="margin-top: 60px; text-align: center; border-top: 1px solid #000; padding-top: 20px;">
