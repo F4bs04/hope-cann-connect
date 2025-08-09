@@ -13,8 +13,13 @@ export const getConsultaById = async (id) => {
 };
 
 export const createConsulta = async (data) => {
-  const { error } = await supabase.from('appointments').insert([data]);
-  return { success: !error, error };
+  const { data: inserted, error } = await supabase.from('appointments').insert([data]).select().maybeSingle();
+  if (error) {
+    const msg = (error as any)?.message?.toString().toLowerCase() || '';
+    const isOverlap = msg.includes('appointments_no_overlapping') || msg.includes('overlap') || msg.includes('conflict');
+    return { success: false, error, errorCode: isOverlap ? 'OVERLAP' : undefined };
+  }
+  return { success: true, data: inserted };
 };
 
 export const updateConsulta = async (id, data) => {

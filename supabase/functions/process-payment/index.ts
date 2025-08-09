@@ -58,11 +58,7 @@ serve(async (req) => {
       cardNumber: paymentData.cardData.number.substring(0, 4) + '****'
     });
 
-    // Process payment with Pagar.me API
-    const pagarmeResponse = await processPagarmePayment(paymentData);
-    
-    console.log('Pagar.me response:', pagarmeResponse);
-
+    // 1) Lock slot by creating an appointment in awaiting_payment before charging
     // Create Supabase client with service role for database operations
     const supabaseService = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -70,95 +66,161 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    if (pagarmeResponse.success) {
-      console.log('Payment approved, creating appointment...');
-      
-      // Get doctor_id from doctors table using user_id
-      const { data: doctorData, error: doctorError } = await supabaseService
+    // Resolve doctor_id (prefer direct id, fallback by user_id)
+    let doctorId = paymentData.appointmentData.doctor_id;
+    let resolvedDoctorId = doctorId;
+
+    // Try to confirm the doctor exists by id
+    const { data: doctorById } = await supabaseService
+      .from('doctors')
+      .select('id')
+      .eq('id', doctorId)
+      .maybeSingle();
+
+    if (!doctorById) {
+      // Fallback: older flows might send user_id
+      const { data: doctorByUser } = await supabaseService
         .from('doctors')
         .select('id')
-        .eq('user_id', paymentData.appointmentData.doctor_id)
-        .single();
-
-      if (doctorError || !doctorData) {
-        console.error('Doctor not found:', doctorError);
+        .eq('user_id', doctorId)
+        .maybeSingle();
+      if (!doctorByUser) {
         throw new Error('Doctor not found');
       }
+      resolvedDoctorId = doctorByUser.id;
+    }
 
-      // Get patient_id from patients table using user_id
-      const { data: patientData, error: patientError } = await supabaseService
-        .from('patients')
-        .select('id')
-        .eq('user_id', userData.user.id)
-        .single();
+    // Resolve patient_id from authenticated user
+    const { data: patientRow } = await supabaseService
+      .from('patients')
+      .select('id')
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
 
-      let patientId = patientData?.id || userData.user.id; // Fallback to user_id
+    const patientId = patientRow?.id;
+    if (!patientId) {
+      console.warn('Patient profile not found for user, cannot proceed with payment booking');
+      return new Response(JSON.stringify({
+        success: false,
+        error_code: 'patient_profile_missing',
+        error: 'Perfil de paciente não encontrado. Complete seu cadastro.'
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 });
+    }
 
-      // Create appointment with correct IDs
-      const { data: appointmentData, error: appointmentError } = await supabaseService
+    const durationMin = paymentData.appointmentData?.duration_min ?? 30;
+    const reason = paymentData.appointmentData?.reason || 'Consulta agendada via plataforma';
+    const consultationType = paymentData.appointmentData?.consultation_type || 'in_person';
+    const scheduledAt = paymentData.appointmentData?.scheduled_at;
+
+    if (!scheduledAt) {
+      return new Response(JSON.stringify({
+        success: false,
+        error_code: 'invalid_payload',
+        error: 'Horário da consulta ausente'
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 });
+    }
+
+    // Try to insert a provisional appointment to hold the slot
+    const { data: provisional, error: provisionalError } = await supabaseService
+      .from('appointments')
+      .insert([{
+        doctor_id: resolvedDoctorId,
+        patient_id: patientId,
+        scheduled_at: scheduledAt,
+        reason,
+        consultation_type: consultationType,
+        status: 'awaiting_payment',
+        payment_status: 'pending',
+        duration_min: durationMin,
+        price_cents: paymentData.amount
+      }])
+      .select()
+      .single();
+
+    if (provisionalError) {
+      console.error('Error creating provisional appointment:', provisionalError);
+      const msg = (provisionalError as any)?.message?.toString() || '';
+      const isOverlap = msg.includes('appointments_no_overlapping') || msg.toLowerCase().includes('overlap') || msg.toLowerCase().includes('conflict');
+      if (isOverlap) {
+        return new Response(JSON.stringify({
+          success: false,
+          error_code: 'slot_unavailable',
+          error: 'Esse horário acabou de ficar indisponível. Por favor, escolha outro.'
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 });
+      }
+      return new Response(JSON.stringify({
+        success: false,
+        error_code: 'appointment_creation_failed',
+        error: 'Falha ao reservar o horário'
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
+    }
+
+    let appointmentId = provisional.id;
+
+    // 2) Process payment only after holding the slot
+    const pagarmeResponse = await processPagarmePayment(paymentData);
+    console.log('Pagar.me response:', pagarmeResponse);
+
+    if (pagarmeResponse.success) {
+      console.log('Payment approved, confirming appointment...');
+
+      // Update appointment to scheduled/paid
+      const { error: updateApptError } = await supabaseService
         .from('appointments')
-        .insert([{
-          doctor_id: doctorData.id,
-          patient_id: patientId,
-          scheduled_at: paymentData.appointmentData.scheduled_at,
-          reason: paymentData.appointmentData.reason || 'Consulta agendada via plataforma',
-          consultation_type: paymentData.appointmentData.consultation_type || 'in_person',
+        .update({
           status: 'scheduled',
           payment_status: 'paid',
-          fee: paymentData.amount / 100 // Convert back from cents to reais
-        }])
-        .select()
-        .single();
+          fee: paymentData.amount / 100
+        })
+        .eq('id', appointmentId);
 
-      if (appointmentError) {
-        console.error('Error creating appointment:', appointmentError);
-        throw new Error('Failed to create appointment');
+      if (updateApptError) {
+        console.error('Error updating appointment to scheduled:', updateApptError);
+        // Try to cancel the appointment to avoid locking slot
+        await supabaseService.from('appointments').update({ status: 'cancelled', payment_status: 'failed' }).eq('id', appointmentId);
+        return new Response(JSON.stringify({
+          success: false,
+          error_code: 'appointment_update_failed',
+          error: 'Pagamento aprovado, mas falha ao confirmar o agendamento. Tente novamente.'
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
       }
 
-      console.log('Appointment created:', appointmentData);
-
-      // Create payment record
-      const { data: paymentRecord, error: paymentError } = await supabaseService
+      // Create payment record (best-effort)
+      const { error: paymentError } = await supabaseService
         .from('payments')
         .insert([{
-          appointment_id: appointmentData.id,
+          appointment_id: appointmentId,
           amount: paymentData.amount / 100,
           currency: 'BRL',
           payment_method: 'credit_card',
           pagarme_transaction_id: pagarmeResponse.transaction_id,
           status: 'paid',
           payment_data: pagarmeResponse
-        }])
-        .select()
-        .single();
-
+        }]);
       if (paymentError) {
         console.error('Error creating payment record:', paymentError);
-        // Don't fail the payment if this fails, just log it
       }
-
-      console.log('Payment record created:', paymentRecord);
 
       return new Response(JSON.stringify({
         success: true,
         message: 'Payment processed successfully',
         transaction_id: pagarmeResponse.transaction_id,
-        appointment_id: appointmentData.id
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
+        appointment_id: appointmentId
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
 
     } else {
-      console.log('Payment declined');
-      
+      console.log('Payment declined, releasing slot...');
+      // Mark appointment as cancelled/failed
+      await supabaseService
+        .from('appointments')
+        .update({ status: 'cancelled', payment_status: 'failed' })
+        .eq('id', appointmentId);
+
       return new Response(JSON.stringify({
         success: false,
+        error_code: 'payment_failed',
         error: pagarmeResponse.error || 'Payment was declined'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      });
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 });
     }
 
   } catch (error: any) {

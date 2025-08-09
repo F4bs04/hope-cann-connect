@@ -145,12 +145,18 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
         throw new Error('Erro ao processar pagamento');
       }
       
-      if (data.success) {
+      if (data?.success) {
         toast.success('Pagamento aprovado! Agendando consulta...');
         console.log('Pagamento aprovado:', data);
         onNext(); // Avançar para confirmação
+      } else if (data?.error_code === 'slot_unavailable') {
+        toast.info('Esse horário acabou de ficar indisponível. Por favor, escolha outro.');
+        onBack(); // Voltar para seleção de data/horário
+        return;
+      } else if (data?.error_code === 'payment_failed') {
+        toast.error(data?.error || 'Pagamento recusado. Tente outro cartão.');
       } else {
-        throw new Error(data.error || 'Pagamento recusado');
+        throw new Error(data?.error || 'Pagamento recusado');
       }
       
     } catch (error: any) {

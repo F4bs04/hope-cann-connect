@@ -165,8 +165,14 @@ const HomeScheduling = () => {
           toast({ title: "Agendamento Concluído!", description: "Sua consulta foi agendada com sucesso." });
           setStep(4); 
         } else {
-           console.error("[HomeScheduling] Falha ao criar consulta. Erro retornado por createConsulta:", JSON.stringify(createResult.error, null, 2));
-           toast({ title: "Erro no Agendamento", description: typeof createResult.error === 'string' ? createResult.error : "Não foi possível agendar sua consulta. Verifique os logs.", variant: "destructive" });
+           if (createResult?.errorCode === 'OVERLAP') {
+             toast({ title: 'Horário indisponível', description: 'Esse horário acabou de ficar indisponível. Por favor, escolha outro.' });
+             setSelectedTime(null);
+             setStep(2);
+           } else {
+             console.error("[HomeScheduling] Falha ao criar consulta. Erro retornado por createConsulta:", JSON.stringify((createResult as any)?.error, null, 2));
+             toast({ title: "Erro no Agendamento", description: typeof (createResult as any)?.error === 'string' ? (createResult as any)?.error : "Não foi possível agendar sua consulta. Verifique os logs.", variant: "destructive" });
+           }
         }
       } catch (error: any) {
         console.error("[HomeScheduling] Erro geral (catch) ao agendar consulta (usuário logado):", error);

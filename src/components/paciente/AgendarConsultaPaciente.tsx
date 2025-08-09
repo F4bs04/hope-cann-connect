@@ -79,7 +79,14 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
 
       if (appointmentError) {
         console.error('Erro ao criar agendamento:', appointmentError);
-        toast.error('Erro ao agendar consulta: ' + appointmentError.message);
+        const msg = (appointmentError as any)?.message?.toString().toLowerCase() || '';
+        const isOverlap = msg.includes('appointments_no_overlapping') || msg.includes('overlap') || msg.includes('conflict');
+        if (isOverlap) {
+          toast.info('Horário indisponível. Por favor, escolha outro.');
+          setSelectedTime(null);
+        } else {
+          toast.error('Erro ao agendar consulta: ' + (appointmentError as any)?.message);
+        }
         return;
       }
 
