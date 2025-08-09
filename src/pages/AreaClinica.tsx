@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
 import { MedicosList } from '@/components/clinica-dashboard/MedicosList';
 import { AgendamentosList } from '@/components/clinica-dashboard/AgendamentosList';
-import { DocumentosList } from '@/components/clinica-dashboard/DocumentosList';
+import Acompanhamento from '@/components/clinica-dashboard/Acompanhamento';
 import EditProfileDialog from '@/components/medico/EditProfileDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,11 +108,11 @@ const AreaClinica: React.FC = () => {
               
               <SidebarMenuItem>
                 <SidebarMenuButton 
-                  onClick={() => navigateToSection('documentos')}
-                  isActive={currentSection === 'documentos'}
+                  onClick={() => navigateToSection('acompanhamento')}
+                  isActive={currentSection === 'acompanhamento'}
                   className="text-white hover:bg-[#009E9B]"
                 >
-                  <FileText className="w-5 h-5 mr-2" /> Documentos
+                  <FileText className="w-5 h-5 mr-2" /> Acompanhamento
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
@@ -152,7 +152,7 @@ const AreaClinica: React.FC = () => {
                   {currentSection === 'dashboard' && 'Dashboard'}
                   {currentSection === 'medicos' && 'Médicos'}
                   {currentSection === 'agendamentos' && 'Agendamentos'}
-                  {currentSection === 'documentos' && 'Documentos'}
+                  {currentSection === 'acompanhamento' && 'Acompanhamento'}
                   {currentSection === 'financeiro' && 'Financeiro'}
                 </h1>
                 <div className="flex items-center gap-4">
@@ -167,7 +167,7 @@ const AreaClinica: React.FC = () => {
             {currentSection === 'dashboard' && <ClinicaDashboard />}
             {currentSection === 'medicos' && <MedicosList />}
             {currentSection === 'agendamentos' && <AgendamentosList />}
-            {currentSection === 'documentos' && <DocumentosList />}
+            {currentSection === 'acompanhamento' && <Acompanhamento />}
             {/* EditProfileDialog temporarily disabled */}
           </main>
         </SidebarInset>
