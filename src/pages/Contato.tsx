@@ -47,7 +47,7 @@ const Contato = () => {
     {
       icon: Phone,
       title: "Telefone",
-      details: ["(11) 99999-9999", "(11) 5555-5555"],
+      details: ["(81) 7900-8621"],
       color: "bg-green-100 text-green-600"
     },
     {
