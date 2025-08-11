@@ -157,31 +157,21 @@ const SmartScheduling: React.FC = () => {
       console.log('=== BUSCANDO MÉDICOS DISPONÍVEIS ===');
       
       try {
-        // Buscar médicos fazendo join entre doctors e profiles
+        // Buscar médicos a partir da view pública para evitar problemas de RLS/joins
         const { data, error } = await supabase
-          .from('doctors')
+          .from('public_doctors')
           .select(`
-            id,
-            user_id,
-            crm,
+            doctor_id,
+            doctor_name,
             specialty,
-            biography,
+            consultation_fee,
             is_available,
             is_approved,
-            consultation_fee,
-            profiles!inner(
-              id,
-              full_name,
-              email,
-              phone,
-              avatar_url,
-              is_active
-            )
+            avatar_url
           `)
-          .eq('is_available', true)
           .eq('is_approved', true)
-          .eq('profiles.is_active', true)
-          .eq('profiles.role', 'doctor');
+          .eq('is_available', true)
+          .limit(10);
           
         if (error) {
           console.error('Erro ao buscar médicos:', error);
@@ -191,17 +181,16 @@ const SmartScheduling: React.FC = () => {
         
         if (data && data.length > 0) {
           console.log('Médicos encontrados:', data);
-          const formattedDoctors = data.map((doctor: any) => ({
-            id: doctor.user_id, // Usar user_id para compatibilidade
-            name: doctor.profiles?.full_name || 'Nome não informado',
-            specialty: doctor.specialty || 'Clínico Geral',
-            bio: doctor.biography || `Médico especialista em ${doctor.specialty || 'medicina geral'}`,
-            email: doctor.profiles?.email || '',
-            phone: doctor.profiles?.phone || '',
-            avatar: doctor.profiles?.avatar_url || '/placeholder.svg',
-            isAvailable: doctor.is_available && doctor.is_approved,
-            crm: doctor.crm,
-            consultationFee: doctor.consultation_fee || 0 // Usar valor real do médico
+          const formattedDoctors = data.map((d: any) => ({
+            id: d.doctor_id, // usar UUID do médico compatível com agendas/appointments
+            name: d.doctor_name || 'Nome não informado',
+            specialty: d.specialty || 'Clínico Geral',
+            bio: `Médico especialista em ${d.specialty || 'medicina geral'}`,
+            email: '', // email pode não estar disponível nesta view
+            phone: '',
+            avatar: d.avatar_url || '/placeholder.svg',
+            isAvailable: d.is_available && d.is_approved,
+            consultationFee: d.consultation_fee || 0
           }));
           
           console.log('Médicos formatados:', formattedDoctors);
