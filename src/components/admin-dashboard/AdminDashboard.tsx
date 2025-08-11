@@ -117,10 +117,9 @@ const AdminDashboard: React.FC = () => {
                  typeof patient === 'object' && 
                  'id' in patient && 
                  'user_id' in patient &&
-                 typeof patient.id === 'string';
+                 typeof (patient as any).id === 'string';
         })
         .map(patient => {
-          // Type assertion after filtering ensures patient is valid
           const validPatient = patient as {
             id: string;
             address?: string;
@@ -133,13 +132,22 @@ const AdminDashboard: React.FC = () => {
             medical_condition?: string;
             updated_at: string;
             user_id: string;
+            full_name?: string; // usar nome do paciente quando existir
             profiles?: {
               full_name?: string;
               email?: string;
               avatar_url?: string;
             };
           };
-          
+
+          // Definir nome com ordem de precedência:
+          // profiles.full_name > patients.full_name > profiles.email > "Paciente"
+          const displayName =
+            validPatient.profiles?.full_name?.trim() ||
+            validPatient.full_name?.trim() ||
+            validPatient.profiles?.email?.trim() ||
+            'Paciente';
+
           return {
             id: validPatient.id,
             address: validPatient.address || '',
@@ -154,9 +162,11 @@ const AdminDashboard: React.FC = () => {
             user_id: validPatient.user_id || '',
             profiles: validPatient.profiles,
             // Campos derivados para compatibilidade
-            nome: validPatient.profiles?.full_name || validPatient.profiles?.email || 'Nome não informado',
-            email: validPatient.profiles?.email || 'Email não informado',
-            telefone: validPatient.emergency_contact_phone || 'Não informado',
+            nome: displayName,
+            // Não forçar "Email não informado" para evitar exibição desnecessária
+            email: validPatient.profiles?.email || undefined,
+            // Não forçar "Não informado": se não houver telefone, não renderiza
+            telefone: validPatient.emergency_contact_phone || undefined,
             data_nascimento: validPatient.birth_date
           };
         });
@@ -165,18 +175,25 @@ const AdminDashboard: React.FC = () => {
       const mappedDoctors = (doctorsData || [])
         .filter(doctor => {
           // Filtro menos restritivo: aceitar se tem ID e CRM válido
-          const hasValidData = doctor.id && doctor.crm;
+          const hasValidData = (doctor as any).id && (doctor as any).crm;
           const isNotGeneric = !doctor.profiles?.full_name?.includes('Médico') &&
             !doctor.profiles?.full_name?.includes('User') &&
             doctor.profiles?.full_name !== 'Nome não informado';
           return hasValidData && (isNotGeneric || !doctor.profiles?.full_name);
         })
-        .map(doctor => ({
-          ...doctor,
-          nome: doctor.profiles?.full_name || doctor.profiles?.email || 'Nome não informado',
-          email: doctor.profiles?.email,
-          especialidade: doctor.specialty
-        }));
+        .map(doctor => {
+          const displayName =
+            doctor.profiles?.full_name?.trim() ||
+            doctor.profiles?.email?.trim() ||
+            'Médico';
+
+          return {
+            ...doctor,
+            nome: displayName,
+            email: doctor.profiles?.email || undefined,
+            especialidade: doctor.specialty
+          };
+        });
       
       console.log('[AdminDashboard] Dados filtrados e mapeados:');
       console.log('Pacientes mapeados:', mappedPatients);
