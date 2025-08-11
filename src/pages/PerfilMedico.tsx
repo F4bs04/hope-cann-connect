@@ -1,46 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useUnifiedAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, MapPin, Clock, Phone, Mail, ArrowLeft } from 'lucide-react';
+import { Star, MapPin, Clock, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { formatCurrency } from '@/utils/formatters';
+
+interface PublicDoctorProfile {
+  id: string;
+  name: string;
+  avatar_url?: string | null;
+  specialty?: string | null;
+  consultation_fee?: number | null;
+  is_available: boolean;
+}
 
 const PerfilMedico = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { userProfile } = useAuth();
-  const [medico, setMedico] = useState<any>(null);
+  const [doctor, setDoctor] = useState<PublicDoctorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchMedico = async () => {
+    const fetchDoctor = async () => {
       if (!id) return;
-      
       try {
         setLoading(true);
-        
-        // Buscar dados do médico nas tabelas atuais
-        const { data: doctorData, error: doctorError } = await supabase
-          .from('doctors')
-          .select(`
-            *,
-            profiles!inner(*)
-          `)
-          .eq('id', id)
+        const { data, error } = await supabase
+          .from('public_doctors')
+          .select('doctor_id, doctor_name, avatar_url, specialty, consultation_fee, is_available')
+          .eq('doctor_id', id)
           .single();
 
-        if (doctorError) {
-          console.error('Erro ao buscar médico:', doctorError);
+        if (error || !data) {
+          console.error('Erro ao buscar médico público:', error);
           setError('Médico não encontrado');
           return;
         }
 
-        setMedico(doctorData);
+        const mapped: PublicDoctorProfile = {
+          id: data.doctor_id,
+          name: data.doctor_name || 'Médico',
+          avatar_url: data.avatar_url,
+          specialty: data.specialty,
+          consultation_fee: data.consultation_fee ? Number(data.consultation_fee) : null,
+          is_available: !!data.is_available,
+        };
+        setDoctor(mapped);
       } catch (err) {
         console.error('Erro geral:', err);
         setError('Erro ao carregar perfil do médico');
@@ -49,7 +59,7 @@ const PerfilMedico = () => {
       }
     };
 
-    fetchMedico();
+    fetchDoctor();
   }, [id]);
 
   if (loading) {
@@ -68,7 +78,7 @@ const PerfilMedico = () => {
     );
   }
 
-  if (error || !medico) {
+  if (error || !doctor) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -99,7 +109,7 @@ const PerfilMedico = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow bg-gray-50">
-        {/* Hero Section com informações do médico */}
+        {/* Hero Section */}
         <section className="bg-white border-b">
           <div className="container mx-auto py-8">
             <Button 
@@ -110,14 +120,13 @@ const PerfilMedico = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar aos Médicos
             </Button>
-            
-            {/* Card principal do médico - design unificado */}
+
             <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-all duration-200">
               <div className="flex items-start gap-6">
                 <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0">
                   <img 
-                    src={medico.profiles?.avatar_url || '/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png'} 
-                    alt={medico.profiles?.full_name || 'Médico'} 
+                    src={doctor.avatar_url || '/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png'} 
+                    alt={doctor.name} 
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder.svg';
@@ -128,25 +137,27 @@ const PerfilMedico = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        Dr(a). {medico.profiles?.full_name || 'Nome não informado'}
+                        Dr(a). {doctor.name}
                       </h1>
-                      <Badge className="bg-hopecann-teal text-white mb-2">
-                        Especialista em cannabis medicinal
-                      </Badge>
+                      {doctor.specialty && (
+                        <Badge className="bg-hopecann-teal text-white mb-2">
+                          {doctor.specialty}
+                        </Badge>
+                      )}
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <MapPin className="h-4 w-4" />
-                        <span>Atendimento online e presencial</span>
+                        <span>Atendimento online</span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${doctor.is_available ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>
                         <Clock size={12} />
-                        Disponível hoje
+                        {doctor.is_available ? 'Disponível' : 'Indisponível'}
                       </span>
                     </div>
                   </div>
-                  <p className="text-gray-600 line-clamp-3">
-                    {medico.biography || 'Médica graduada pela Universidade Federal de Pernambuco (UFPE) em 2018; Dedicou-se aos estudos do sistema endocanabinoide e suas aplicações clínicas realizando formações nacionais e internacionais nessa área (entre elas, WeCann Academy) desde 2022. Atualmente membra da APMC (Associação Pan-americana de Medicina Canabinoide).'}
+                  <p className="text-gray-600">
+                    {doctor.specialty ? `Especialista em ${doctor.specialty} com foco em medicina canábica.` : 'Especialista em medicina canábica.'}
                   </p>
                 </div>
               </div>
@@ -154,7 +165,6 @@ const PerfilMedico = () => {
           </div>
         </section>
 
-        {/* Conteúdo detalhado */}
         <section className="py-8">
           <div className="container mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -166,28 +176,8 @@ const PerfilMedico = () => {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-600 leading-relaxed">
-                      {medico.biography || 'Médica graduada pela Universidade Federal de Pernambuco (UFPE) em 2018; Dedicou-se aos estudos do sistema endocanabinoide e suas aplicações clínicas realizando formações nacionais e internacionais nessa área (entre elas, WeCann Academy) desde 2022. Atualmente membra da APMC (Associação Pan-americana de Medicina Canabinoide).'}
+                      {doctor.specialty ? `Profissional com experiência em ${doctor.specialty}, atuando com terapias baseadas em cannabis medicinal.` : 'Profissional atuante com terapias baseadas em cannabis medicinal.'}
                     </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informações Profissionais</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-1">CRM</h4>
-                        <p className="text-gray-600">{medico.crm || '27383GO'}</p>
-                      </div>
-                      {medico.profiles?.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm text-gray-600">{medico.profiles.email}</span>
-                        </div>
-                      )}
-                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -203,7 +193,7 @@ const PerfilMedico = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Valor da consulta:</span>
                         <span className="font-semibold text-lg">
-                          R$ 150,00
+                          {doctor.consultation_fee ? formatCurrency(Number(doctor.consultation_fee)) : 'Consulte'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -228,10 +218,7 @@ const PerfilMedico = () => {
                     <div className="text-center py-4">
                       <div className="flex items-center justify-center gap-1 mb-2">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className="h-5 w-5 fill-yellow-400 text-yellow-400"
-                          />
+                          <Star key={star} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                         ))}
                       </div>
                       <p className="text-lg font-semibold">5.0</p>
