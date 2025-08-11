@@ -6,11 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
  * Processes a raw doctor record from the database into a standardized Doctor object
  */
 export const processDoctorData = async (doctor: any): Promise<Doctor> => {
-  // Check for the nearest available appointment using the appointments table
+  const doctorId = doctor.id || doctor.doctor_id;
   const { data: appointmentData, error: appointmentError } = await supabase
     .from('appointments')
     .select('scheduled_at')
-    .eq('doctor_id', doctor.id)
+    .eq('doctor_id', doctorId)
     .eq('status', 'scheduled')
     .gte('scheduled_at', new Date().toISOString())
     .order('scheduled_at', { ascending: true })
@@ -44,11 +44,11 @@ export const processDoctorData = async (doctor: any): Promise<Doctor> => {
     : doctor.biography || 'Especialista em tratamentos canábicos.';
 
   return {
-    id: doctor.id.toString(), // Convert UUID to string to match DoctorCard interface
-    name: doctor.profiles?.full_name || "Médico",
+    id: (doctor.id || doctor.doctor_id)?.toString(),
+    name: doctor.profiles?.full_name || doctor.doctor_name || "Médico",
     specialty: doctor.specialty || "Medicina Canábica",
     bio: truncatedBio,
-    image: doctor.profiles?.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+    image: doctor.profiles?.avatar_url || doctor.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
     availability,
     consultationFee: doctor.consultation_fee || 0
   };

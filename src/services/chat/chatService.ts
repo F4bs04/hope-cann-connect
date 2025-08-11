@@ -200,8 +200,8 @@ export const getChatsAtivos = async (doctorId: string) => {
             : chat.created_at,
           pacientes: {
             id: chat.patients.id,
-            nome: chat.patients.profiles?.full_name || chat.patients.full_name || 'Paciente',
-            email: chat.patients.profiles?.email || '',
+            nome: chat.patients.full_name || 'Paciente',
+            email: '',
             avatar: null
           },
           data_inicio: chat.created_at,

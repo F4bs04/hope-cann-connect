@@ -20,18 +20,15 @@ export const useAvailableDoctors = () => {
       try {
         // Buscando médicos aprovados da tabela doctors
         const { data, error } = await supabase
-          .from('doctors')
+          .from('public_doctors')
           .select(`
-            id,
-            user_id,
-            crm,
-            cpf,
+            doctor_id,
+            doctor_name,
             specialty,
-            biography,
             consultation_fee,
             is_available,
             is_approved,
-            profiles!inner(full_name, email, phone, avatar_url)
+            avatar_url
           `)
           .eq('is_approved', true)
           .eq('is_available', true)
