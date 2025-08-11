@@ -29,7 +29,6 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
     if (initialDoctors.length > 0) {
       setDoctors(initialDoctors);
       setFilteredDoctors(initialDoctors);
-      
       // Extract unique specialties for filtering
       const uniqueSpecialties = [...new Set(initialDoctors.map(doctor => doctor.specialty))];
       setSpecialties(uniqueSpecialties);
@@ -39,80 +38,37 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
     }
   }, [initialDoctors]);
 
-  // Fetch doctors from Supabase if not provided
+  // Fetch doctors from Supabase if not provided (public view)
   const fetchDoctors = async () => {
     if (initialDoctors.length > 0) return;
-    
+
     try {
       setIsLoading(true);
-      
+
       const { data, error } = await supabase
-        .from('doctors')
-        .select(`
-          *,
-          profiles!inner(full_name, avatar_url)
-        `)
+        .from('public_doctors')
+        .select('doctor_id, doctor_name, avatar_url, specialty, consultation_fee, is_available, is_approved')
         .eq('is_available', true)
         .eq('is_approved', true);
-        
-      if (error) {
-        throw error;
-      }
-      
+
+      if (error) throw error;
+
       if (data && data.length > 0) {
-        console.log("Médicos encontrados em DoctorSearch:", data);
-        // Process doctor data
-        const doctorsWithAvailability = await Promise.all(data.map(async (doctor) => {
-          // Check for the nearest available appointment
-          const { data: appointmentData, error: appointmentError } = await supabase
-            .from('appointments')
-            .select('scheduled_at')
-            .eq('doctor_id', doctor.id)
-            .eq('status', 'scheduled')
-            .gte('scheduled_at', new Date().toISOString())
-            .order('scheduled_at', { ascending: true })
-            .limit(1);
-          
-          if (appointmentError) {
-            console.error('Error fetching appointments:', appointmentError);
-          }
-          
-          let availability = ['next-week']; // Default to next week
-          
-          if (appointmentData && appointmentData.length > 0) {
-            const appointmentDate = new Date(appointmentData[0].scheduled_at);
-            const today = new Date();
-            const thisWeekEnd = new Date(today);
-            thisWeekEnd.setDate(today.getDate() + 7);
-            
-            // Check if appointment is today
-            if (appointmentDate.toDateString() === today.toDateString()) {
-              availability = ['today', 'this-week'];
-            } 
-            // Check if appointment is this week
-            else if (appointmentDate <= thisWeekEnd) {
-              availability = ['this-week'];
-            }
-          }
-          
-          return {
-            id: doctor.id,
-            name: doctor.profiles?.full_name || "Médico",
-            specialty: doctor.specialty || "Medicina Canábica",
-            bio: doctor.biography || 'Especialista em tratamentos canábicos.',
-            image: doctor.profiles?.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
-            availability
-          };
+        const mapped: Doctor[] = data.map((d: any) => ({
+          id: d.doctor_id,
+          name: d.doctor_name || 'Médico',
+          specialty: d.specialty || 'Medicina Canábica',
+          bio: 'Especialista em tratamentos canábicos.',
+          image: d.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+          availability: ['this-week']
         }));
-        
-        setDoctors(doctorsWithAvailability);
-        setFilteredDoctors(doctorsWithAvailability);
-        
-        // Extract unique specialties for filtering
-        const uniqueSpecialties = [...new Set(data.map(doctor => doctor.specialty).filter(Boolean))];
+
+        setDoctors(mapped);
+        setFilteredDoctors(mapped);
+
+        const uniqueSpecialties = [...new Set(data.map((d: any) => d.specialty).filter(Boolean))] as string[];
         setSpecialties(uniqueSpecialties);
       } else {
-        console.log("No doctors found in database");
         toast({
           title: "Nenhum médico encontrado",
           description: "Não há médicos disponíveis no momento.",
@@ -143,18 +99,18 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
 
   const filterDoctors = (term: string, specialty: string) => {
     let filtered = doctors;
-    
+
     if (term) {
-      filtered = filtered.filter(doctor => 
+      filtered = filtered.filter(doctor =>
         doctor.name.toLowerCase().includes(term.toLowerCase()) ||
         doctor.specialty.toLowerCase().includes(term.toLowerCase())
       );
     }
-    
+
     if (specialty) {
       filtered = filtered.filter(doctor => doctor.specialty === specialty);
     }
-    
+
     setFilteredDoctors(filtered);
   };
 
@@ -186,7 +142,7 @@ const DoctorSearch = ({ onSelectDoctor, initialDoctors = [], isInitialLoading = 
           </Button>
         </div>
       </div>
-      
+
       <DoctorList 
         doctors={filteredDoctors} 
         isLoading={isLoading} 

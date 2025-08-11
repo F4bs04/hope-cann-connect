@@ -42,11 +42,8 @@ const Medicos = () => {
       setIsLoading(true);
       
       const { data, error } = await supabase
-        .from('doctors')
-        .select(`
-          *,
-          profiles!inner(full_name, avatar_url)
-        `)
+        .from('public_doctors')
+        .select('doctor_id, doctor_name, avatar_url, specialty, consultation_fee, is_available, is_approved')
         .eq('is_available', true)
         .eq('is_approved', true);
         
@@ -55,49 +52,18 @@ const Medicos = () => {
       }
       
       if (data && data.length > 0) {
-        // Processar dados dos médicos
-        const doctorsWithAvailability = await Promise.all(data.map(async (doctor) => {
-          // Verificar próximas consultas disponíveis
-          const { data: appointmentData, error: appointmentError } = await supabase
-            .from('appointments')
-            .select('scheduled_at')
-            .eq('doctor_id', doctor.id)
-            .eq('status', 'scheduled')
-            .gte('scheduled_at', new Date().toISOString())
-            .order('scheduled_at', { ascending: true })
-            .limit(1);
-          
-          if (appointmentError) {
-            console.error('Error fetching appointments:', appointmentError);
-          }
-          
-          let availability = ['next-week']; // Default
-          
-          if (appointmentData && appointmentData.length > 0) {
-            const appointmentDate = new Date(appointmentData[0].scheduled_at);
-            const today = new Date();
-            const thisWeekEnd = new Date(today);
-            thisWeekEnd.setDate(today.getDate() + 7);
-            
-            if (appointmentDate.toDateString() === today.toDateString()) {
-              availability = ['today', 'this-week'];
-            } else if (appointmentDate <= thisWeekEnd) {
-              availability = ['this-week'];
-            }
-          }
-          
-          return {
-            id: doctor.id,
-            name: doctor.profiles?.full_name || "Médico",
-            specialty: doctor.specialty || "Medicina Canábica",
-            bio: doctor.biography || 'Especialista em tratamentos canábicos.',
-            image: doctor.profiles?.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
-            availability
-          };
+        // Mapear dados dos médicos públicos
+        const doctorsMapped = data.map((d: any) => ({
+          id: d.doctor_id,
+          name: d.doctor_name || 'Médico',
+          specialty: d.specialty || 'Medicina Canábica',
+          bio: 'Especialista em tratamentos canábicos.',
+          image: d.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+          availability: ['this-week']
         }));
         
-        setAllDoctors(doctorsWithAvailability);
-        setFilteredDoctors(doctorsWithAvailability);
+        setAllDoctors(doctorsMapped);
+        setFilteredDoctors(doctorsMapped);
       }
     } catch (error) {
       console.error('Erro ao buscar médicos:', error);

@@ -10,8 +10,10 @@ export const fetchDoctors = async ({ setDoctors, setIsLoading, setDbStatus, toas
     console.log("Fetching doctors for scheduling from Supabase...");
     
     const { data, error } = await supabase
-      .from('doctors')
-      .select('id, user_id, specialty, biography, is_approved, created_at, profiles!inner(full_name, avatar_url)');
+      .from('public_doctors')
+      .select('doctor_id, doctor_name, avatar_url, specialty, consultation_fee, is_available, is_approved')
+      .eq('is_available', true)
+      .eq('is_approved', true);
       
     if (error) {
       console.error('Error fetching doctors:', error);
@@ -25,25 +27,21 @@ export const fetchDoctors = async ({ setDoctors, setIsLoading, setDbStatus, toas
     console.log(`Total de médicos encontrados: ${data?.length || 0}`);
     
     if (data && data.length > 0) {
-      console.log("Médicos encontrados:", data);
+      console.log("Médicos públicos encontrados:", data);
       
-      const doctorsWithAvailability = data.map(doctor => {
-        const availability = ['next-week'];
-        
-        return {
-          id: doctor.id,
-          name: doctor.profiles?.full_name || 'Nome não disponível',
-          specialty: doctor.specialty || "Medicina Canábica",
-          bio: doctor.biography || 'Especialista em tratamentos canábicos.',
-          image: doctor.profiles?.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
-          availability
-        };
-      });
+      const doctorsMapped = data.map((d: any) => ({
+        id: d.doctor_id,
+        name: d.doctor_name || 'Nome não disponível',
+        specialty: d.specialty || 'Medicina Canábica',
+        bio: 'Especialista em tratamentos canábicos.',
+        image: d.avatar_url || `/lovable-uploads/5c0f64ec-d529-43ac-8451-ed01f592a3f7.png`,
+        availability: ['this-week']
+      }));
       
-      setDoctors(doctorsWithAvailability);
+      setDoctors(doctorsMapped);
       setDbStatus({
         success: true,
-        message: `${doctorsWithAvailability.length} médicos encontrados`
+        message: `${doctorsMapped.length} médicos encontrados`
       });
     } else {
       console.log("Nenhum médico encontrado, usando dados de fallback");
