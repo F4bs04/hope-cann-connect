@@ -181,17 +181,39 @@ const SmartScheduling: React.FC = () => {
         
         if (data && data.length > 0) {
           console.log('Médicos encontrados:', data);
-          const formattedDoctors = data.map((d: any) => ({
-            id: d.doctor_id, // usar UUID do médico compatível com agendas/appointments
-            name: d.doctor_name || 'Nome não informado',
-            specialty: d.specialty || 'Clínico Geral',
-            bio: `Médico especialista em ${d.specialty || 'medicina geral'}`,
-            email: '', // email pode não estar disponível nesta view
-            phone: '',
-            avatar: d.avatar_url || '/placeholder.svg',
-            isAvailable: d.is_available && d.is_approved,
-            consultationFee: d.consultation_fee || 0
-          }));
+          const ids = data.map((d: any) => d.doctor_id).filter(Boolean);
+
+          // Buscar detalhes adicionais (biografia) da tabela doctors com RLS pública
+          let extrasMap: Record<string, { biography?: string }> = {};
+          if (ids.length) {
+            const { data: extras, error: extrasError } = await supabase
+              .from('doctors')
+              .select('id, biography')
+              .in('id', ids)
+              .eq('is_approved', true)
+              .eq('is_suspended', false);
+            if (extrasError) {
+              console.warn('Não foi possível carregar detalhes extras do médico:', extrasError);
+            } else if (extras) {
+              extrasMap = Object.fromEntries(extras.map((e: any) => [e.id, { biography: e.biography }]));
+            }
+          }
+
+          const formattedDoctors = data.map((d: any) => {
+            const extra = extrasMap[d.doctor_id] || {};
+            const bio = extra.biography || `Médico especialista em ${d.specialty || 'medicina geral'}`;
+            return {
+              id: d.doctor_id, // usar UUID do médico compatível com agendas/appointments
+              name: d.doctor_name || 'Nome não informado',
+              specialty: d.specialty || 'Clínico Geral',
+              bio,
+              email: '', // email pode não estar disponível nesta view
+              phone: '',
+              avatar: d.avatar_url || '/placeholder.svg',
+              isAvailable: d.is_available && d.is_approved,
+              consultationFee: d.consultation_fee || 0
+            } as any;
+          });
           
           console.log('Médicos formatados:', formattedDoctors);
           setDoctors(formattedDoctors);
@@ -385,28 +407,33 @@ const SmartScheduling: React.FC = () => {
                           </div>
                         )}
                         
-                        <div className="flex items-center space-x-4">
-                          <div className="w-16 h-16 bg-hopecann-teal/10 rounded-full flex items-center justify-center">
-                            <User className="w-8 h-8 text-hopecann-teal" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className={`font-semibold text-lg ${
-                              selectedDoctor?.id === doctor.id ? 'text-hopecann-teal' : 'text-gray-900'
-                            }`}>
-                              {doctor.name}
-                            </h3>
-                            <p className="text-sm text-gray-600">{doctor.email}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline">
-                                Disponível
-                              </Badge>
-                              <div className="flex items-center gap-1 text-hopecann-teal font-semibold">
-                                <DollarSign className="w-4 h-4" />
-                                <span>R$ {doctor.consultationFee || 50}</span>
+                          <div className="flex items-start space-x-4">
+                            <div className="w-16 h-16 rounded-full overflow-hidden ring-1 ring-hopecann-teal/20 bg-gray-100">
+                              <img
+                                src={doctor.avatar || '/placeholder.svg'}
+                                alt={`Foto do médico ${doctor.name}`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className={`font-semibold text-lg ${selectedDoctor?.id === doctor.id ? 'text-hopecann-teal' : 'text-gray-900'}`}>{doctor.name}</h3>
+                              <p className="text-sm text-gray-600">{doctor.specialty}</p>
+                              {doctor.bio && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {doctor.bio.length > 120 ? `${doctor.bio.slice(0, 120)}...` : doctor.bio}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2 mt-3">
+                                <Badge variant="outline">Disponível</Badge>
+                                <div className="flex items-center gap-1 text-hopecann-teal font-semibold">
+                                  <DollarSign className="w-4 h-4" />
+                                  <span>{formatCurrency(doctor.consultationFee || 0)}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
                       </CardContent>
                     </Card>
                   ))}
