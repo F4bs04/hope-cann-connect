@@ -112,13 +112,7 @@ export const getMensagensChat = async (chatId: string): Promise<ChatMessage[]> =
   try {
     const { data, error } = await supabase
       .from('chat_messages')
-      .select(`
-        *,
-        sender:profiles!chat_messages_sender_id_fkey(
-          full_name,
-          email
-        )
-      `)
+      .select('*')
       .eq('chat_id', chatId)
       .order('created_at', { ascending: true });
 
@@ -171,11 +165,7 @@ export const getChatsAtivos = async (doctorId: string) => {
         patients!inner(
           id,
           full_name,
-          user_id,
-          profiles(
-            full_name,
-            email
-          )
+          user_id
         )
       `)
       .eq('doctor_id', doctorId)
