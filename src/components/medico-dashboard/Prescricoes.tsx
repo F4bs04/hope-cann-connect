@@ -49,6 +49,12 @@ const Prescricoes: React.FC = () => {
   const [doctorCRM, setDoctorCRM] = useState<string>('');
   const [signatureId, setSignatureId] = useState<string>('');
   
+  const slugify = (s: string) => (s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  
   useEffect(() => {
     const loadPacientes = async () => {
       setLoading(true);
@@ -427,10 +433,10 @@ const Prescricoes: React.FC = () => {
             </div>
             
             <div className="mt-12 pt-8 border-t text-center">
-              <div className="w-64 mx-auto border-b border-black pb-1">
-                <p className="font-medium text-sm">Assinatura e Carimbo do Médico</p>
+              <div className="w-64 mx-auto">
+                <p className="font-medium text-sm">Assinatura: {signatureId} • {doctorName}</p>
+                <p className="mt-1 text-sm">CRM: {doctorCRM || '---'}</p>
               </div>
-              <p className="mt-2 text-sm">CRM: 12345 - RJ</p>
             </div>
           </div>
         </div>

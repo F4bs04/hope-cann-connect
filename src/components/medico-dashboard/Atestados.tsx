@@ -29,6 +29,9 @@ const Atestados: React.FC = () => {
   const [activeTab, setActiveTab] = useState('formulario');
   const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
   const [pdfFilePath, setPdfFilePath] = useState<string | null>(null);
+  const [doctorName, setDoctorName] = useState<string>('Médico');
+  const [doctorCRM, setDoctorCRM] = useState<string>('');
+  const [signatureId, setSignatureId] = useState<string>('');
 
   // Form state
   const [pacienteId, setPacienteId] = useState('');
@@ -47,6 +50,26 @@ const Atestados: React.FC = () => {
         if (user?.user?.id) {
           const data = await getPacientes(user.user.id);
           setPacientes(data);
+
+          try {
+            const userId = user.user.id;
+            setSignatureId(`DR-${userId.slice(0, 8)}`);
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', userId)
+              .maybeSingle();
+            if (profile?.full_name) setDoctorName(profile.full_name);
+
+            const { data: doctor } = await supabase
+              .from('doctors')
+              .select('crm')
+              .eq('user_id', userId)
+              .maybeSingle();
+            if (doctor?.crm) setDoctorCRM(doctor.crm);
+          } catch (e) {
+            console.warn('Não foi possível carregar dados do médico para assinatura/CRM');
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar pacientes:', error);
@@ -359,8 +382,11 @@ const Atestados: React.FC = () => {
           <div className="md:w-1/2 print:w-full bg-white p-6 border rounded-lg shadow-sm">
             <div ref={atestadoRef} className="p-6 print:p-0 min-h-[500px]">
               <div className="text-center border-b pb-4 mb-6">
-                <h2 className="text-xl font-bold text-blue-800">ATESTADO MÉDICO</h2>
-                <p className="text-sm text-gray-600 mt-1">Doc. Nº {Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</p>
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <img src="/lovable-uploads/Logo.png" alt="Hopecann - Logo" className="h-8 w-auto" />
+                  <h2 className="text-xl font-bold text-blue-800">ATESTADO MÉDICO</h2>
+                </div>
+                <p className="text-sm text-gray-600">Doc. Nº {Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</p>
               </div>
               
               <div className="mb-6">
@@ -389,10 +415,10 @@ const Atestados: React.FC = () => {
               )}
               
               <div className="mt-12 pt-8 border-t text-center">
-                <div className="w-64 mx-auto border-b border-black pb-1">
-                  <p className="font-medium text-sm">Assinatura e Carimbo do Médico</p>
+                <div className="w-64 mx-auto">
+                  <p className="font-medium text-sm">Assinatura: {signatureId} • {doctorName}</p>
+                  <p className="mt-1 text-sm">CRM: {doctorCRM || '---'}</p>
                 </div>
-                <p className="mt-2 text-sm">CRM: 12345 - RJ</p>
               </div>
             </div>
             

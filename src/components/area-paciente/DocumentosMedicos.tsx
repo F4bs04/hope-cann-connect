@@ -115,7 +115,6 @@ const DocumentosMedicos: React.FC = () => {
     }
   };
 
-  // Escapar conteúdo dinâmico para evitar XSS em templates HTML
   const esc = (val: any) => String(val ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -123,11 +122,20 @@ const DocumentosMedicos: React.FC = () => {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+  const slugify = (val: any) => String(val ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
   const generateReceitaHTML = (documento: any) => `
     <div style="padding: 40px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
       <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px;">
-        <h1 style="color: #2563eb; margin: 0; font-size: 24px;">RECEITA MÉDICA</h1>
-        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${String(documento.id).padStart(4, '0')}</p>
+        <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:8px;">
+          <img src="/lovable-uploads/Logo.png" alt="Hopecann - Logo" style="height:32px;"/>
+          <h1 style="color: #2563eb; margin: 0; font-size: 24px;">RECEITA MÉDICA</h1>
+        </div>
+        <p style="color: #666; margin: 0;">Doc. Nº ${String(documento.id).padStart(4, '0')}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
@@ -143,8 +151,7 @@ const DocumentosMedicos: React.FC = () => {
       
       <div style="margin-top: 60px; text-align: center; border-top: 1px solid #000; padding-top: 20px;">
         <div style="width: 300px; margin: 0 auto;">
-          <p style="font-weight: bold; margin: 0;">Assinatura e Carimbo do Médico</p>
-          <p style="margin: 10px 0 0 0; font-size: 14px;">CRM: 12345 - RJ</p>
+          <p style="font-weight: bold; margin: 0;">Assinatura: DR-${slugify(documento.medico_nome)}-${String(documento.id).toString().padStart(4, '0')} • ${esc(documento.medico_nome)}</p>
         </div>
       </div>
     </div>
@@ -153,8 +160,11 @@ const DocumentosMedicos: React.FC = () => {
   const generateAtestadoHTML = (documento: any) => `
     <div style="padding: 40px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
       <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px;">
-        <h1 style="color: #2563eb; margin: 0; font-size: 24px;">ATESTADO MÉDICO</h1>
-        <p style="color: #666; margin: 5px 0 0 0;">Doc. Nº ${String(documento.id).padStart(4, '0')}</p>
+        <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:8px;">
+          <img src="/lovable-uploads/Logo.png" alt="Hopecann - Logo" style="height:32px;"/>
+          <h1 style="color: #2563eb; margin: 0; font-size: 24px;">ATESTADO MÉDICO</h1>
+        </div>
+        <p style="color: #666; margin: 0;">Doc. Nº ${String(documento.id).padStart(4, '0')}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
