@@ -99,6 +99,7 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
   const pacientesData = usePacientesData();
   const dialogState = useDialogState();
   const [currentConsultationDuration, setCurrentConsultationDuration] = useState("30");
+  const [selectedPaciente, setSelectedPaciente] = useState<any>(null);
   
   // Additional states for missing properties
   const [receitas] = useState<any[]>([]);
@@ -156,8 +157,8 @@ export const DoctorScheduleProvider: React.FC<{ children: ReactNode }> = ({ chil
     handleSaveProntuario,
     historicoPaciente,
     consultas: pacientesData.pacientes || [], // Add missing consultas
-    selectedPaciente: null, // Add missing selectedPaciente
-    setSelectedPaciente: () => {}, // Add missing setSelectedPaciente
+    selectedPaciente,
+    setSelectedPaciente,
     refetch: pacientesData.refetch || (() => {}) // Add missing refetch
   };
 
