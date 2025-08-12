@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import DoctorAvailabilityService from '@/services/doctorAvailability/doctorAvailabilityService';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -29,6 +30,48 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
     selectedDoctorId || undefined, 
     selectedDate
   );
+
+  const [availableDays, setAvailableDays] = useState<Date[]>([]);
+
+  useEffect(() => {
+    const fetchAvailableDays = async () => {
+      if (!selectedDoctorId) {
+        setAvailableDays([]);
+        return;
+      }
+      try {
+        const schedule = await DoctorAvailabilityService.loadDoctorSchedule(selectedDoctorId);
+        const weekdayMap: Record<string, number> = {
+          sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+        };
+        const activeWeekdays = new Set<number>();
+        (schedule || []).forEach((d: any) => {
+          if (d?.isActive && d.slots?.some((s: any) => s?.isActive)) {
+            const idx = weekdayMap[d.day as keyof typeof weekdayMap];
+            if (idx !== undefined) activeWeekdays.add(idx);
+          }
+        });
+
+        const days: Date[] = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        for (let i = 0; i < 60; i++) {
+          const date = new Date(today);
+          date.setDate(today.getDate() + i);
+          if (date.getDay() === 0) continue; // pular domingos
+          if (activeWeekdays.has(date.getDay())) {
+            days.push(new Date(date.getFullYear(), date.getMonth(), date.getDate()));
+          }
+        }
+        setAvailableDays(days);
+      } catch (e) {
+        console.error('Erro ao carregar disponibilidade do médico:', e);
+        setAvailableDays([]);
+      }
+    };
+
+    fetchAvailableDays();
+  }, [selectedDoctorId]);
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
@@ -158,6 +201,10 @@ const AgendarConsultaPaciente: React.FC<AgendarConsultaPacienteProps> = ({
             disabled={(date) => date < new Date() || date.getDay() === 0} // Disable past dates and Sundays
             locale={ptBR}
             className="rounded-md border"
+            modifiers={{ hasSlots: availableDays }}
+            modifiersClassNames={{
+              hasSlots: "after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-primary"
+            }}
           />
         </CardContent>
       </Card>
