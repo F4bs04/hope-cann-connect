@@ -1,81 +1,15 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import DoctorSelection from '../components/scheduling/DoctorSelection';
-import DateTimeSelection from '../components/scheduling/DateTimeSelection';
-import UserDataForm from '../components/scheduling/UserDataForm';
-import ConfirmationScreen from '../components/scheduling/ConfirmationScreen';
-import StepsIndicator from '../components/scheduling/StepsIndicator';
-import { useConsultationData } from '../hooks/useConsultationData';
+import HomeScheduling from '../components/home-scheduling/HomeScheduling';
 
 const Agendar = () => {
-  const {
-    step,
-    selectedDoctor,
-    selectedDate,
-    selectedTime,
-    formData,
-    doctorInfo,
-    setSelectedDoctor,
-    setSelectedDate,
-    setSelectedTime,
-    handleFormChange,
-    handleNext,
-    handleBack,
-    handleSubmit,
-  } = useConsultationData();
-  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow py-12">
-        <div className="hopecann-container max-w-4xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-center">Agende sua Consulta</h1>
-          <p className="text-lg text-center text-gray-600 mb-10">
-            Preencha os dados abaixo para agendar sua consulta com um de nossos especialistas
-          </p>
-          
-          <StepsIndicator currentStep={step} />
-          
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-            {step === 1 && (
-              <DoctorSelection 
-                selectedDoctor={selectedDoctor} 
-                onSelectDoctor={setSelectedDoctor} 
-                onNext={handleNext} 
-              />
-            )}
-            
-            {step === 2 && (
-              <DateTimeSelection 
-                selectedDate={selectedDate}
-                selectedTime={selectedTime}
-                setSelectedDate={setSelectedDate}
-                setSelectedTime={setSelectedTime}
-                onNext={handleNext}
-                onBack={handleBack}
-              />
-            )}
-            
-            {step === 3 && (
-              <UserDataForm 
-                formData={formData}
-                handleFormChange={handleFormChange}
-                onSubmit={handleSubmit}
-                onBack={handleBack}
-              />
-            )}
-            
-            {step === 4 && (
-              <ConfirmationScreen 
-                selectedDoctor={doctorInfo}
-                selectedDate={selectedDate}
-                selectedTime={selectedTime}
-              />
-            )}
-          </div>
-        </div>
+      <main className="flex-grow">
+        <HomeScheduling />
       </main>
       <Footer />
     </div>
