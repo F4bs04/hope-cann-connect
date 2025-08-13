@@ -11,6 +11,7 @@ import { Check, Download, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getPacientes, createLaudo } from '@/services/supabaseService';
 import PdfUpload from '@/components/ui/pdf-upload';
+import { supabase } from '@/integrations/supabase/client';
 
 const Laudos: React.FC = () => {
   const { toast } = useToast();
@@ -19,32 +20,44 @@ const Laudos: React.FC = () => {
   const [assinado, setAssinado] = useState(false);
   const [success, setSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState('formulario');
-  const [medicoUserId, setMedicoUserId] = useState<number | null>(null);
+  const [doctorId, setDoctorId] = useState<string | null>(null);
+  const [uploaderId, setUploaderId] = useState<number | null>(null);
   const [pdfFilePath, setPdfFilePath] = useState<string | null>(null);
 
   // Form state
   const [pacienteId, setPacienteId] = useState('');
   const [tipoLaudo, setTipoLaudo] = useState('');
-  const [objetivo, setObjetivo] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [conclusao, setConclusao] = useState('');
+  const [conteudo, setConteudo] = useState('');
   const [observacoes, setObservacoes] = useState('');
   
   useEffect(() => {
-    const loadPacientes = async () => {
+    const loadData = async () => {
       setLoading(true);
-      const data = await getPacientes();
-      setPacientes(data);
-      setLoading(false);
+      try {
+        // Carregar pacientes do médico atual
+        const { data: user } = await supabase.auth.getUser();
+        const data = await getPacientes(user.user?.id);
+        setPacientes(data);
+
+        // Obter doctor_id (uuid)
+        const { data: doctor } = await supabase
+          .from('doctors')
+          .select('id')
+          .eq('user_id', user.user?.id)
+          .maybeSingle();
+        if (doctor?.id) setDoctorId(doctor.id);
+
+        // Gerar um identificador numérico estável para upload (necessário pelo componente PdfUpload)
+        if (user.user?.id) {
+          const numericId = Array.from(user.user.id).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+          setUploaderId(numericId);
+        }
+      } finally {
+        setLoading(false);
+      }
     };
-    
-    loadPacientes();
-    
-    // Carregar ID do médico do localStorage
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      setMedicoUserId(parseInt(userId));
-    }
+
+    loadData();
   }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,26 +74,24 @@ const Laudos: React.FC = () => {
         return;
       }
       
-      const laudoData = {
-        id_paciente: parseInt(pacienteId),
-        tipo_laudo: 'pdf_anexo',
-        objetivo: 'Ver documento PDF anexado',
-        descricao: 'Laudo médico via PDF anexado',
-        conclusao: 'Ver documento PDF anexado',
-        observacoes: observacoes || 'Documento PDF anexado pelo médico',
-        assinado: true,
-        arquivo_pdf: pdfFilePath
+      const laudoData: any = {
+        patient_id: pacienteId,
+        document_type: 'medical_report',
+        title: 'Laudo médico (PDF anexo)',
+        content: observacoes || 'Documento PDF anexado pelo médico',
+        is_signed: true,
+        file_path: pdfFilePath,
+        issued_at: new Date().toISOString(),
       };
-      
-      const newLaudo = await createLaudo(laudoData);
-      
-      if (newLaudo) {
+      if (doctorId) laudoData.doctor_id = doctorId;
+      const result = await createLaudo(laudoData);
+      if (result?.success) {
         setSuccess(true);
       }
       return;
     }
     
-    // Validações para o formulário
+    // Validações para o formulário unificado
     if (!pacienteId) {
       toast({
         variant: "destructive",
@@ -89,43 +100,16 @@ const Laudos: React.FC = () => {
       });
       return;
     }
-    
-    if (!tipoLaudo) {
+
+    if (!conteudo.trim()) {
       toast({
         variant: "destructive",
-        title: "Tipo de laudo obrigatório",
-        description: "Por favor, selecione o tipo de laudo",
+        title: "Conteúdo obrigatório",
+        description: "Digite o texto do laudo",
       });
       return;
     }
-    
-    if (!objetivo) {
-      toast({
-        variant: "destructive",
-        title: "Objetivo obrigatório",
-        description: "Por favor, insira o objetivo do laudo",
-      });
-      return;
-    }
-    
-    if (!descricao) {
-      toast({
-        variant: "destructive",
-        title: "Descrição clínica obrigatória",
-        description: "Por favor, insira a descrição clínica detalhada",
-      });
-      return;
-    }
-    
-    if (!conclusao) {
-      toast({
-        variant: "destructive",
-        title: "Conclusão obrigatória",
-        description: "Por favor, insira a conclusão médica",
-      });
-      return;
-    }
-    
+
     if (!assinado) {
       toast({
         variant: "destructive",
@@ -134,20 +118,20 @@ const Laudos: React.FC = () => {
       });
       return;
     }
-    
-    const laudoData = {
-      id_paciente: parseInt(pacienteId),
-      tipo_laudo: tipoLaudo,
-      objetivo,
-      descricao,
-      conclusao,
-      observacoes,
-      assinado: true
+
+    const laudoData: any = {
+      patient_id: pacienteId,
+      document_type: 'medical_report',
+      title: tipoLaudo ? `Laudo ${tipoLaudo}` : 'Laudo médico',
+      content: conteudo,
+      is_signed: true,
+      issued_at: new Date().toISOString(),
     };
-    
-    const newLaudo = await createLaudo(laudoData);
-    
-    if (newLaudo) {
+    if (doctorId) laudoData.doctor_id = doctorId;
+
+    const result = await createLaudo(laudoData);
+
+    if (result?.success) {
       setSuccess(true);
     }
   };
