@@ -155,6 +155,7 @@ export type Database = {
       }
       appointments: {
         Row: {
+          channel: string | null
           clinic_id: string | null
           consultation_type: Database["public"]["Enums"]["consultation_type"]
           created_at: string
@@ -162,7 +163,9 @@ export type Database = {
           duration_min: number
           expires_at: string | null
           fee: number | null
+          google_meet_url: string | null
           id: string
+          idempotency_key: string | null
           notes: string | null
           patient_id: string
           payment_status: string | null
@@ -174,6 +177,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          channel?: string | null
           clinic_id?: string | null
           consultation_type?: Database["public"]["Enums"]["consultation_type"]
           created_at?: string
@@ -181,7 +185,9 @@ export type Database = {
           duration_min?: number
           expires_at?: string | null
           fee?: number | null
+          google_meet_url?: string | null
           id?: string
+          idempotency_key?: string | null
           notes?: string | null
           patient_id: string
           payment_status?: string | null
@@ -193,6 +199,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          channel?: string | null
           clinic_id?: string | null
           consultation_type?: Database["public"]["Enums"]["consultation_type"]
           created_at?: string
@@ -200,7 +207,9 @@ export type Database = {
           duration_min?: number
           expires_at?: string | null
           fee?: number | null
+          google_meet_url?: string | null
           id?: string
+          idempotency_key?: string | null
           notes?: string | null
           patient_id?: string
           payment_status?: string | null
@@ -548,6 +557,7 @@ export type Database = {
           clinic_id: string | null
           consultation_fee: number | null
           cpf: string
+          cpf_hash: string | null
           created_at: string
           crm: string
           id: string
@@ -566,6 +576,7 @@ export type Database = {
           clinic_id?: string | null
           consultation_fee?: number | null
           cpf: string
+          cpf_hash?: string | null
           created_at?: string
           crm: string
           id?: string
@@ -584,6 +595,7 @@ export type Database = {
           clinic_id?: string | null
           consultation_fee?: number | null
           cpf?: string
+          cpf_hash?: string | null
           created_at?: string
           crm?: string
           id?: string
@@ -966,11 +978,39 @@ export type Database = {
           },
         ]
       }
+      onboarding_links: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          long_url: string
+          phone: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id: string
+          long_url: string
+          phone: string
+          role: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          long_url?: string
+          phone?: string
+          role?: string
+        }
+        Relationships: []
+      }
       patients: {
         Row: {
           address: string | null
           birth_date: string
           cpf: string | null
+          cpf_hash: string | null
           created_at: string
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
@@ -985,6 +1025,7 @@ export type Database = {
           address?: string | null
           birth_date: string
           cpf?: string | null
+          cpf_hash?: string | null
           created_at?: string
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -999,6 +1040,7 @@ export type Database = {
           address?: string | null
           birth_date?: string
           cpf?: string | null
+          cpf_hash?: string | null
           created_at?: string
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -1018,6 +1060,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_events: {
+        Row: {
+          created_at: string
+          raw: Json
+          tx_id: string
+        }
+        Insert: {
+          created_at?: string
+          raw: Json
+          tx_id: string
+        }
+        Update: {
+          created_at?: string
+          raw?: Json
+          tx_id?: string
+        }
+        Relationships: []
       }
       payments: {
         Row: {
@@ -1254,6 +1314,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_chat: {
+        Args: { p_chat_id: string; uid: string }
+        Returns: boolean
+      }
       can_access_patient_data: {
         Args: { patient_user_id: string }
         Returns: boolean
@@ -1270,6 +1334,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_admin: {
+        Args: { uid: string }
+        Returns: boolean
+      }
       is_doctor_available: {
         Args:
           | {
@@ -1278,6 +1346,14 @@ export type Database = {
               p_appointment_id?: string
             }
           | { p_medico_id: number; p_data_hora: string; p_consulta_id?: number }
+        Returns: boolean
+      }
+      is_doctor_user: {
+        Args: { uid: string; p_doctor_id: string }
+        Returns: boolean
+      }
+      is_patient_user: {
+        Args: { uid: string; p_patient_id: string }
         Returns: boolean
       }
       rpc_slots_available: {
