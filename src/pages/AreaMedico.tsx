@@ -40,7 +40,7 @@ import Laudos from '@/components/medico-dashboard/Laudos';
 import PedidosExame from '@/components/medico-dashboard/PedidosExame';
 import ConsultaView from '@/components/medico-dashboard/ConsultaView';
 import ProntuarioAba from '@/components/medico/ProntuarioAba';
-import AgendaSlotsManager from '@/components/medico/AgendaSlotsManager';
+import CalendarSlotsManager from '@/components/medico/CalendarSlotsManager';
 import ClinicaDashboard from '@/components/clinica-dashboard/ClinicaDashboard';
 import ConfiguracoesFinanceiras from '@/components/medico-dashboard/ConfiguracoesFinanceiras';
 import EditProfileDialog from '@/components/medico/EditProfileDialog';
@@ -169,7 +169,7 @@ const AreaMedicoContent: React.FC = () => {
       case 'agenda':
         return <AgendaMedica />;
       case 'slots':
-        return <AgendaSlotsManager />;
+        return <CalendarSlotsManager />;
       case 'prescricoes':
         return <Prescricoes />;
       case 'prontuarios':
