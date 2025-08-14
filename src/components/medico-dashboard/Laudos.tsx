@@ -189,9 +189,7 @@ const Laudos: React.FC = () => {
             setSuccess(false);
             setAssinado(false);
             setTipoLaudo('');
-            setObjetivo('');
-            setDescricao('');
-            setConclusao('');
+            setConteudo('');
             setObservacoes('');
             setPacienteId('');
             setPdfFilePath(null);
@@ -262,43 +260,15 @@ const Laudos: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="objetivo" className="font-medium">
-                    Objetivo do Laudo*
-                  </Label>
-                  <Input
-                    id="objetivo"
-                    placeholder="Descreva o objetivo do laudo"
-                    value={objetivo}
-                    onChange={(e) => setObjetivo(e.target.value)}
-                    className="mt-1"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="descricao" className="font-medium">
-                    Descrição Clínica Detalhada*
+                  <Label htmlFor="conteudo" className="font-medium">
+                    Conteúdo do Laudo*
                   </Label>
                   <Textarea
-                    id="descricao"
-                    placeholder="Inclua todos os detalhes clínicos relevantes"
-                    value={descricao}
-                    onChange={(e) => setDescricao(e.target.value)}
-                    className="mt-1 min-h-[150px]"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="conclusao" className="font-medium">
-                    Conclusão Médica*
-                  </Label>
-                  <Textarea
-                    id="conclusao"
-                    placeholder="Digite a conclusão médica"
-                    value={conclusao}
-                    onChange={(e) => setConclusao(e.target.value)}
-                    className="mt-1 min-h-[100px]"
+                    id="conteudo"
+                    placeholder="Digite todo o conteúdo do laudo médico de forma livre. Inclua objetivo, descrição clínica detalhada, conclusões e qualquer informação relevante."
+                    value={conteudo}
+                    onChange={(e) => setConteudo(e.target.value)}
+                    className="mt-1 min-h-[300px]"
                     required
                   />
                 </div>
@@ -367,7 +337,7 @@ const Laudos: React.FC = () => {
                 
                 <PdfUpload 
                   onUploadComplete={handlePdfUploadComplete} 
-                  userId={medicoUserId} 
+                  userId={uploaderId} 
                   pacienteId={pacienteId ? parseInt(pacienteId) : null}
                   docType="laudo"
                 />

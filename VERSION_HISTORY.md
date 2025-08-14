@@ -2,6 +2,42 @@
 
 ## 📋 Registro de Marcos do Projeto
 
+### 🚀 T1.1 - Otimização da Experiência Médica
+**Data de Lançamento:** 14 de Agosto de 2025  
+**Status:** Implementado - Melhoria na UX Médica
+
+#### 🎯 Objetivo da Versão
+Simplificar e unificar a interface de criação de documentos médicos, reduzindo complexidade e aumentando a liberdade de escrita para profissionais.
+
+#### ⚡ Principais Melhorias
+- **📝 Unificação de Campos**: Transformação de múltiplos campos específicos em área de texto livre
+- **🎨 Interface Simplificada**: Redução de fricção na criação de documentos
+- **⚙️ Compatibilidade Mantida**: Zero impacto no banco de dados existente
+- **🔒 Segurança Preservada**: Todas as políticas RLS mantidas intactas
+
+#### 🔧 Componentes Atualizados
+- **Laudos.tsx**: Unificação dos campos objetivo, descrição e conclusão em um único campo "conteúdo"
+- **Sistema de Upload**: Correção de parâmetros para melhor compatibilidade
+
+#### 📊 Impacto Técnico
+- **Migração de Schema**: ✅ Não necessária
+- **Compatibilidade**: ✅ 100% retrocompatível
+- **Performance**: ✅ Melhorada (menos campos)
+- **UX**: ✅ Significativamente otimizada
+
+#### 🛡️ Validações de Segurança
+- ✅ RLS policies mantidas
+- ✅ Autenticação preservada
+- ✅ Criptografia intacta
+- ✅ Auditoria funcional
+
+#### 🎁 Benefícios Imediatos
+- **Para Médicos**: Interface mais intuitiva e flexível
+- **Para Sistema**: Menor complexidade de validação
+- **Para Manutenção**: Código mais limpo e focado
+
+---
+
 ### 🎉 Beta 1.0 - Primeira Versão Estável
 **Data de Lançamento:** 08 de Agosto de 2025  
 **Status:** Estável para Testes de Usuários
