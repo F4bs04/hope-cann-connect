@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1327,7 +1327,7 @@ export type Database = {
         Returns: undefined
       }
       generate_doctor_slots: {
-        Args: { p_doctor_id: string; p_start_date: string; p_end_date: string }
+        Args: { p_doctor_id: string; p_end_date: string; p_start_date: string }
         Returns: undefined
       }
       get_authenticated_email: {
@@ -1341,33 +1341,33 @@ export type Database = {
       is_doctor_available: {
         Args:
           | {
+              p_appointment_id?: string
               p_doctor_id: string
               p_scheduled_at: string
-              p_appointment_id?: string
             }
-          | { p_medico_id: number; p_data_hora: string; p_consulta_id?: number }
+          | { p_consulta_id?: number; p_data_hora: string; p_medico_id: number }
         Returns: boolean
       }
       is_doctor_user: {
-        Args: { uid: string; p_doctor_id: string }
+        Args: { p_doctor_id: string; uid: string }
         Returns: boolean
       }
       is_patient_user: {
-        Args: { uid: string; p_patient_id: string }
+        Args: { p_patient_id: string; uid: string }
         Returns: boolean
       }
       rpc_slots_available: {
         Args: {
           p_doctor: string
           p_from: string
-          p_to: string
           p_slot_minutes?: number
           p_step_minutes?: number
+          p_to: string
           p_tz?: string
         }
         Returns: {
-          slot_start: string
           slot_end: string
+          slot_start: string
         }[]
       }
       verificar_chats_expirados: {
@@ -1385,9 +1385,9 @@ export type Database = {
       verify_user_password_v2: {
         Args: { p_email: string; p_password: string }
         Returns: {
+          is_valid: boolean
           user_id: number
           user_type: string
-          is_valid: boolean
         }[]
       }
     }
